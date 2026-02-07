@@ -51,7 +51,7 @@ function Navbar() {
               Log in
             </Button>
           </Link>
-          <Link href="#waitlist">
+          <Link href="/signup">
             <Button size="sm">Get Early Access</Button>
           </Link>
         </div>
@@ -104,7 +104,7 @@ function HeroSection() {
         </p>
 
         <div className="animate-fade-in-up mt-10 flex flex-col items-center justify-center gap-4 opacity-0 delay-300 sm:flex-row">
-          <Link href="#waitlist">
+          <Link href="/signup">
             <Button size="lg" className="h-12 px-8 text-base">
               Get Started Free
               <svg

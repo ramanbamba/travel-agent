@@ -1,12 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 export function WaitlistForm() {
   const [email, setEmail] = useState("");
-  const [submitted, setSubmitted] = useState(false);
+  const router = useRouter();
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -18,34 +19,7 @@ export function WaitlistForm() {
       localStorage.setItem("waitlist", JSON.stringify(existing));
     }
 
-    setSubmitted(true);
-    setEmail("");
-  }
-
-  if (submitted) {
-    return (
-      <div className="mt-8 rounded-xl border border-white/10 bg-white/[0.03] p-6">
-        <div className="flex items-center justify-center gap-2 text-emerald-400">
-          <svg
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-            <polyline points="22 4 12 14.01 9 11.01" />
-          </svg>
-          <span className="font-medium">You&apos;re on the list</span>
-        </div>
-        <p className="mt-2 text-sm text-muted-foreground">
-          We&apos;ll reach out when your spot opens up.
-        </p>
-      </div>
-    );
+    router.push("/signup");
   }
 
   return (
