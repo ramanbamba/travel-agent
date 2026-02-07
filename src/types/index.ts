@@ -9,3 +9,42 @@ export interface ApiResponse<T = unknown> {
   error: string | null;
   message: string;
 }
+
+export interface UserProfile {
+  id: string;
+  first_name: string;
+  last_name: string;
+  middle_name: string | null;
+  phone: string | null;
+  date_of_birth: string | null;
+  gender: string | null;
+  passport_vault_id: string | null;
+  ktn_vault_id: string | null;
+  redress_number: string | null;
+  preferred_cabin: "economy" | "premium_economy" | "business" | "first";
+  seat_preference: "window" | "middle" | "aisle" | "no_preference";
+  meal_preference:
+    | "standard"
+    | "vegetarian"
+    | "vegan"
+    | "halal"
+    | "kosher"
+    | "gluten_free"
+    | "no_preference";
+  home_airport: string | null;
+  onboarding_completed: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface LoyaltyProgram {
+  id: string;
+  user_id: string;
+  airline_code: string;
+  airline_name: string;
+  program_name: string;
+  member_number: string;
+  tier: string | null;
+  created_at: string;
+  updated_at: string;
+}

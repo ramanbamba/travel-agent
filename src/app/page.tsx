@@ -46,7 +46,7 @@ function Navbar() {
           </Link>
         </div>
         <div className="flex items-center gap-3">
-          <Link href="/dashboard">
+          <Link href="/login">
             <Button variant="ghost" size="sm">
               Log in
             </Button>

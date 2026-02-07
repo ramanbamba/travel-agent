@@ -1,14 +1,27 @@
-export default function DashboardLayout({
+import Link from "next/link";
+import { redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
+import { UserMenu } from "@/components/user-menu";
+
+export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  // TODO: Add auth check here — redirect to /login if not authenticated
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/login");
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-white/5">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
-          <div className="flex items-center gap-2">
+          <Link href="/dashboard" className="flex items-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white">
               <svg
                 width="18"
@@ -24,8 +37,8 @@ export default function DashboardLayout({
               </svg>
             </div>
             <span className="text-lg font-semibold tracking-tight">Skyswift</span>
-          </div>
-          <p className="text-sm text-muted-foreground">Dashboard</p>
+          </Link>
+          <UserMenu email={user.email ?? ""} />
         </div>
       </header>
       <main>{children}</main>
