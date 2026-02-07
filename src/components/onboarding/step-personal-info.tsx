@@ -53,7 +53,9 @@ export function StepPersonalInfo({
       title="Let's get to know you"
       subtitle="We'll use this information for your flight bookings."
     >
-      <form onSubmit={handleSubmit(onNext)} className="space-y-4">
+      <form onSubmit={handleSubmit(onNext, (validationErrors) => {
+        console.log("[Onboarding] Step 1 validation failed:", validationErrors);
+      })} className="space-y-4">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <div className="space-y-2">
             <Label htmlFor="first_name" className="text-white/80">

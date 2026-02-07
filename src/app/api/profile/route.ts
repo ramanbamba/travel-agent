@@ -74,22 +74,48 @@ export async function PUT(request: Request) {
   delete body.created_at;
   delete body.updated_at;
 
-  const { data, error } = await supabase
+  // Try UPDATE first (works for existing profiles without requiring all NOT NULL cols)
+  const { data: updated, error: updateError } = await supabase
     .from("user_profiles")
-    .upsert({ id: user.id, ...body }, { onConflict: "id" })
+    .update(body)
+    .eq("id", user.id)
     .select()
     .single();
 
-  if (error) {
-    return NextResponse.json<ApiResponse>(
-      { data: null, error: error.message, message: "Failed to update profile" },
-      { status: 500 }
-    );
+  // Row exists — return updated data
+  if (updated) {
+    return NextResponse.json<ApiResponse<UserProfile>>({
+      data: updated as UserProfile,
+      error: null,
+      message: "Profile updated successfully",
+    });
   }
 
-  return NextResponse.json<ApiResponse<UserProfile>>({
-    data: data as UserProfile,
-    error: null,
-    message: "Profile updated successfully",
-  });
+  // No row found (PGRST116) — INSERT for first-time profile creation
+  if (updateError?.code === "PGRST116") {
+    const { data: inserted, error: insertError } = await supabase
+      .from("user_profiles")
+      .insert({ id: user.id, ...body })
+      .select()
+      .single();
+
+    if (insertError) {
+      return NextResponse.json<ApiResponse>(
+        { data: null, error: insertError.message, message: "Failed to create profile" },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json<ApiResponse<UserProfile>>({
+      data: inserted as UserProfile,
+      error: null,
+      message: "Profile created successfully",
+    });
+  }
+
+  // Other error
+  return NextResponse.json<ApiResponse>(
+    { data: null, error: updateError?.message ?? "Unknown error", message: "Failed to update profile" },
+    { status: 500 }
+  );
 }

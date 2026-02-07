@@ -58,6 +58,7 @@ export function OnboardingWizard({
     determineStartStep(initialProfile, initialLoyaltyPrograms)
   );
   const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   // Aggregated form data across steps
   const [personalInfo, setPersonalInfo] = useState<PersonalInfoValues>({
@@ -124,7 +125,9 @@ export function OnboardingWizard({
 
   const handlePersonalInfo = async (data: PersonalInfoValues) => {
     setIsSaving(true);
+    setSaveError(null);
     try {
+      console.log("[Onboarding] Saving personal info:", data);
       await saveProfile({
         first_name: data.first_name,
         middle_name: data.middle_name || null,
@@ -132,10 +135,13 @@ export function OnboardingWizard({
         date_of_birth: data.date_of_birth,
         gender: data.gender,
       });
+      console.log("[Onboarding] Personal info saved, advancing to step 1");
       setPersonalInfo(data);
       setCurrentStep(1);
-    } catch {
-      // Could add toast notification here
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to save profile";
+      console.error("[Onboarding] Error saving personal info:", err);
+      setSaveError(message);
     } finally {
       setIsSaving(false);
     }
@@ -143,16 +149,21 @@ export function OnboardingWizard({
 
   const handleTravelDocuments = async (data: TravelDocumentsValues) => {
     setIsSaving(true);
+    setSaveError(null);
     try {
+      console.log("[Onboarding] Saving travel documents");
       await saveProfile({
         passport_vault_id: data.passport_number,
         ktn_vault_id: data.ktn || null,
         redress_number: data.redress_number || null,
       });
+      console.log("[Onboarding] Travel docs saved, advancing to step 2");
       setTravelDocuments(data);
       setCurrentStep(2);
-    } catch {
-      // Could add toast notification here
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to save travel documents";
+      console.error("[Onboarding] Error saving travel docs:", err);
+      setSaveError(message);
     } finally {
       setIsSaving(false);
     }
@@ -160,12 +171,17 @@ export function OnboardingWizard({
 
   const handleLoyaltyPrograms = async (data: LoyaltyProgramsValues) => {
     setIsSaving(true);
+    setSaveError(null);
     try {
+      console.log("[Onboarding] Saving loyalty programs:", data.loyalty_programs.length, "programs");
       await saveLoyaltyPrograms(data.loyalty_programs);
+      console.log("[Onboarding] Loyalty programs saved, advancing to step 3");
       setLoyaltyPrograms(data);
       setCurrentStep(3);
-    } catch {
-      // Could add toast notification here
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to save loyalty programs";
+      console.error("[Onboarding] Error saving loyalty programs:", err);
+      setSaveError(message);
     } finally {
       setIsSaving(false);
     }
@@ -173,15 +189,20 @@ export function OnboardingWizard({
 
   const handlePreferences = async (data: PreferencesValues) => {
     setIsSaving(true);
+    setSaveError(null);
     try {
+      console.log("[Onboarding] Saving preferences:", data);
       await saveProfile({
         seat_preference: data.seat_preference,
         meal_preference: data.meal_preference,
       });
+      console.log("[Onboarding] Preferences saved, advancing to step 4");
       setPreferences(data);
       setCurrentStep(4);
-    } catch {
-      // Could add toast notification here
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to save preferences";
+      console.error("[Onboarding] Error saving preferences:", err);
+      setSaveError(message);
     } finally {
       setIsSaving(false);
     }
@@ -189,12 +210,17 @@ export function OnboardingWizard({
 
   const handleComplete = async () => {
     setIsSaving(true);
+    setSaveError(null);
     try {
+      console.log("[Onboarding] Completing onboarding");
       await saveProfile({ onboarding_completed: true });
+      console.log("[Onboarding] Onboarding completed, redirecting to dashboard");
       router.push("/dashboard");
       router.refresh();
-    } catch {
-      // Could add toast notification here
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to complete onboarding";
+      console.error("[Onboarding] Error completing onboarding:", err);
+      setSaveError(message);
     } finally {
       setIsSaving(false);
     }
@@ -205,6 +231,13 @@ export function OnboardingWizard({
       <div className="mb-10">
         <ProgressIndicator currentStep={currentStep} />
       </div>
+
+      {saveError && (
+        <div className="mb-6 rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+          <p className="font-medium">Failed to save</p>
+          <p className="mt-1">{saveError}</p>
+        </div>
+      )}
 
       {/* key={currentStep} forces remount for clean entrance animation */}
       <div key={currentStep}>
