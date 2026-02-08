@@ -362,7 +362,7 @@ export function useChatMessages() {
   );
 
   const confirmBooking = useCallback(
-    async (bookingId: string) => {
+    async (bookingId: string, paymentMethodId?: string) => {
       const booking = bookingRef.current;
       if (!booking || booking.id !== bookingId) return;
 
@@ -374,22 +374,15 @@ export function useChatMessages() {
         const res = await fetch("/api/booking/confirm", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ booking }),
+          body: JSON.stringify({ booking, paymentMethodId }),
         });
-
-        if (!res.ok) {
-          const errorText = "Booking failed. Please try again.";
-          setError(errorText);
-          addMessage(createMessage("assistant", errorText));
-          return;
-        }
 
         const json = await res.json();
 
-        if (json.error) {
-          addMessage(
-            createMessage("assistant", "Booking failed. Please try again.")
-          );
+        if (!res.ok || json.error) {
+          const errorText = json.message ?? "Booking failed. Please try again.";
+          setError(errorText);
+          addMessage(createMessage("assistant", errorText));
           return;
         }
 

@@ -11,7 +11,7 @@ import { BookingConfirmationCard } from "@/components/flights/booking-confirmati
 interface RichContentRendererProps {
   content: RichContent;
   onSelectFlight?: (flightId: string) => void;
-  onConfirmBooking?: (bookingId: string) => void;
+  onConfirmBooking?: (bookingId: string, paymentMethodId?: string) => void;
 }
 
 export function RichContentRenderer({

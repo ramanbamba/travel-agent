@@ -1,6 +1,7 @@
 "use client";
 
-import { CheckCircle, Plane, Copy, CreditCard } from "lucide-react";
+import Link from "next/link";
+import { CheckCircle, Plane, Copy, CreditCard, ExternalLink } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
@@ -82,6 +83,17 @@ export function BookingConfirmationCard({
               {confirmation.totalPrice.currency}
             </span>
           </div>
+
+          {/* View in My Bookings */}
+          <Link href="/dashboard/bookings">
+            <Button
+              variant="outline"
+              className="w-full gap-2 border-white/10"
+            >
+              <ExternalLink className="h-4 w-4" />
+              View in My Bookings
+            </Button>
+          </Link>
 
           {/* Boarding pass button */}
           <BoardingPass

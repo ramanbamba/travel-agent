@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { stripe } from "@/lib/stripe/client";
 import type { ApiResponse, BookingConfirmation, BookingSummary } from "@/types";
 
 function generateConfirmationCode(): string {
@@ -9,6 +10,23 @@ function generateConfirmationCode(): string {
     code += chars[Math.floor(Math.random() * chars.length)];
   }
   return code;
+}
+
+function friendlyStripeError(code: string | undefined): string {
+  switch (code) {
+    case "card_declined":
+      return "Your card was declined. Please try a different card.";
+    case "insufficient_funds":
+      return "Insufficient funds. Please try a different card.";
+    case "expired_card":
+      return "Your card has expired. Please update your card details.";
+    case "incorrect_cvc":
+      return "Incorrect CVC. Please check your card details.";
+    case "processing_error":
+      return "A processing error occurred. Please try again.";
+    default:
+      return "Payment failed. Please try a different card.";
+  }
 }
 
 export async function POST(request: Request) {
@@ -27,6 +45,7 @@ export async function POST(request: Request) {
 
   const body = await request.json();
   const booking = body.booking as BookingSummary;
+  const paymentMethodId = body.paymentMethodId as string | undefined;
 
   if (!booking) {
     return NextResponse.json<ApiResponse>(
@@ -36,6 +55,94 @@ export async function POST(request: Request) {
         message: "Booking summary is required",
       },
       { status: 400 }
+    );
+  }
+
+  if (!paymentMethodId) {
+    return NextResponse.json<ApiResponse>(
+      {
+        data: null,
+        error: "Bad request",
+        message: "Payment method is required",
+      },
+      { status: 400 }
+    );
+  }
+
+  // Verify the payment method belongs to this user
+  const { data: pmRow } = await supabase
+    .from("payment_methods")
+    .select("stripe_payment_method_id")
+    .eq("id", paymentMethodId)
+    .eq("user_id", user.id)
+    .single();
+
+  if (!pmRow) {
+    return NextResponse.json<ApiResponse>(
+      {
+        data: null,
+        error: "Not found",
+        message: "Payment method not found",
+      },
+      { status: 404 }
+    );
+  }
+
+  // Get Stripe customer ID
+  const { data: profile } = await supabase
+    .from("user_profiles")
+    .select("stripe_customer_id")
+    .eq("id", user.id)
+    .single();
+
+  if (!profile?.stripe_customer_id) {
+    return NextResponse.json<ApiResponse>(
+      {
+        data: null,
+        error: "No customer",
+        message: "No Stripe customer found. Please add a payment method first.",
+      },
+      { status: 400 }
+    );
+  }
+
+  const amountCents = Math.round(booking.totalPrice.amount * 100);
+
+  // Create and confirm PaymentIntent
+  let paymentIntent;
+  try {
+    paymentIntent = await stripe.paymentIntents.create({
+      amount: amountCents,
+      currency: booking.totalPrice.currency.toLowerCase(),
+      customer: profile.stripe_customer_id,
+      payment_method: pmRow.stripe_payment_method_id,
+      confirm: true,
+      off_session: true,
+      metadata: {
+        supabase_user_id: user.id,
+      },
+    });
+  } catch (err: unknown) {
+    const stripeErr = err as { code?: string; message?: string };
+    const friendlyMsg = friendlyStripeError(stripeErr.code);
+    return NextResponse.json<ApiResponse>(
+      {
+        data: null,
+        error: stripeErr.code ?? "payment_failed",
+        message: friendlyMsg,
+      },
+      { status: 402 }
+    );
+  }
+
+  if (paymentIntent.status !== "succeeded") {
+    return NextResponse.json<ApiResponse>(
+      {
+        data: null,
+        error: "payment_incomplete",
+        message: "Payment could not be completed. Please try again.",
+      },
+      { status: 402 }
     );
   }
 
@@ -50,11 +157,14 @@ export async function POST(request: Request) {
       user_id: user.id,
       status: "confirmed",
       pnr: confirmationCode,
-      total_price_cents: Math.round(booking.totalPrice.amount * 100),
+      total_price_cents: amountCents,
       currency: booking.totalPrice.currency,
       cabin_class: cabinClass,
       data_source: "manual",
       booked_at: new Date().toISOString(),
+      stripe_payment_intent_id: paymentIntent.id,
+      payment_status: "captured",
+      payment_method_id: paymentMethodId,
     })
     .select("id")
     .single();
@@ -89,7 +199,6 @@ export async function POST(request: Request) {
     .insert(segmentInserts);
 
   if (segmentError) {
-    // Mark booking as failed if segments couldn't be inserted
     await supabase
       .from("bookings")
       .update({ status: "failed" })

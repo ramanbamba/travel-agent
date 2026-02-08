@@ -10,7 +10,7 @@ interface ChatMessagesProps {
   messages: ChatMessage[];
   isLoading: boolean;
   onSelectFlight?: (flightId: string) => void;
-  onConfirmBooking?: (bookingId: string) => void;
+  onConfirmBooking?: (bookingId: string, paymentMethodId?: string) => void;
 }
 
 export function ChatMessages({

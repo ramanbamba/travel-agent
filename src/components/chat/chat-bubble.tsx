@@ -5,7 +5,7 @@ import { RichContentRenderer } from "./rich-content-renderer";
 interface ChatBubbleProps {
   message: ChatMessage;
   onSelectFlight?: (flightId: string) => void;
-  onConfirmBooking?: (bookingId: string) => void;
+  onConfirmBooking?: (bookingId: string, paymentMethodId?: string) => void;
 }
 
 export function ChatBubble({

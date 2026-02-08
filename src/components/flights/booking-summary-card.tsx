@@ -1,13 +1,17 @@
+"use client";
+
+import { useState } from "react";
 import { Plane, User, CreditCard, Armchair, Award, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { PaymentSelector } from "./payment-selector";
 import type { BookingSummary } from "@/types/flights";
 
 interface BookingSummaryCardProps {
   summary: BookingSummary;
-  onConfirm?: (bookingId: string) => void;
+  onConfirm?: (bookingId: string, paymentMethodId: string) => void;
 }
 
 function formatSeatPref(pref: string) {
@@ -20,6 +24,13 @@ export function BookingSummaryCard({
 }: BookingSummaryCardProps) {
   const segment = summary.flight.segments[0];
   const { passenger } = summary;
+  const [showPayment, setShowPayment] = useState(false);
+  const [paying, setPaying] = useState(false);
+
+  function handlePay(paymentMethodId: string) {
+    setPaying(true);
+    onConfirm?.(summary.id, paymentMethodId);
+  }
 
   return (
     <Card className="w-full border-white/10 bg-white/[0.03]">
@@ -125,10 +136,24 @@ export function BookingSummaryCard({
             </span>
           </div>
         </div>
+
+        {/* Payment selector (shown after clicking Confirm & Pay) */}
+        {showPayment && onConfirm && (
+          <>
+            <Separator className="bg-white/5" />
+            <PaymentSelector
+              amount={summary.totalPrice.amount}
+              currency={summary.totalPrice.currency}
+              onPay={handlePay}
+              onCancel={() => setShowPayment(false)}
+              disabled={paying}
+            />
+          </>
+        )}
       </CardContent>
-      {onConfirm && (
+      {onConfirm && !showPayment && (
         <CardFooter>
-          <Button className="w-full" onClick={() => onConfirm(summary.id)}>
+          <Button className="w-full" onClick={() => setShowPayment(true)}>
             Confirm & Pay
           </Button>
         </CardFooter>

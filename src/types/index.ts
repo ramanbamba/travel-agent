@@ -87,3 +87,14 @@ export interface DbBooking {
 export interface BookingWithSegments extends DbBooking {
   flight_segments: DbFlightSegment[];
 }
+
+export interface PaymentMethod {
+  id: string;
+  stripe_payment_method_id: string;
+  card_brand: string;
+  card_last_four: string;
+  card_exp_month: number;
+  card_exp_year: number;
+  is_default: boolean;
+  created_at: string;
+}

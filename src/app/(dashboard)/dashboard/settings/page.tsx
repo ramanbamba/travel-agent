@@ -1,6 +1,7 @@
 "use client";
 
-import { Bell, Mail, MessageSquare, Smartphone } from "lucide-react";
+import Link from "next/link";
+import { Bell, CreditCard, ChevronRight, Mail, MessageSquare, Smartphone } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
@@ -70,6 +71,22 @@ export default function SettingsPage() {
             ))}
           </CardContent>
         </Card>
+        <Link href="/dashboard/settings/payment">
+          <Card className="cursor-pointer border-white/10 bg-white/[0.02] transition-colors hover:bg-white/[0.04]">
+            <CardContent className="flex items-center justify-between p-4">
+              <div className="flex items-center gap-3">
+                <CreditCard className="h-4 w-4 text-muted-foreground" />
+                <div>
+                  <p className="text-sm font-medium">Payment Methods</p>
+                  <p className="text-xs text-muted-foreground">
+                    Manage saved cards for flight bookings
+                  </p>
+                </div>
+              </div>
+              <ChevronRight className="h-4 w-4 text-muted-foreground" />
+            </CardContent>
+          </Card>
+        </Link>
       </div>
     </div>
   );
