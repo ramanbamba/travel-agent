@@ -10,8 +10,15 @@ interface FlightCardProps {
 }
 
 export function FlightCard({ flight, onSelect }: FlightCardProps) {
-  const segment = flight.segments[0];
-  const cabinLabel = segment.cabin.replace("_", " ");
+  const firstSegment = flight.segments[0];
+  const lastSegment = flight.segments[flight.segments.length - 1];
+  const cabinLabel = firstSegment.cabin.replace("_", " ");
+
+  // For multi-segment, show connecting airports
+  const connectionInfo =
+    flight.segments.length > 1
+      ? flight.segments.slice(0, -1).map((s) => s.arrival.airportCode).join(", ")
+      : null;
 
   return (
     <Card className="border-white/10 bg-white/[0.03] transition-colors hover:border-white/20">
@@ -19,29 +26,33 @@ export function FlightCard({ flight, onSelect }: FlightCardProps) {
         <div className="flex items-center justify-between gap-4">
           {/* Route info */}
           <div className="flex-1 space-y-3">
-            {/* Airline + flight number */}
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-medium">{segment.airline}</span>
+            {/* Airline + flight number + cabin */}
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-sm font-medium">{firstSegment.airline}</span>
               <span className="text-xs text-muted-foreground">
-                {segment.flightNumber}
+                {firstSegment.flightNumber}
               </span>
               <Badge variant="outline" className="text-[10px] capitalize">
                 {cabinLabel}
               </Badge>
+              {firstSegment.aircraft && (
+                <span className="text-[10px] text-muted-foreground">
+                  {firstSegment.aircraft}
+                </span>
+              )}
             </div>
 
             {/* Times + airports */}
             <div className="flex items-center gap-3">
               <div className="text-center">
                 <p className="text-lg font-semibold">
-                  {new Date(segment.departure.time).toLocaleTimeString("en-US", {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                    hour12: false,
-                  })}
+                  {new Date(firstSegment.departure.time).toLocaleTimeString(
+                    "en-US",
+                    { hour: "2-digit", minute: "2-digit", hour12: false }
+                  )}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  {segment.departure.airportCode}
+                  {firstSegment.departure.airportCode}
                 </p>
               </div>
 
@@ -51,26 +62,35 @@ export function FlightCard({ flight, onSelect }: FlightCardProps) {
                 </span>
                 <div className="flex w-full items-center gap-1">
                   <div className="h-px flex-1 bg-white/20" />
+                  {flight.stops > 0 && (
+                    <div className="flex gap-0.5">
+                      {Array.from({ length: flight.stops }).map((_, i) => (
+                        <div
+                          key={i}
+                          className="h-1.5 w-1.5 rounded-full bg-white/40"
+                        />
+                      ))}
+                    </div>
+                  )}
                   <Plane className="h-3 w-3 text-muted-foreground" />
                   <div className="h-px flex-1 bg-white/20" />
                 </div>
                 <span className="text-[10px] text-muted-foreground">
                   {flight.stops === 0
                     ? "Nonstop"
-                    : `${flight.stops} stop${flight.stops > 1 ? "s" : ""}`}
+                    : `${flight.stops} stop${flight.stops > 1 ? "s" : ""}${connectionInfo ? ` (${connectionInfo})` : ""}`}
                 </span>
               </div>
 
               <div className="text-center">
                 <p className="text-lg font-semibold">
-                  {new Date(segment.arrival.time).toLocaleTimeString("en-US", {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                    hour12: false,
-                  })}
+                  {new Date(lastSegment.arrival.time).toLocaleTimeString(
+                    "en-US",
+                    { hour: "2-digit", minute: "2-digit", hour12: false }
+                  )}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  {segment.arrival.airportCode}
+                  {lastSegment.arrival.airportCode}
                 </p>
               </div>
             </div>
@@ -86,9 +106,9 @@ export function FlightCard({ flight, onSelect }: FlightCardProps) {
                 {flight.price.currency}
               </p>
             </div>
-            {flight.seatsRemaining && flight.seatsRemaining <= 5 && (
+            {flight.seatsRemaining != null && flight.seatsRemaining <= 5 && (
               <span className="text-[10px] text-orange-400">
-                {flight.seatsRemaining} seats left
+                {flight.seatsRemaining} seat{flight.seatsRemaining !== 1 ? "s" : ""} left
               </span>
             )}
             {onSelect && (
