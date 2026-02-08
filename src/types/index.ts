@@ -51,3 +51,39 @@ export interface LoyaltyProgram {
   created_at: string;
   updated_at: string;
 }
+
+export interface DbFlightSegment {
+  id: string;
+  booking_id: string;
+  segment_order: number;
+  airline_code: string;
+  flight_number: string;
+  departure_airport: string;
+  arrival_airport: string;
+  departure_time: string;
+  arrival_time: string;
+  aircraft_type: string | null;
+  cabin_class: string;
+  seat_number: string | null;
+  status: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DbBooking {
+  id: string;
+  user_id: string;
+  status: string;
+  pnr: string | null;
+  total_price_cents: number | null;
+  currency: string;
+  cabin_class: string;
+  data_source: string;
+  booked_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface BookingWithSegments extends DbBooking {
+  flight_segments: DbFlightSegment[];
+}

@@ -50,14 +50,14 @@ export function UserMenu({ email }: UserMenuProps) {
         <DropdownMenuSeparator className="bg-white/10" />
         <DropdownMenuItem
           className="cursor-pointer"
-          onClick={() => router.push("/dashboard")}
+          onClick={() => router.push("/dashboard/profile")}
         >
           <User className="mr-2 h-4 w-4" />
           Profile
         </DropdownMenuItem>
         <DropdownMenuItem
           className="cursor-pointer"
-          onClick={() => router.push("/dashboard")}
+          onClick={() => router.push("/dashboard/settings")}
         >
           <Settings className="mr-2 h-4 w-4" />
           Settings

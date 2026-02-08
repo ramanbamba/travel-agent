@@ -1,6 +1,10 @@
-import { CheckCircle, Plane, Copy } from "lucide-react";
+"use client";
+
+import { CheckCircle, Plane, Copy, CreditCard } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { toast } from "@/hooks/use-toast";
+import { BoardingPass } from "./boarding-pass";
 import type { BookingConfirmation } from "@/types/flights";
 
 interface BookingConfirmationCardProps {
@@ -14,6 +18,10 @@ export function BookingConfirmationCard({
 
   const copyCode = () => {
     navigator.clipboard.writeText(confirmation.confirmationCode);
+    toast({
+      title: "PNR copied",
+      description: confirmation.confirmationCode,
+    });
   };
 
   return (
@@ -74,6 +82,20 @@ export function BookingConfirmationCard({
               {confirmation.totalPrice.currency}
             </span>
           </div>
+
+          {/* Boarding pass button */}
+          <BoardingPass
+            confirmation={confirmation}
+            trigger={
+              <Button
+                variant="outline"
+                className="w-full gap-2 border-white/10"
+              >
+                <CreditCard className="h-4 w-4" />
+                View Boarding Pass
+              </Button>
+            }
+          />
         </div>
       </CardContent>
     </Card>

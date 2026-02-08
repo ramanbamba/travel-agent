@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { usePathname } from "next/navigation";
 import { Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,6 +14,12 @@ import { SidebarNav } from "./sidebar-nav";
 
 export function MobileNav() {
   const [open, setOpen] = useState(false);
+  const pathname = usePathname();
+
+  // Close sheet on route change
+  useEffect(() => {
+    setOpen(false);
+  }, [pathname]);
 
   return (
     <>
@@ -30,7 +37,7 @@ export function MobileNav() {
           <SheetHeader>
             <SheetTitle className="text-left">Navigation</SheetTitle>
           </SheetHeader>
-          <div className="mt-4" onClick={() => setOpen(false)}>
+          <div className="mt-4">
             <SidebarNav />
           </div>
         </SheetContent>
