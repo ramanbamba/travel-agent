@@ -116,6 +116,7 @@ export function FlightCard({ flight, onSelect }: FlightCardProps) {
                 size="sm"
                 variant="secondary"
                 onClick={() => onSelect(flight.id)}
+                aria-label={`Select ${firstSegment.airline} flight ${firstSegment.flightNumber}, $${flight.price.amount}`}
                 className="text-xs"
               >
                 Select

@@ -42,11 +42,12 @@ export async function GET() {
   }
 
   return NextResponse.json<
-    ApiResponse<{ profile: UserProfile | null; loyalty_programs: LoyaltyProgram[] }>
+    ApiResponse<{ profile: UserProfile | null; loyalty_programs: LoyaltyProgram[]; email: string | undefined }>
   >({
     data: {
       profile: profile as UserProfile | null,
       loyalty_programs: (loyaltyPrograms as LoyaltyProgram[]) ?? [],
+      email: user.email,
     },
     error: null,
     message: "Profile fetched successfully",

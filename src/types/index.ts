@@ -80,12 +80,17 @@ export interface DbBooking {
   cabin_class: string;
   data_source: string;
   booked_at: string | null;
+  cancelled_at: string | null;
+  payment_status: string | null;
+  stripe_payment_intent_id: string | null;
+  payment_method_id: string | null;
   created_at: string;
   updated_at: string;
 }
 
 export interface BookingWithSegments extends DbBooking {
   flight_segments: DbFlightSegment[];
+  payment_methods: { card_brand: string; card_last_four: string } | null;
 }
 
 export interface PaymentMethod {

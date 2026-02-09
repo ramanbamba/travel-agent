@@ -48,6 +48,12 @@ function FieldDisplay({ label, value }: { label: string; value: string | null | 
   );
 }
 
+const CABIN_LABELS: Record<string, string> = {
+  economy: "Economy",
+  premium_economy: "Premium Economy",
+  business: "Business",
+  first: "First",
+};
 const GENDER_LABELS: Record<string, string> = { M: "Male", F: "Female", X: "Other" };
 const MEAL_LABELS: Record<string, string> = {
   standard: "Standard",
@@ -118,6 +124,7 @@ export function ProfileView() {
         last_name: profile.last_name,
         date_of_birth: profile.date_of_birth ?? "",
         gender: (profile.gender as "M" | "F" | "X") ?? "M",
+        phone: profile.phone ?? "",
       });
     } else if (section === "documents" && profile) {
       docsForm.reset({
@@ -129,6 +136,8 @@ export function ProfileView() {
       prefsForm.reset({
         seat_preference: profile.seat_preference,
         meal_preference: profile.meal_preference,
+        preferred_cabin: profile.preferred_cabin,
+        home_airport: profile.home_airport ?? "",
       });
     } else if (section === "loyalty") {
       setEditLoyalty(
@@ -159,6 +168,7 @@ export function ProfileView() {
             last_name: values.last_name,
             date_of_birth: values.date_of_birth,
             gender: values.gender,
+            phone: values.phone || null,
           }),
         });
         if (res.ok) {
@@ -194,6 +204,8 @@ export function ProfileView() {
           body: JSON.stringify({
             seat_preference: values.seat_preference,
             meal_preference: values.meal_preference,
+            preferred_cabin: values.preferred_cabin ?? "economy",
+            home_airport: values.home_airport || null,
           }),
         });
         if (res.ok) {
@@ -298,6 +310,10 @@ export function ProfileView() {
                 </SelectContent>
               </Select>
             </div>
+            <div>
+              <Label htmlFor="phone">Phone</Label>
+              <Input id="phone" {...personalForm.register("phone")} className="mt-1" placeholder="+1 (555) 123-4567" />
+            </div>
           </div>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2">
@@ -306,6 +322,7 @@ export function ProfileView() {
             <FieldDisplay label="Last Name" value={profile.last_name} />
             <FieldDisplay label="Date of Birth" value={profile.date_of_birth} />
             <FieldDisplay label="Gender" value={GENDER_LABELS[profile.gender ?? ""] ?? profile.gender} />
+            <FieldDisplay label="Phone" value={profile.phone} />
           </div>
         )}
       </ProfileSection>
@@ -479,11 +496,38 @@ export function ProfileView() {
                 </SelectContent>
               </Select>
             </div>
+            <div>
+              <Label>Preferred Cabin</Label>
+              <Select
+                value={prefsForm.watch("preferred_cabin") ?? "economy"}
+                onValueChange={(v) => prefsForm.setValue("preferred_cabin", v as PreferencesValues["preferred_cabin"])}
+              >
+                <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {Object.entries(CABIN_LABELS).map(([val, label]) => (
+                    <SelectItem key={val} value={val}>{label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="home_airport">Home Airport</Label>
+              <Input
+                id="home_airport"
+                {...prefsForm.register("home_airport")}
+                className="mt-1"
+                placeholder="JFK"
+                maxLength={4}
+              />
+              <p className="mt-1 text-xs text-muted-foreground">IATA airport code (e.g. JFK, LAX, LHR)</p>
+            </div>
           </div>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2">
             <FieldDisplay label="Seat Preference" value={SEAT_LABELS[profile.seat_preference]} />
             <FieldDisplay label="Meal Preference" value={MEAL_LABELS[profile.meal_preference]} />
+            <FieldDisplay label="Preferred Cabin" value={CABIN_LABELS[profile.preferred_cabin]} />
+            <FieldDisplay label="Home Airport" value={profile.home_airport} />
           </div>
         )}
       </ProfileSection>

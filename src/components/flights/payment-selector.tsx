@@ -164,14 +164,15 @@ function SelectorContent({
 
   return (
     <div className="space-y-3">
-      <p className="text-xs font-medium text-muted-foreground">
+      <p id="payment-method-label" className="text-xs font-medium text-muted-foreground">
         Select payment method
       </p>
 
+      <div role="radiogroup" aria-labelledby="payment-method-label">
       {methods.map((m) => (
         <label
           key={m.id}
-          className={`flex cursor-pointer items-center gap-3 rounded-lg border px-3 py-2.5 transition-colors ${
+          className={`mb-3 flex cursor-pointer items-center gap-3 rounded-lg border px-3 py-2.5 transition-colors ${
             selected === m.id
               ? "border-primary bg-primary/5"
               : "border-white/10 hover:bg-white/[0.03]"
@@ -183,6 +184,7 @@ function SelectorContent({
             value={m.id}
             checked={selected === m.id}
             onChange={() => setSelected(m.id)}
+            aria-label={`${m.card_brand} ending in ${m.card_last_four}`}
             className="sr-only"
           />
           <div
@@ -201,6 +203,7 @@ function SelectorContent({
           </span>
         </label>
       ))}
+      </div>
 
       {!showAddCard && (
         <button

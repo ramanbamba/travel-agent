@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { stripe } from "@/lib/stripe/client";
+import { getResend, FROM_EMAIL } from "@/lib/email/client";
+import { BookingConfirmationEmail } from "@/lib/email/booking-confirmation";
+import { logAudit } from "@/lib/audit";
 import type { ApiResponse, BookingConfirmation, BookingSummary } from "@/types";
 
 function generateConfirmationCode(): string {
@@ -88,10 +91,10 @@ export async function POST(request: Request) {
     );
   }
 
-  // Get Stripe customer ID
+  // Get Stripe customer ID and profile info for email
   const { data: profile } = await supabase
     .from("user_profiles")
-    .select("stripe_customer_id")
+    .select("stripe_customer_id, first_name, last_name")
     .eq("id", user.id)
     .single();
 
@@ -214,14 +217,84 @@ export async function POST(request: Request) {
     );
   }
 
+  const bookedAt = new Date().toISOString();
+
   const confirmation: BookingConfirmation = {
     bookingId: bookingRow.id,
     confirmationCode,
     flight: booking.flight,
     passenger: booking.passenger,
     totalPrice: booking.totalPrice,
-    bookedAt: new Date().toISOString(),
+    bookedAt,
   };
+
+  // Fire-and-forget: send confirmation email + audit logs
+  const passengerName = profile?.first_name
+    ? `${profile.first_name} ${profile.last_name}`
+    : booking.passenger.firstName;
+
+  const formattedPrice = new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: booking.totalPrice.currency,
+  }).format(booking.totalPrice.amount);
+
+  const emailSegment = booking.flight.segments[0];
+
+  const emailPromise = user.email
+    ? getResend().emails
+        .send({
+          from: FROM_EMAIL,
+          to: user.email,
+          subject: `Booking Confirmed: ${emailSegment.departure.airportCode} → ${emailSegment.arrival.airportCode} (${confirmationCode})`,
+          react: BookingConfirmationEmail({
+            confirmationCode,
+            passengerName,
+            flight: {
+              airline: emailSegment.airline,
+              flightNumber: emailSegment.flightNumber,
+              departureAirport: emailSegment.departure.airportCode,
+              arrivalAirport: emailSegment.arrival.airportCode,
+              departureTime: emailSegment.departure.time,
+              arrivalTime: emailSegment.arrival.time,
+              cabin: emailSegment.cabin,
+            },
+            totalPrice: formattedPrice,
+            bookedAt,
+            bookingId: bookingRow.id,
+          }),
+        })
+        .then((result) => {
+          if (result.error) {
+            console.error("[email] Failed to send confirmation:", result.error);
+          }
+          // Audit the email send
+          logAudit(supabase, {
+            userId: user.id,
+            action: "email.booking_confirmation_sent",
+            resourceType: "booking",
+            resourceId: bookingRow.id,
+            metadata: { emailId: result.data?.id },
+          });
+        })
+        .catch((err) => {
+          console.error("[email] Unexpected error:", err);
+        })
+    : Promise.resolve();
+
+  const auditPromise = logAudit(supabase, {
+    userId: user.id,
+    action: "booking.created",
+    resourceType: "booking",
+    resourceId: bookingRow.id,
+    metadata: {
+      pnr: confirmationCode,
+      amountCents,
+      currency: booking.totalPrice.currency,
+    },
+  });
+
+  // Don't await — fire-and-forget so we don't delay the response
+  Promise.all([emailPromise, auditPromise]).catch(() => {});
 
   return NextResponse.json<ApiResponse<BookingConfirmation>>({
     data: confirmation,

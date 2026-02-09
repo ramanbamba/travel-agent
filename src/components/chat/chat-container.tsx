@@ -78,6 +78,8 @@ export function ChatContainer() {
                   size="icon"
                   className="h-7 w-7 lg:hidden"
                   onClick={() => setShowSessions(!showSessions)}
+                  aria-label={showSessions ? "Hide chat history" : "Show chat history"}
+                  aria-expanded={showSessions}
                 >
                   <History className="h-3.5 w-3.5" />
                 </Button>

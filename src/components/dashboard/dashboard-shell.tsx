@@ -17,7 +17,7 @@ export function DashboardShell({ email, children }: DashboardShellProps) {
       <header className="flex h-14 shrink-0 items-center justify-between border-b border-white/5 px-4">
         <div className="flex items-center gap-3">
           <MobileNav />
-          <Link href="/dashboard" className="flex items-center gap-2">
+          <Link href="/dashboard" className="flex items-center gap-2" aria-label="Skyswift home">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white">
               <svg
                 width="18"
@@ -42,12 +42,12 @@ export function DashboardShell({ email, children }: DashboardShellProps) {
 
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar — hidden on mobile */}
-        <aside className="hidden w-56 shrink-0 border-r border-white/5 p-4 md:block">
+        <nav className="hidden w-56 shrink-0 border-r border-white/5 p-4 md:block" aria-label="Main navigation">
           <SidebarNav />
-        </aside>
+        </nav>
 
         {/* Main content */}
-        <main className="flex-1 overflow-y-auto">{children}</main>
+        <main className="flex-1 overflow-y-auto" id="main-content">{children}</main>
       </div>
     </div>
   );

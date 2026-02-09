@@ -48,9 +48,10 @@ export function ChatInput({ onSend, disabled }: ChatInputProps) {
             onChange={handleInput}
             onKeyDown={handleKeyDown}
             placeholder="Where do you want to fly?"
+            aria-label="Flight booking message"
             disabled={disabled}
             rows={1}
-            className="w-full resize-none rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-white/20 focus:outline-none focus:ring-0 disabled:opacity-50"
+            className="w-full resize-none rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-white/20 focus:outline-none focus:ring-1 focus:ring-primary/50 disabled:opacity-50"
           />
         </div>
         <Button

@@ -27,6 +27,7 @@ export const personalInfoSchema = z.object({
       { message: "You must be at least 18 years old" }
     ),
   gender: z.enum(["M", "F", "X"], { message: "Please select a gender" }),
+  phone: z.string().max(30, "Phone number is too long").optional().or(z.literal("")),
 });
 
 export const travelDocumentsSchema = z.object({
@@ -85,6 +86,8 @@ export const preferencesSchema = z.object({
     ],
     { message: "Please select a meal preference" }
   ),
+  preferred_cabin: z.enum(["economy", "premium_economy", "business", "first"], { message: "Please select a cabin" }).optional(),
+  home_airport: z.string().max(4, "IATA code is at most 4 characters").optional().or(z.literal("")),
   special_assistance: z.array(z.string()).optional(),
 });
 

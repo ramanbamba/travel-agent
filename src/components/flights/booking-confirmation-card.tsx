@@ -5,7 +5,12 @@ import { CheckCircle, Plane, Copy, CreditCard, ExternalLink } from "lucide-react
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
-import { BoardingPass } from "./boarding-pass";
+import dynamic from "next/dynamic";
+
+const BoardingPass = dynamic(() =>
+  import("./boarding-pass").then((mod) => mod.BoardingPass),
+  { ssr: false }
+);
 import type { BookingConfirmation } from "@/types/flights";
 
 interface BookingConfirmationCardProps {

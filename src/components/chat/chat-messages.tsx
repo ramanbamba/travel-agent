@@ -26,7 +26,7 @@ export function ChatMessages({
   }, [messages, isLoading]);
 
   return (
-    <ScrollArea className="flex-1">
+    <ScrollArea className="flex-1" role="log" aria-label="Chat messages" aria-live="polite">
       <div className="mx-auto max-w-3xl py-4">
         {messages.map((msg) => (
           <ChatBubble

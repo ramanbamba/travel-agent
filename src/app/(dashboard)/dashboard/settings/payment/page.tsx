@@ -79,7 +79,7 @@ export default function PaymentSettingsPage() {
     <div className="animate-in fade-in duration-300 p-6">
       <div className="flex items-center gap-3">
         <Link href="/dashboard/settings">
-          <Button variant="ghost" size="icon" className="h-8 w-8">
+          <Button variant="ghost" size="icon" className="h-8 w-8" aria-label="Back to settings">
             <ArrowLeft className="h-4 w-4" />
           </Button>
         </Link>

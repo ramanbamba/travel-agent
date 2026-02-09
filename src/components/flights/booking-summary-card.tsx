@@ -6,7 +6,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { PaymentSelector } from "./payment-selector";
+import dynamic from "next/dynamic";
+
+const PaymentSelector = dynamic(() =>
+  import("./payment-selector").then((mod) => mod.PaymentSelector),
+  { ssr: false, loading: () => <div className="flex justify-center py-6"><div className="h-5 w-5 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" /></div> }
+);
 import type { BookingSummary } from "@/types/flights";
 
 interface BookingSummaryCardProps {
