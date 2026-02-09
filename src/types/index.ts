@@ -88,6 +88,9 @@ export interface DbBooking {
   markup_cents: number | null;
   service_fee_cents: number | null;
   our_revenue_cents: number | null;
+  supplier_name: string | null;
+  supplier_booking_id: string | null;
+  supplier_offer_id: string | null;
   created_at: string;
   updated_at: string;
 }

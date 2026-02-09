@@ -4,7 +4,12 @@ import type {
   SupplySearchParams,
   SupplySearchResult,
   SupplierName,
+  SupplyPassenger,
+  SupplyPaymentInfo,
+  SupplyBooking,
+  SupplyCancellationResult,
 } from "./types";
+import { SupplyError } from "./types";
 import { resolveSuppliers } from "./rules-engine";
 import { AmadeusSupplier } from "./suppliers/amadeus/amadeus-supplier";
 import { MockSupplier } from "./suppliers/mock/mock-supplier";
@@ -169,4 +174,75 @@ export async function searchFlightsCompat(
     ),
     source: result.source,
   };
+}
+
+// ── Booking: supplier resolution ────────────────────────────────────────────
+
+/** Suppliers that support createBooking (not just search). */
+const BOOKABLE_SUPPLIERS = new Set(["duffel", "mock"]);
+
+/**
+ * Parse the composite offer ID to determine which supplier owns it.
+ * Offer IDs are prefixed: "duffel-off_xxx", "amadeus-xxx", "mock-xxx".
+ */
+export function resolveSupplierFromOfferId(offerId: string): SupplierName {
+  const dash = offerId.indexOf("-");
+  if (dash === -1) return "mock";
+  const prefix = offerId.slice(0, dash);
+  if (supplierFactories.has(prefix)) return prefix;
+  return "mock";
+}
+
+/**
+ * Create a booking with the appropriate supplier.
+ * Resolves the supplier from the offer ID, validates it's bookable,
+ * and delegates to supplier.createBooking().
+ */
+export async function createSupplyBooking(
+  offerId: string,
+  passengers: SupplyPassenger[],
+  payment: SupplyPaymentInfo
+): Promise<SupplyBooking> {
+  const supplierName = resolveSupplierFromOfferId(offerId);
+
+  if (!BOOKABLE_SUPPLIERS.has(supplierName)) {
+    throw new SupplyError(
+      `Supplier "${supplierName}" does not support booking`,
+      supplierName,
+      "NOT_SUPPORTED",
+      501
+    );
+  }
+
+  const supplier = getSupplier(supplierName);
+  if (!supplier || !supplier.isAvailable()) {
+    throw new SupplyError(
+      `Supplier "${supplierName}" is not available`,
+      supplierName,
+      "SUPPLIER_UNAVAILABLE",
+      503
+    );
+  }
+
+  return supplier.createBooking(offerId, passengers, payment);
+}
+
+/**
+ * Cancel a booking with the named supplier.
+ */
+export async function cancelSupplyBooking(
+  supplierName: string,
+  supplierBookingId: string
+): Promise<SupplyCancellationResult> {
+  const supplier = getSupplier(supplierName);
+  if (!supplier || !supplier.isAvailable()) {
+    throw new SupplyError(
+      `Supplier "${supplierName}" is not available for cancellation`,
+      supplierName,
+      "SUPPLIER_UNAVAILABLE",
+      503
+    );
+  }
+
+  return supplier.cancelBooking(supplierBookingId);
 }

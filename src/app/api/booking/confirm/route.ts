@@ -4,6 +4,12 @@ import { stripe } from "@/lib/stripe/client";
 import { getResend, FROM_EMAIL } from "@/lib/email/client";
 import { BookingConfirmationEmail } from "@/lib/email/booking-confirmation";
 import { logAudit } from "@/lib/audit";
+import {
+  resolveSupplierFromOfferId,
+  createSupplyBooking,
+  SupplyError,
+} from "@/lib/supply";
+import type { SupplyPassenger, SupplyPaymentInfo } from "@/lib/supply";
 import type { ApiResponse, BookingConfirmation, BookingSummary } from "@/types";
 
 function generateConfirmationCode(): string {
@@ -91,10 +97,10 @@ export async function POST(request: Request) {
     );
   }
 
-  // Get Stripe customer ID and profile info for email
+  // Get Stripe customer ID and profile info for email + supplier booking
   const { data: profile } = await supabase
     .from("user_profiles")
-    .select("stripe_customer_id, first_name, last_name")
+    .select("stripe_customer_id, first_name, last_name, date_of_birth, gender, phone")
     .eq("id", user.id)
     .single();
 
@@ -159,7 +165,87 @@ export async function POST(request: Request) {
     );
   }
 
-  const confirmationCode = generateConfirmationCode();
+  // ── Phase 2: Book with supplier ─────────────────────────────────────────────
+  const offerId = booking.flight.id;
+  const supplierName = resolveSupplierFromOfferId(offerId);
+  const BOOKABLE_SUPPLIERS = new Set(["duffel", "mock"]);
+  const isBookable = BOOKABLE_SUPPLIERS.has(supplierName);
+
+  let confirmationCode: string;
+  let supplierBookingId: string | null = null;
+  let dataSource: string;
+
+  if (isBookable) {
+    // Build passenger from profile
+    const passenger: SupplyPassenger = {
+      firstName: profile.first_name,
+      lastName: profile.last_name,
+      email: user.email ?? "",
+      phone: profile.phone ?? undefined,
+      dateOfBirth: profile.date_of_birth ?? undefined,
+      gender: profile.gender === "male" || profile.gender === "female"
+        ? profile.gender
+        : undefined,
+    };
+
+    // Payment to supplier is at supplier cost, not customer-facing price
+    const supplyPayment: SupplyPaymentInfo = {
+      type: supplierName === "duffel" ? "duffel_balance" : "card",
+      currency: booking.totalPrice.currency,
+      amount: supplierCostCents / 100,
+    };
+
+    try {
+      const supplyBooking = await createSupplyBooking(
+        offerId,
+        [passenger],
+        supplyPayment
+      );
+
+      confirmationCode = supplyBooking.confirmationCode;
+      supplierBookingId = supplyBooking.supplierBookingId;
+      dataSource = supplierName;
+    } catch (err) {
+      // Supplier booking failed — auto-refund Stripe
+      console.error("[booking] Supplier booking failed, refunding Stripe:", err);
+
+      try {
+        await stripe.refunds.create({ payment_intent: paymentIntent.id });
+      } catch (refundErr) {
+        console.error("[booking] Stripe refund also failed:", refundErr);
+      }
+
+      // Audit the failure
+      logAudit(supabase, {
+        userId: user.id,
+        action: "booking.supplier_failed",
+        resourceType: "booking",
+        resourceId: "none",
+        metadata: {
+          supplier: supplierName,
+          offerId,
+          error: err instanceof Error ? err.message : String(err),
+        },
+      }).catch(() => {});
+
+      const isExpired = err instanceof SupplyError && err.status === 410;
+      return NextResponse.json<ApiResponse>(
+        {
+          data: null,
+          error: isExpired ? "offer_expired" : "supplier_booking_failed",
+          message: isExpired
+            ? "This offer has expired. Please search for flights again."
+            : "Booking failed with the airline. Your card has been refunded.",
+        },
+        { status: isExpired ? 410 : 502 }
+      );
+    }
+  } else {
+    // Non-bookable supplier (amadeus, unknown) — use random PNR
+    confirmationCode = generateConfirmationCode();
+    dataSource = "manual";
+  }
+
   const segment = booking.flight.segments[0];
   const cabinClass = segment?.cabin ?? "economy";
 
@@ -173,7 +259,7 @@ export async function POST(request: Request) {
       total_price_cents: amountCents,
       currency: booking.totalPrice.currency,
       cabin_class: cabinClass,
-      data_source: "manual",
+      data_source: dataSource,
       booked_at: new Date().toISOString(),
       stripe_payment_intent_id: paymentIntent.id,
       payment_status: "captured",
@@ -182,6 +268,9 @@ export async function POST(request: Request) {
       markup_cents: markupCents,
       service_fee_cents: serviceFeeCents,
       our_revenue_cents: ourRevenueCents,
+      supplier_name: isBookable ? supplierName : null,
+      supplier_booking_id: supplierBookingId,
+      supplier_offer_id: isBookable ? offerId : null,
     })
     .select("id")
     .single();
@@ -304,6 +393,8 @@ export async function POST(request: Request) {
       pnr: confirmationCode,
       amountCents,
       currency: booking.totalPrice.currency,
+      supplier: isBookable ? supplierName : "manual",
+      supplierBookingId,
     },
   });
 

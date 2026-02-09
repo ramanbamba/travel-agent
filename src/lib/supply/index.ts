@@ -4,6 +4,9 @@ export {
   searchFlightsCompat,
   toFlightOption,
   registerSupplier,
+  resolveSupplierFromOfferId,
+  createSupplyBooking,
+  cancelSupplyBooking,
 } from "./supply-manager";
 
 export { resolveSuppliers } from "./rules-engine";

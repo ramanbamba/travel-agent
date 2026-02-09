@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { stripe } from "@/lib/stripe/client";
+import { cancelSupplyBooking } from "@/lib/supply";
+import { logAudit } from "@/lib/audit";
 import type { ApiResponse, DbBooking } from "@/types";
 
 export async function POST(
@@ -68,6 +70,40 @@ export async function POST(
         },
         { status: 500 }
       );
+    }
+  }
+
+  // Cancel with supplier (best-effort — don't block user cancellation)
+  if (typedBooking.supplier_name && typedBooking.supplier_booking_id) {
+    try {
+      await cancelSupplyBooking(
+        typedBooking.supplier_name,
+        typedBooking.supplier_booking_id
+      );
+      logAudit(supabase, {
+        userId: user.id,
+        action: "booking.supplier_cancelled",
+        resourceType: "booking",
+        resourceId: bookingId,
+        metadata: {
+          supplier: typedBooking.supplier_name,
+          supplierBookingId: typedBooking.supplier_booking_id,
+        },
+      }).catch(() => {});
+    } catch (err) {
+      // Log but don't block — customer is already refunded
+      console.error("[cancel] Supplier cancellation failed:", err);
+      logAudit(supabase, {
+        userId: user.id,
+        action: "booking.supplier_cancel_failed",
+        resourceType: "booking",
+        resourceId: bookingId,
+        metadata: {
+          supplier: typedBooking.supplier_name,
+          supplierBookingId: typedBooking.supplier_booking_id,
+          error: err instanceof Error ? err.message : String(err),
+        },
+      }).catch(() => {});
     }
   }
 
