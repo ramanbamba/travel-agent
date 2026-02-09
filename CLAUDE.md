@@ -96,4 +96,39 @@ BA_NDC_CLIENT_ID=
 BA_NDC_CLIENT_SECRET=
 AMADEUS_API_KEY=
 AMADEUS_API_SECRET=
+DUFFEL_API_TOKEN=
+DUFFEL_LIVE_TOKEN=
+NEXT_PUBLIC_APP_MODE=
 ```
+
+## Phase 2 Context
+
+### Duffel Integration
+- Primary supply source is now Duffel (replaces Amadeus for real bookings)
+- Duffel JS SDK: @duffel/api
+- Test token env var: DUFFEL_API_TOKEN
+- API flow: Create Offer Request → Select Offer → Create Order
+- Duffel uses "slices" (journey segments) and "offers" (bookable options)
+- Payment via Duffel Balance (sandbox: unlimited, live: pre-funded)
+- Duffel handles ticketing/accreditation — we don't need ARC/IATA
+
+### Supply Abstraction Layer
+- All flight suppliers implement a unified SupplierInterface
+- Supply Manager + Rules Engine routes requests to correct supplier
+- Currently: Duffel (primary), Amadeus (legacy/fallback), Mock (testing)
+- Future: BA NDC, United NDC, etc.
+
+### Pricing Engine
+- Markup (hidden in fare): configurable % or fixed amount
+- Service fee (visible to customer): configurable
+- Concierge fee (optional premium): configurable
+- Pricing rules stored in pricing_rules table
+- Applied between search results and customer display
+
+### Design Language
+- Apple Liquid Glass inspired (WWDC 2025)
+- Glassmorphism: backdrop-filter blur, translucent surfaces
+- Content-first, fluid transitions, mobile-native feel
+- Typography: Satoshi (display) + General Sans (body) via Google Fonts/Fontsource
+- Color: warm neutrals + Apple blue accent
+- Animations: spring easing, staggered reveals, 60fps

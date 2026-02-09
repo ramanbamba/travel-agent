@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { searchFlights, AmadeusApiError } from "@/lib/amadeus/flights";
-import { generateMockFlights } from "@/lib/mock/flights";
+import { searchFlightsCompat } from "@/lib/supply";
 import type { ApiResponse, ParsedIntent, FlightOption } from "@/types";
 
 // ── Simple in-memory cache (5 min TTL) ──────────────────────────────────────
@@ -342,37 +341,16 @@ export async function POST(request: Request) {
     });
   }
 
-  // Search via Amadeus
-  let flights: FlightOption[];
-  let source: "amadeus" | "mock" = "amadeus";
+  // Search via supply layer (handles fallback automatically)
+  const { flights, source } = await searchFlightsCompat({
+    origin,
+    destination,
+    departureDate,
+    adults: intent.passengers ?? 1,
+  });
 
-  try {
-    flights = await searchFlights({
-      origin,
-      destination,
-      departureDate,
-      adults: intent.passengers ?? 1,
-    });
-
-    if (flights.length > 0) {
-      setCache(cacheKey, flights);
-    }
-  } catch (err) {
-    console.error("Amadeus search failed, falling back to mocks:", err);
-
-    // Provide user-friendly error context
-    if (err instanceof AmadeusApiError && err.status === 429) {
-      // Rate limited — still fall back, but mention it
-      source = "mock";
-    }
-
-    // Fallback to mock flights
-    source = "mock";
-    flights = generateMockFlights(
-      origin,
-      destination,
-      departureDate
-    );
+  if (flights.length > 0) {
+    setCache(cacheKey, flights);
   }
 
   // No flights found — suggest nearby dates

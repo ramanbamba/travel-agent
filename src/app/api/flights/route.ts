@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { searchFlights, AmadeusApiError } from "@/lib/amadeus/flights";
+import { searchFlightsCompat, SupplyError } from "@/lib/supply";
 import type { ApiResponse, FlightOption } from "@/types";
+import type { CabinClass } from "@/lib/supply";
 
 export async function GET(request: NextRequest) {
   const supabase = createClient();
@@ -36,12 +37,12 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const flights = await searchFlights({
+    const { flights } = await searchFlightsCompat({
       origin,
       destination,
       departureDate,
       adults: adults ? parseInt(adults) : 1,
-      cabinClass: cabinClass as "ECONOMY" | "PREMIUM_ECONOMY" | "BUSINESS" | "FIRST" | undefined,
+      cabinClass: cabinClass?.toLowerCase() as CabinClass | undefined,
     });
 
     return NextResponse.json<ApiResponse<FlightOption[]>>({
@@ -51,13 +52,13 @@ export async function GET(request: NextRequest) {
     });
   } catch (err) {
     const message =
-      err instanceof AmadeusApiError
+      err instanceof SupplyError
         ? err.message
         : "Flight search failed";
 
     return NextResponse.json<ApiResponse>(
       { data: null, error: message, message: "Flight search error" },
-      { status: err instanceof AmadeusApiError ? err.status : 500 }
+      { status: err instanceof SupplyError ? err.status : 500 }
     );
   }
 }
