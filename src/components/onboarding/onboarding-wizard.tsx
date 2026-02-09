@@ -127,7 +127,7 @@ export function OnboardingWizard({
     setIsSaving(true);
     setSaveError(null);
     try {
-      console.log("[Onboarding] Saving personal info:", data);
+
       await saveProfile({
         first_name: data.first_name,
         middle_name: data.middle_name || null,
@@ -135,7 +135,7 @@ export function OnboardingWizard({
         date_of_birth: data.date_of_birth,
         gender: data.gender,
       });
-      console.log("[Onboarding] Personal info saved, advancing to step 1");
+
       setPersonalInfo(data);
       setCurrentStep(1);
     } catch (err) {
@@ -151,13 +151,13 @@ export function OnboardingWizard({
     setIsSaving(true);
     setSaveError(null);
     try {
-      console.log("[Onboarding] Saving travel documents");
+
       await saveProfile({
         passport_vault_id: data.passport_number,
         ktn_vault_id: data.ktn || null,
         redress_number: data.redress_number || null,
       });
-      console.log("[Onboarding] Travel docs saved, advancing to step 2");
+
       setTravelDocuments(data);
       setCurrentStep(2);
     } catch (err) {
@@ -173,9 +173,9 @@ export function OnboardingWizard({
     setIsSaving(true);
     setSaveError(null);
     try {
-      console.log("[Onboarding] Saving loyalty programs:", data.loyalty_programs.length, "programs");
+
       await saveLoyaltyPrograms(data.loyalty_programs);
-      console.log("[Onboarding] Loyalty programs saved, advancing to step 3");
+
       setLoyaltyPrograms(data);
       setCurrentStep(3);
     } catch (err) {
@@ -191,12 +191,12 @@ export function OnboardingWizard({
     setIsSaving(true);
     setSaveError(null);
     try {
-      console.log("[Onboarding] Saving preferences:", data);
+
       await saveProfile({
         seat_preference: data.seat_preference,
         meal_preference: data.meal_preference,
       });
-      console.log("[Onboarding] Preferences saved, advancing to step 4");
+
       setPreferences(data);
       setCurrentStep(4);
     } catch (err) {
@@ -212,9 +212,9 @@ export function OnboardingWizard({
     setIsSaving(true);
     setSaveError(null);
     try {
-      console.log("[Onboarding] Completing onboarding");
+
       await saveProfile({ onboarding_completed: true });
-      console.log("[Onboarding] Onboarding completed, redirecting to dashboard");
+
       router.push("/dashboard");
       router.refresh();
     } catch (err) {

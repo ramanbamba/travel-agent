@@ -1,4 +1,4 @@
-const BASE_URL = "https://test.api.amadeus.com";
+const BASE_URL = process.env.AMADEUS_BASE_URL ?? "https://test.api.amadeus.com";
 const TOKEN_URL = `${BASE_URL}/v1/security/oauth2/token`;
 
 interface AmadeusToken {
