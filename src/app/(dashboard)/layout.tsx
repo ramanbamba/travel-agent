@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { DashboardShell } from "@/components/dashboard/dashboard-shell";
+import { AppShell } from "@/components/layout/app-shell";
+import { GradientMesh } from "@/components/layout/gradient-mesh";
 
 export default async function DashboardLayout({
   children,
@@ -16,5 +17,10 @@ export default async function DashboardLayout({
     redirect("/login");
   }
 
-  return <DashboardShell email={user.email ?? ""}>{children}</DashboardShell>;
+  return (
+    <>
+      <GradientMesh />
+      <AppShell email={user.email ?? ""}>{children}</AppShell>
+    </>
+  );
 }
