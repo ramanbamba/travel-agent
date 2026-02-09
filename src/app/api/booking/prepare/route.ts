@@ -61,7 +61,12 @@ export async function POST(request: Request) {
       loyaltyNumber: anyLoyalty?.member_number,
       passportOnFile: !!profile?.passport_vault_id,
     },
-    totalPrice: flight.price,
+    totalPrice: {
+      amount: flight.price.amount,
+      currency: flight.price.currency,
+      serviceFee: flight.price.serviceFee,
+      markup: flight.price.markup,
+    },
     status: "pending",
   };
 

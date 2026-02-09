@@ -28,6 +28,9 @@ export interface FlightOption {
   price: {
     amount: number;
     currency: string;
+    serviceFee?: number;
+    /** Internal: markup baked into fare (not shown to customer) */
+    markup?: number;
   };
   seatsRemaining?: number;
 }
@@ -47,6 +50,8 @@ export interface BookingSummary {
   totalPrice: {
     amount: number;
     currency: string;
+    serviceFee?: number;
+    markup?: number;
   };
   status: "pending" | "confirmed" | "failed";
 }
@@ -63,6 +68,8 @@ export interface BookingConfirmation {
   totalPrice: {
     amount: number;
     currency: string;
+    serviceFee?: number;
+    markup?: number;
   };
   bookedAt: string;
 }

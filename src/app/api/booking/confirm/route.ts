@@ -111,6 +111,16 @@ export async function POST(request: Request) {
 
   const amountCents = Math.round(booking.totalPrice.amount * 100);
 
+  // Calculate cost breakdown for revenue tracking
+  const serviceFeeCents = booking.totalPrice.serviceFee
+    ? Math.round(booking.totalPrice.serviceFee * 100)
+    : 0;
+  const markupCents = booking.totalPrice.markup
+    ? Math.round(booking.totalPrice.markup * 100)
+    : 0;
+  const supplierCostCents = amountCents - serviceFeeCents - markupCents;
+  const ourRevenueCents = markupCents + serviceFeeCents;
+
   // Create and confirm PaymentIntent
   let paymentIntent;
   try {
@@ -168,6 +178,10 @@ export async function POST(request: Request) {
       stripe_payment_intent_id: paymentIntent.id,
       payment_status: "captured",
       payment_method_id: paymentMethodId,
+      supplier_cost_cents: supplierCostCents,
+      markup_cents: markupCents,
+      service_fee_cents: serviceFeeCents,
+      our_revenue_cents: ourRevenueCents,
     })
     .select("id")
     .single();

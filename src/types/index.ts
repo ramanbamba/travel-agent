@@ -84,6 +84,10 @@ export interface DbBooking {
   payment_status: string | null;
   stripe_payment_intent_id: string | null;
   payment_method_id: string | null;
+  supplier_cost_cents: number | null;
+  markup_cents: number | null;
+  service_fee_cents: number | null;
+  our_revenue_cents: number | null;
   created_at: string;
   updated_at: string;
 }

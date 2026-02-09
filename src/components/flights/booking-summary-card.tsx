@@ -133,12 +133,41 @@ export function BookingSummaryCard({
         {/* Price */}
         <div className="flex items-start gap-3">
           <CreditCard className="mt-0.5 h-4 w-4 text-muted-foreground" />
-          <div className="flex w-full items-center justify-between text-sm">
-            <span className="text-muted-foreground">Total</span>
-            <span className="text-lg font-bold">
-              ${summary.totalPrice.amount.toLocaleString()}{" "}
-              {summary.totalPrice.currency}
-            </span>
+          <div className="w-full space-y-1.5 text-sm">
+            {summary.totalPrice.serviceFee ? (
+              <>
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Flight fare</span>
+                  <span>
+                    ${(summary.totalPrice.amount - summary.totalPrice.serviceFee).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}{" "}
+                    {summary.totalPrice.currency}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Service fee</span>
+                  <span>
+                    ${summary.totalPrice.serviceFee.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}{" "}
+                    {summary.totalPrice.currency}
+                  </span>
+                </div>
+                <Separator className="bg-white/5" />
+                <div className="flex items-center justify-between">
+                  <span className="font-medium">Total</span>
+                  <span className="text-lg font-bold">
+                    ${summary.totalPrice.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}{" "}
+                    {summary.totalPrice.currency}
+                  </span>
+                </div>
+              </>
+            ) : (
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground">Total</span>
+                <span className="text-lg font-bold">
+                  ${summary.totalPrice.amount.toLocaleString()}{" "}
+                  {summary.totalPrice.currency}
+                </span>
+              </div>
+            )}
           </div>
         </div>
 

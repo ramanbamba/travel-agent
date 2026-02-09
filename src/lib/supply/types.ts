@@ -36,6 +36,8 @@ export interface PriceBreakdown {
   taxesAndFees: number;
   total: number;
   currency: string;
+  markup?: number;
+  serviceFee?: number;
 }
 
 export interface FareConditions {

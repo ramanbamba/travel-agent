@@ -9,6 +9,7 @@ import { resolveSuppliers } from "./rules-engine";
 import { AmadeusSupplier } from "./suppliers/amadeus/amadeus-supplier";
 import { MockSupplier } from "./suppliers/mock/mock-supplier";
 import { DuffelSupplier } from "./suppliers/duffel/duffel-supplier";
+import { applyPricingToOffer } from "@/lib/pricing/pricing-engine";
 import type { FlightOption } from "@/types/flights";
 
 // ── Supplier registry ────────────────────────────────────────────────────────
@@ -145,6 +146,8 @@ export function toFlightOption(offer: FlightOffer): FlightOption {
     price: {
       amount: offer.price.total,
       currency: offer.price.currency,
+      serviceFee: offer.price.serviceFee,
+      markup: offer.price.markup,
     },
     seatsRemaining: offer.seatsRemaining,
   };
@@ -161,7 +164,9 @@ export async function searchFlightsCompat(
 ): Promise<{ flights: FlightOption[]; source: SupplierName }> {
   const result = await searchFlights(params);
   return {
-    flights: result.offers.map(toFlightOption),
+    flights: result.offers.map((offer) =>
+      toFlightOption(applyPricingToOffer(offer))
+    ),
     source: result.source,
   };
 }
