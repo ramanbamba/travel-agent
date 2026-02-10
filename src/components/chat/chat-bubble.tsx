@@ -6,6 +6,11 @@ interface ChatBubbleProps {
   message: ChatMessage;
   onSelectFlight?: (flightId: string) => void;
   onConfirmBooking?: (bookingId: string, paymentMethodId?: string) => void;
+  onRazorpayConfirm?: (bookingId: string, razorpayResponse: {
+    razorpay_payment_id: string;
+    razorpay_order_id: string;
+    razorpay_signature: string;
+  }) => void;
   /** Stagger index for entrance animation */
   index?: number;
 }
@@ -14,6 +19,7 @@ export function ChatBubble({
   message,
   onSelectFlight,
   onConfirmBooking,
+  onRazorpayConfirm,
   index = 0,
 }: ChatBubbleProps) {
   const isUser = message.role === "user";
@@ -87,6 +93,7 @@ export function ChatBubble({
               content={message.richContent}
               onSelectFlight={onSelectFlight}
               onConfirmBooking={onConfirmBooking}
+              onRazorpayConfirm={onRazorpayConfirm}
             />
           </div>
         )}

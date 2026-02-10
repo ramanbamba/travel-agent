@@ -7,10 +7,10 @@ interface WelcomeScreenProps {
 }
 
 const suggestions = [
-  { route: "SFO → London", prompt: "Book a flight from SFO to London next Friday" },
-  { route: "NYC → Tokyo", prompt: "Round trip from JFK to Tokyo, departing March 15, returning March 22" },
-  { route: "LAX → Paris", prompt: "Find me a business class flight to Paris next month" },
-  { route: "ORD → Miami", prompt: "Find me the cheapest flight to Miami this weekend" },
+  { route: "Delhi next Tuesday", prompt: "Delhi next Tuesday" },
+  { route: "Mumbai tomorrow", prompt: "I need to fly to Mumbai tomorrow" },
+  { route: "Goa this weekend", prompt: "Goa this weekend, cheapest option" },
+  { route: "BLR → London", prompt: "Book a flight to London next month" },
 ];
 
 export function WelcomeScreen({ onSuggestedPrompt }: WelcomeScreenProps) {

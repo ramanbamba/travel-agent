@@ -10,6 +10,11 @@ interface ChatMessagesProps {
   isLoading: boolean;
   onSelectFlight?: (flightId: string) => void;
   onConfirmBooking?: (bookingId: string, paymentMethodId?: string) => void;
+  onRazorpayConfirm?: (bookingId: string, razorpayResponse: {
+    razorpay_payment_id: string;
+    razorpay_order_id: string;
+    razorpay_signature: string;
+  }) => void;
 }
 
 export function ChatMessages({
@@ -17,6 +22,7 @@ export function ChatMessages({
   isLoading,
   onSelectFlight,
   onConfirmBooking,
+  onRazorpayConfirm,
 }: ChatMessagesProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -41,6 +47,7 @@ export function ChatMessages({
             index={i}
             onSelectFlight={onSelectFlight}
             onConfirmBooking={onConfirmBooking}
+            onRazorpayConfirm={onRazorpayConfirm}
           />
         ))}
         {isLoading && <TypingIndicator />}

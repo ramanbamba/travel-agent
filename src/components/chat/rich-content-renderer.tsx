@@ -12,12 +12,18 @@ interface RichContentRendererProps {
   content: RichContent;
   onSelectFlight?: (flightId: string) => void;
   onConfirmBooking?: (bookingId: string, paymentMethodId?: string) => void;
+  onRazorpayConfirm?: (bookingId: string, razorpayResponse: {
+    razorpay_payment_id: string;
+    razorpay_order_id: string;
+    razorpay_signature: string;
+  }) => void;
 }
 
 export function RichContentRenderer({
   content,
   onSelectFlight,
   onConfirmBooking,
+  onRazorpayConfirm,
 }: RichContentRendererProps) {
   switch (content.type) {
     case "flight_results":
@@ -32,6 +38,7 @@ export function RichContentRenderer({
         <BookingSummaryCard
           summary={content.data as BookingSummary}
           onConfirm={onConfirmBooking}
+          onRazorpayConfirm={onRazorpayConfirm}
         />
       );
     case "booking_confirmation":

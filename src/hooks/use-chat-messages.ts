@@ -236,21 +236,26 @@ export function useChatMessages() {
         }
       }
 
+      const isFirstMessage = messagesRef.current.length === 0;
       const userMsg = createMessage("user", content);
       addMessage(userMsg);
       setIsLoading(true);
       setError(null);
 
-      // Auto-title from first user message if this is the first message
-      if (sessionId && messagesRef.current.length === 0) {
+      // Auto-title from first user message
+      if (sessionId && isFirstMessage) {
         autoTitle(sessionId, content);
       }
 
       try {
-        const res = await fetch("/api/flights/parse-intent", {
+        const res = await fetch("/api/chat/message", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ message: content }),
+          body: JSON.stringify({
+            message: content,
+            chatSessionId: sessionId,
+            isFirstMessage,
+          }),
         });
 
         if (!res.ok) {
@@ -275,7 +280,24 @@ export function useChatMessages() {
           return;
         }
 
-        const { reply, flights } = json.data;
+        const { reply, flights, action, greeting, selectedFlightIndex } =
+          json.data;
+
+        // Show greeting before main reply if present
+        if (greeting && isFirstMessage) {
+          addMessage(createMessage("assistant", greeting));
+        }
+
+        // Handle flight selection from AI
+        if (action === "select_flight" && selectedFlightIndex != null) {
+          const flight = flightsRef.current[selectedFlightIndex];
+          if (flight) {
+            addMessage(createMessage("assistant", reply));
+            // Auto-trigger flight selection
+            selectFlightInner(flight.id);
+            return;
+          }
+        }
 
         if (flights && flights.length > 0) {
           flightsRef.current = flights;
@@ -297,6 +319,58 @@ export function useChatMessages() {
       }
     },
     [addMessage, currentSessionId, autoTitle]
+  );
+
+  // Inner selectFlight for AI-triggered selection (no message added)
+  const selectFlightInner = useCallback(
+    async (flightId: string) => {
+      const flight = flightsRef.current.find((f) => f.id === flightId);
+      if (!flight) return;
+
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        const res = await fetch("/api/booking/prepare", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ flight }),
+        });
+
+        if (!res.ok) {
+          addMessage(
+            createMessage("assistant", "Failed to prepare booking. Please try again.")
+          );
+          return;
+        }
+
+        const json = await res.json();
+        if (json.error) {
+          addMessage(
+            createMessage("assistant", "Failed to prepare booking. Please try again.")
+          );
+          return;
+        }
+
+        const summary = json.data as BookingSummary;
+        bookingRef.current = summary;
+
+        addMessage(
+          createMessage(
+            "assistant",
+            "Here's your booking summary. Review and confirm:",
+            { type: "booking_summary", data: summary }
+          )
+        );
+      } catch {
+        addMessage(
+          createMessage("assistant", "Network error. Check your connection and try again.")
+        );
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [addMessage]
   );
 
   const selectFlight = useCallback(
@@ -371,13 +445,102 @@ export function useChatMessages() {
       setError(null);
 
       try {
-        const res = await fetch("/api/booking/confirm", {
+        // Use demo confirm route when no payment method (demo pay mode)
+        const isDemoPay = !paymentMethodId || paymentMethodId === "demo";
+        const endpoint = isDemoPay
+          ? "/api/booking/demo-confirm"
+          : "/api/booking/confirm";
+
+        const res = await fetch(endpoint, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ booking, paymentMethodId }),
         });
 
-        const json = await res.json();
+        let json;
+        const contentType = res.headers.get("content-type") ?? "";
+        if (contentType.includes("application/json")) {
+          json = await res.json();
+        } else {
+          const text = await res.text();
+          console.error("[confirmBooking] Non-JSON response:", res.status, text.slice(0, 200));
+          json = { error: "server_error", message: "Server error — please try again." };
+        }
+
+        if (!res.ok || json.error) {
+          const errorText = json.message ?? "Booking failed. Please try again.";
+          setError(errorText);
+          addMessage(createMessage("assistant", errorText));
+          return;
+        }
+
+        addMessage(
+          createMessage(
+            "assistant",
+            "Your booking is confirmed! Here are the details:",
+            {
+              type: "booking_confirmation",
+              data: json.data,
+            }
+          )
+        );
+
+        // Link booking to session
+        if (currentSessionId && json.data?.bookingId) {
+          fetch(`/api/chat-sessions/${currentSessionId}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ booking_id: json.data.bookingId }),
+          }).catch(() => {});
+        }
+
+        bookingRef.current = null;
+      } catch {
+        const errorMsg = "Network error. Check your connection and try again.";
+        setError(errorMsg);
+        addMessage(createMessage("assistant", errorMsg));
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [addMessage, currentSessionId]
+  );
+
+  const confirmBookingRazorpay = useCallback(
+    async (
+      bookingId: string,
+      razorpayResponse: {
+        razorpay_payment_id: string;
+        razorpay_order_id: string;
+        razorpay_signature: string;
+      }
+    ) => {
+      const booking = bookingRef.current;
+      if (!booking || booking.id !== bookingId) return;
+
+      addMessage(createMessage("user", "Confirm and pay for this booking."));
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        const res = await fetch("/api/payments/verify", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            ...razorpayResponse,
+            booking,
+          }),
+        });
+
+        let json;
+        const contentType = res.headers.get("content-type") ?? "";
+        if (contentType.includes("application/json")) {
+          json = await res.json();
+        } else {
+          const text = await res.text();
+          console.error("[confirmBookingRazorpay] Non-JSON response:", res.status, text.slice(0, 200));
+          json = { error: "server_error", message: "Server error — please try again." };
+        }
 
         if (!res.ok || json.error) {
           const errorText = json.message ?? "Booking failed. Please try again.";
@@ -428,6 +591,7 @@ export function useChatMessages() {
     sendMessage,
     selectFlight,
     confirmBooking,
+    confirmBookingRazorpay,
     clearChat: createNewSession,
     selectSession,
   };

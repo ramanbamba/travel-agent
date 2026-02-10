@@ -19,6 +19,7 @@ export function ChatContainer() {
     sendMessage,
     selectFlight,
     confirmBooking,
+    confirmBookingRazorpay,
     clearChat,
     selectSession,
   } = useChatMessages();
@@ -124,6 +125,7 @@ export function ChatContainer() {
             isLoading={isLoading}
             onSelectFlight={selectFlight}
             onConfirmBooking={confirmBooking}
+            onRazorpayConfirm={confirmBookingRazorpay}
           />
         ) : (
           <WelcomeScreen onSuggestedPrompt={sendMessage} />
