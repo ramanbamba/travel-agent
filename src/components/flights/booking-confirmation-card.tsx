@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Copy, CreditCard, ExternalLink } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { formatPrice } from "@/lib/utils/format-india";
 import { toast } from "@/hooks/use-toast";
 import dynamic from "next/dynamic";
 
@@ -204,8 +205,7 @@ export function BookingConfirmationCard({
         <div className="mt-2 text-sm text-[var(--glass-text-primary)]">
           Total paid:{" "}
           <span className="font-bold">
-            ${confirmation.totalPrice.amount.toLocaleString()}{" "}
-            {confirmation.totalPrice.currency}
+            {formatPrice(confirmation.totalPrice.amount, confirmation.totalPrice.currency)}
           </span>
         </div>
 

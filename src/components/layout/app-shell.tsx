@@ -6,6 +6,7 @@ import { MessageSquare, Plane, User, Settings } from "lucide-react";
 import { UserMenu } from "@/components/user-menu";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { MobileTabBar } from "./mobile-tab-bar";
+import { SandboxBanner } from "./sandbox-banner";
 import { GlassNavbar } from "@/components/ui/glass";
 import { cn } from "@/lib/utils";
 
@@ -26,6 +27,7 @@ export function AppShell({ email, children }: AppShellProps) {
 
   return (
     <div className="flex h-[100dvh] flex-col">
+      <SandboxBanner />
       {/* Top navbar */}
       <GlassNavbar>
         <div className="flex items-center gap-3">

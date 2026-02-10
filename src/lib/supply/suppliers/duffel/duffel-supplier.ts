@@ -9,6 +9,7 @@ import type {
 } from "../../types";
 import { SupplyError } from "../../types";
 import { getDuffelClient } from "./client";
+import { getAppMode } from "@/lib/config/app-mode";
 import {
   mapDuffelOfferToFlightOffer,
   mapPassengerToDuffel,
@@ -20,6 +21,8 @@ export class DuffelSupplier implements FlightSupplier {
   readonly name = "duffel";
 
   isAvailable(): boolean {
+    const mode = getAppMode();
+    if (mode === "live") return !!process.env.DUFFEL_LIVE_TOKEN;
     return !!process.env.DUFFEL_API_TOKEN;
   }
 
@@ -121,6 +124,8 @@ export class DuffelSupplier implements FlightSupplier {
         return mapPassengerToDuffel(p, passengerId);
       });
 
+      // Use the fetched offer's exact price — Duffel re-prices on fetch and
+      // rejects payments that don't match the current offer total.
       const order = await duffel.orders.create({
         selected_offers: [duffelOfferId],
         passengers: duffelPassengers,
@@ -128,8 +133,8 @@ export class DuffelSupplier implements FlightSupplier {
         payments: [
           {
             type: "balance",
-            amount: payment.amount.toFixed(2),
-            currency: payment.currency,
+            amount: offer.total_amount,
+            currency: offer.total_currency,
           },
         ],
       });
@@ -138,13 +143,22 @@ export class DuffelSupplier implements FlightSupplier {
     } catch (err) {
       if (err instanceof SupplyError) throw err;
 
-      const message = err instanceof Error ? err.message : "Booking creation failed";
-
-      // Detect common Duffel error codes from the SDK error shape
+      // Log the full Duffel error for debugging
       const errRecord = err as Record<string, unknown>;
       const meta = errRecord?.meta as Record<string, unknown> | undefined;
-      const duffelErrors = (meta?.errors ?? errRecord?.errors ?? []) as { code?: string }[];
+      const duffelErrors = (meta?.errors ?? errRecord?.errors ?? []) as { code?: string; message?: string; title?: string }[];
       const firstError = duffelErrors[0];
+
+      console.error("[duffel] createBooking failed:", {
+        message: err instanceof Error ? err.message : String(err),
+        meta: meta ? JSON.stringify(meta) : undefined,
+        errors: duffelErrors.length > 0 ? JSON.stringify(duffelErrors) : undefined,
+        offerId,
+      });
+
+      const message = firstError?.message
+        || (err instanceof Error ? err.message : undefined)
+        || "Booking creation failed";
 
       if (firstError?.code === "offer_expired") {
         throw new SupplyError(
@@ -163,7 +177,7 @@ export class DuffelSupplier implements FlightSupplier {
         );
       }
 
-      throw new SupplyError(message, "duffel", "BOOKING_FAILED", 500);
+      throw new SupplyError(message, "duffel", "BOOKING_FAILED", meta?.status as number ?? 500);
     }
   }
 

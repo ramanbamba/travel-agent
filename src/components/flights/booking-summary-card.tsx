@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Plane, User, Armchair, Award, ShieldCheck, CreditCard } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { formatPrice } from "@/lib/utils/format-india";
 import dynamic from "next/dynamic";
 
 const PaymentSelector = dynamic(
@@ -16,11 +17,27 @@ const PaymentSelector = dynamic(
     ),
   }
 );
+
+const RazorpayPayment = dynamic(
+  () => import("./razorpay-payment").then((mod) => mod.RazorpayPayment),
+  { ssr: false }
+);
+
+const BookingConfirmDialog = dynamic(
+  () => import("./booking-confirm-dialog").then((mod) => mod.BookingConfirmDialog),
+  { ssr: false }
+);
+
 import type { BookingSummary } from "@/types/flights";
 
 interface BookingSummaryCardProps {
   summary: BookingSummary;
   onConfirm?: (bookingId: string, paymentMethodId: string) => void;
+  onRazorpayConfirm?: (bookingId: string, razorpayResponse: {
+    razorpay_payment_id: string;
+    razorpay_order_id: string;
+    razorpay_signature: string;
+  }) => void;
 }
 
 function formatSeatPref(pref: string) {
@@ -32,11 +49,16 @@ function formatSeatPref(pref: string) {
 export function BookingSummaryCard({
   summary,
   onConfirm,
+  onRazorpayConfirm,
 }: BookingSummaryCardProps) {
   const segment = summary.flight.segments[0];
   const { passenger } = summary;
   const [showPayment, setShowPayment] = useState(false);
+  const [showRazorpay, setShowRazorpay] = useState(false);
+  const [razorpayConfirmed, setRazorpayConfirmed] = useState(false);
   const [paying, setPaying] = useState(false);
+  const [payError, setPayError] = useState<string | null>(null);
+  const currency = summary.totalPrice.currency;
 
   function handlePay(paymentMethodId: string) {
     setPaying(true);
@@ -171,25 +193,13 @@ export function BookingSummaryCard({
                 <div className="flex items-center justify-between">
                   <span className="text-[var(--glass-text-tertiary)]">Flight fare</span>
                   <span className="text-[var(--glass-text-primary)]">
-                    $
-                    {(
-                      summary.totalPrice.amount - summary.totalPrice.serviceFee
-                    ).toLocaleString(undefined, {
-                      minimumFractionDigits: 2,
-                      maximumFractionDigits: 2,
-                    })}{" "}
-                    {summary.totalPrice.currency}
+                    {formatPrice(summary.totalPrice.amount - summary.totalPrice.serviceFee, currency)}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-[var(--glass-text-tertiary)]">Service fee</span>
                   <span className="text-[var(--glass-text-primary)]">
-                    $
-                    {summary.totalPrice.serviceFee.toLocaleString(undefined, {
-                      minimumFractionDigits: 2,
-                      maximumFractionDigits: 2,
-                    })}{" "}
-                    {summary.totalPrice.currency}
+                    {formatPrice(summary.totalPrice.serviceFee, currency)}
                   </span>
                 </div>
                 <div className="border-t border-[var(--glass-border)]" />
@@ -198,12 +208,7 @@ export function BookingSummaryCard({
                     Total
                   </span>
                   <span className="text-lg font-bold text-[var(--glass-text-primary)]">
-                    $
-                    {summary.totalPrice.amount.toLocaleString(undefined, {
-                      minimumFractionDigits: 2,
-                      maximumFractionDigits: 2,
-                    })}{" "}
-                    {summary.totalPrice.currency}
+                    {formatPrice(summary.totalPrice.amount, currency)}
                   </span>
                 </div>
               </>
@@ -211,15 +216,14 @@ export function BookingSummaryCard({
               <div className="flex items-center justify-between">
                 <span className="text-[var(--glass-text-tertiary)]">Total</span>
                 <span className="text-lg font-bold text-[var(--glass-text-primary)]">
-                  ${summary.totalPrice.amount.toLocaleString()}{" "}
-                  {summary.totalPrice.currency}
+                  {formatPrice(summary.totalPrice.amount, currency)}
                 </span>
               </div>
             )}
           </div>
         </div>
 
-        {/* Payment selector */}
+        {/* Payment selector (Stripe) */}
         {showPayment && onConfirm && (
           <>
             <div className="border-t border-[var(--glass-border)]" />
@@ -232,25 +236,123 @@ export function BookingSummaryCard({
             />
           </>
         )}
+
+        {/* Razorpay confirmation + payment flow */}
+        {showRazorpay && !razorpayConfirmed && (
+          <>
+            <div className="border-t border-[var(--glass-border)]" />
+            <BookingConfirmDialog
+              booking={summary}
+              onConfirm={() => setRazorpayConfirmed(true)}
+              onCancel={() => {
+                setShowRazorpay(false);
+                setRazorpayConfirmed(false);
+              }}
+            />
+          </>
+        )}
+
+        {showRazorpay && razorpayConfirmed && (
+          <>
+            <div className="border-t border-[var(--glass-border)]" />
+            <RazorpayPayment
+              amount={summary.totalPrice.amount}
+              currency={currency}
+              description={`${segment.departure.airportCode} → ${segment.arrival.airportCode} · ${segment.airline} ${segment.flightNumber}`}
+              userName={`${passenger.firstName} ${passenger.lastName}`}
+              userEmail={passenger.email}
+              confirmed={razorpayConfirmed}
+              onSuccess={(response) => {
+                setPaying(true);
+                onRazorpayConfirm?.(summary.id, response);
+              }}
+              onFailure={(error) => {
+                setPayError(error);
+                setRazorpayConfirmed(false);
+              }}
+            />
+            {payError && (
+              <p className="text-xs text-red-500 text-center">{payError}</p>
+            )}
+          </>
+        )}
       </div>
 
-      {/* Confirm & Pay button */}
-      {onConfirm && !showPayment && (
-        <div className="border-t border-[var(--glass-border)] px-5 py-4">
+      {/* Confirm & Pay buttons */}
+      {onConfirm && !showPayment && !showRazorpay && (
+        <div className="border-t border-[var(--glass-border)] px-5 py-4 space-y-2.5">
+          {/* Demo Pay — bypasses Stripe, books directly with supplier */}
+          <button
+            onClick={() => {
+              setPaying(true);
+              onConfirm(summary.id, "demo");
+            }}
+            disabled={paying}
+            className={cn(
+              "flex w-full items-center justify-center gap-2",
+              "rounded-[var(--glass-radius-button)] px-4 py-2.5",
+              "text-sm font-semibold text-white",
+              "bg-black dark:bg-white dark:text-black",
+              "shadow-[0_1px_2px_rgba(0,0,0,0.2)]",
+              "transition-all duration-200 ease-spring",
+              "hover:opacity-90 active:scale-[0.97]",
+              "disabled:opacity-50"
+            )}
+          >
+            {paying ? (
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white dark:border-black/30 dark:border-t-black" />
+            ) : (
+              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M17.72 5.011H8.17l.27-1.57a1 1 0 0 1 .98-.82h6.47a3.72 3.72 0 0 1 1.83 6.96v.01c-.07.02-.14.05-.22.07a3.72 3.72 0 0 1-2.59-.14 3.72 3.72 0 0 1-2.15-3.37H8.44L7.09 14.1h9.73a1 1 0 0 1 .89.55l2.34 4.68a1 1 0 0 1-.9 1.45H4.12a1 1 0 0 1-.97-1.22l1.2-5.42.01-.05L5.8 6.73l.01-.05.6-2.79A1 1 0 0 1 7.38 3h9.73a1 1 0 0 1 .61.2z" />
+              </svg>
+            )}
+            {paying ? "Booking..." : "Demo Pay"}
+          </button>
+
+          <div className="relative flex items-center justify-center">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-[var(--glass-border)]" />
+            </div>
+            <span className="relative bg-[var(--glass-standard)] px-2 text-[11px] text-[var(--glass-text-tertiary)]">
+              or
+            </span>
+          </div>
+
+          {/* Razorpay — UPI, cards, wallets for India */}
+          <button
+            onClick={() => setShowRazorpay(true)}
+            disabled={paying}
+            className={cn(
+              "flex w-full items-center justify-center gap-2",
+              "rounded-[var(--glass-radius-button)] px-4 py-2.5",
+              "text-sm font-semibold text-white",
+              "bg-[#0A84FF]",
+              "shadow-[0_1px_3px_rgba(10,132,255,0.3)]",
+              "transition-all duration-200 ease-spring",
+              "hover:opacity-90 active:scale-[0.97]",
+              "disabled:opacity-50"
+            )}
+          >
+            Pay {formatPrice(summary.totalPrice.amount, currency)}
+          </button>
+
+          {/* Stripe card option */}
           <button
             onClick={() => setShowPayment(true)}
+            disabled={paying}
             className={cn(
               "flex w-full items-center justify-center",
               "rounded-[var(--glass-radius-button)] px-4 py-2.5",
-              "text-sm font-semibold text-white",
-              "bg-[var(--glass-accent-blue)]",
-              "shadow-[0_1px_2px_rgba(0,0,0,0.1),0_2px_8px_rgba(0,113,227,0.25)]",
+              "text-sm font-medium",
+              "text-[var(--glass-text-secondary)]",
+              "border border-[var(--glass-border)]",
+              "bg-[var(--glass-subtle)]",
               "transition-all duration-200 ease-spring",
-              "hover:shadow-[0_2px_8px_rgba(0,0,0,0.1),0_4px_16px_rgba(0,113,227,0.3)]",
-              "active:scale-[0.97]"
+              "hover:bg-[var(--glass-standard)] active:scale-[0.97]",
+              "disabled:opacity-50"
             )}
           >
-            Confirm & Pay
+            Pay with saved card
           </button>
         </div>
       )}

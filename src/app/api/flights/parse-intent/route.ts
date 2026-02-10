@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { searchFlightsCompat } from "@/lib/supply";
+import { INDIAN_AIRPORTS } from "@/lib/utils/format-india";
+import { DEFAULT_HOME_AIRPORT } from "@/lib/utils/format-india";
 import type { ApiResponse, ParsedIntent, FlightOption } from "@/types";
 
 // ── Simple in-memory cache (5 min TTL) ──────────────────────────────────────
@@ -102,6 +104,8 @@ const airportMap: Record<string, string> = {
   del: "DEL",
   bangkok: "BKK",
   bkk: "BKK",
+  // Indian airports (spread from format-india)
+  ...INDIAN_AIRPORTS,
 };
 
 // ── Date parsing ────────────────────────────────────────────────────────────
@@ -292,7 +296,7 @@ export async function POST(request: Request) {
       .eq("id", user.id)
       .single();
 
-    intent.origin = profile?.home_airport ?? "JFK";
+    intent.origin = profile?.home_airport ?? DEFAULT_HOME_AIRPORT;
   }
 
   if (!intent.destination) {

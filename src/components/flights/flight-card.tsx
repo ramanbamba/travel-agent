@@ -1,6 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
+import { formatPrice } from "@/lib/utils/format-india";
 import type { FlightOption } from "@/types/flights";
 
 interface FlightCardProps {
@@ -162,7 +163,7 @@ export function FlightCard({ flight, onSelect }: FlightCardProps) {
       <div className="mt-3 flex items-center justify-between">
         <div className="flex items-baseline gap-1">
           <span className="text-xl font-bold text-[var(--glass-text-primary)]">
-            ${flight.price.amount.toLocaleString()}
+            {formatPrice(flight.price.amount, flight.price.currency)}
           </span>
           <span className="text-[11px] text-[var(--glass-text-tertiary)]">
             {flight.price.currency}
@@ -176,7 +177,7 @@ export function FlightCard({ flight, onSelect }: FlightCardProps) {
         {onSelect && (
           <button
             onClick={() => onSelect(flight.id)}
-            aria-label={`Select ${firstSegment.airline} flight ${firstSegment.flightNumber}, $${flight.price.amount}`}
+            aria-label={`Select ${firstSegment.airline} flight ${firstSegment.flightNumber}, ${formatPrice(flight.price.amount, flight.price.currency)}`}
             className={cn(
               "flex items-center gap-1.5",
               "rounded-full px-4 py-1.5",

@@ -78,6 +78,7 @@ export interface SupplySearchParams {
   cabinClass?: CabinClass;
   airline?: string; // IATA airline code — used for NDC routing
   maxResults?: number;
+  currency?: string; // Preferred currency (e.g. "INR", "USD")
 }
 
 // ── Booking types (interface-complete, used in future prompts) ───────────────
