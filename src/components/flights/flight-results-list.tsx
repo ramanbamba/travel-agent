@@ -11,12 +11,12 @@ export function FlightResultsList({
   onSelect,
 }: FlightResultsListProps) {
   return (
-    <div className="flex w-full flex-col gap-3">
+    <div className="flex w-full flex-col gap-2.5">
       {flights.map((flight, i) => (
         <div
           key={flight.id}
-          className="animate-chat-message"
-          style={{ animationDelay: `${i * 100}ms` }}
+          className="animate-chat-message opacity-0 [animation-fill-mode:forwards]"
+          style={{ animationDelay: `${i * 80}ms` }}
         >
           <FlightCard flight={flight} onSelect={onSelect} />
         </div>

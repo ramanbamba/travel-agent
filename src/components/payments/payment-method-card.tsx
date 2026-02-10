@@ -1,8 +1,8 @@
 "use client";
 
-import { CreditCard, Star, Trash2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Star, Trash2 } from "lucide-react";
+import { GlassPill } from "@/components/ui/glass";
+import { cn } from "@/lib/utils";
 import type { PaymentMethod } from "@/types";
 
 interface PaymentMethodCardProps {
@@ -11,13 +11,41 @@ interface PaymentMethodCardProps {
   onDelete?: (id: string) => void;
 }
 
-function brandIcon(brand: string) {
+const brandConfig: Record<string, { label: string; gradient: string; text: string }> = {
+  visa: {
+    label: "Visa",
+    gradient: "from-[#1a1f71] to-[#2557d6]",
+    text: "text-white",
+  },
+  mastercard: {
+    label: "Mastercard",
+    gradient: "from-[#eb001b] to-[#f79e1b]",
+    text: "text-white",
+  },
+  amex: {
+    label: "Amex",
+    gradient: "from-[#007bc1] to-[#00a3e0]",
+    text: "text-white",
+  },
+  american_express: {
+    label: "Amex",
+    gradient: "from-[#007bc1] to-[#00a3e0]",
+    text: "text-white",
+  },
+  discover: {
+    label: "Discover",
+    gradient: "from-[#ff6000] to-[#ff8a3d]",
+    text: "text-white",
+  },
+};
+
+function getBrand(brand: string) {
   const b = brand.toLowerCase();
-  if (b === "visa") return "Visa";
-  if (b === "mastercard") return "MC";
-  if (b === "amex" || b === "american_express") return "Amex";
-  if (b === "discover") return "Disc";
-  return brand.charAt(0).toUpperCase() + brand.slice(1);
+  return brandConfig[b] ?? {
+    label: brand.charAt(0).toUpperCase() + brand.slice(1),
+    gradient: "from-[var(--glass-text-tertiary)] to-[var(--glass-text-secondary)]",
+    text: "text-white",
+  };
 }
 
 export function PaymentMethodCard({
@@ -25,56 +53,60 @@ export function PaymentMethodCard({
   onSetDefault,
   onDelete,
 }: PaymentMethodCardProps) {
+  const brand = getBrand(method.card_brand);
+
   return (
-    <div className="flex items-center justify-between rounded-lg border border-white/10 px-4 py-3">
-      <div className="flex items-center gap-3">
-        <div className="flex h-9 w-9 items-center justify-center rounded-md bg-white/5">
-          <CreditCard className="h-4 w-4 text-muted-foreground" />
-        </div>
-        <div>
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium">
-              {brandIcon(method.card_brand)}
-            </span>
-            <span className="text-sm text-muted-foreground">
-              &bull;&bull;&bull;&bull; {method.card_last_four}
-            </span>
-            {method.is_default && (
-              <Badge
-                variant="outline"
-                className="border-green-500/20 bg-green-500/10 text-green-400 text-[10px]"
-              >
-                Default
-              </Badge>
-            )}
-          </div>
-          <p className="text-xs text-muted-foreground">
-            Expires {String(method.card_exp_month).padStart(2, "0")}/
-            {method.card_exp_year}
-          </p>
-        </div>
+    <div className="flex items-center gap-3 rounded-[var(--glass-radius-sm)] bg-[var(--glass-subtle)] p-3">
+      {/* Mini card visualization */}
+      <div
+        className={cn(
+          "flex h-10 w-14 shrink-0 items-end justify-start rounded-lg bg-gradient-to-br p-1.5 shadow-sm",
+          brand.gradient
+        )}
+      >
+        <span className={cn("text-[9px] font-bold leading-none", brand.text)}>
+          {brand.label}
+        </span>
       </div>
+
+      {/* Card info */}
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-medium text-[var(--glass-text-primary)]">
+            &bull;&bull;&bull;&bull; {method.card_last_four}
+          </span>
+          {method.is_default && (
+            <GlassPill variant="green" size="sm">
+              <Star className="h-2.5 w-2.5" />
+              Default
+            </GlassPill>
+          )}
+        </div>
+        <p className="text-xs text-[var(--glass-text-tertiary)]">
+          Expires {String(method.card_exp_month).padStart(2, "0")}/
+          {method.card_exp_year}
+        </p>
+      </div>
+
+      {/* Actions */}
       <div className="flex items-center gap-1">
         {!method.is_default && onSetDefault && (
-          <Button
-            variant="ghost"
-            size="sm"
+          <button
             onClick={() => onSetDefault(method.id)}
-            className="h-8 gap-1 text-xs text-muted-foreground hover:text-foreground"
+            className="flex h-8 items-center gap-1 rounded-[var(--glass-radius-sm)] px-2 text-xs font-medium text-[var(--glass-text-tertiary)] transition-colors hover:bg-[var(--glass-standard)] hover:text-[var(--glass-text-primary)]"
           >
             <Star className="h-3 w-3" />
-            Set default
-          </Button>
+            <span className="hidden sm:inline">Set default</span>
+          </button>
         )}
         {onDelete && (
-          <Button
-            variant="ghost"
-            size="icon"
+          <button
             onClick={() => onDelete(method.id)}
-            className="h-8 w-8 text-muted-foreground hover:text-red-400"
+            aria-label="Delete card"
+            className="flex h-8 w-8 items-center justify-center rounded-[var(--glass-radius-sm)] text-[var(--glass-text-tertiary)] transition-colors hover:bg-[var(--glass-accent-red-light)] hover:text-[var(--glass-accent-red)]"
           >
             <Trash2 className="h-3.5 w-3.5" />
-          </Button>
+          </button>
         )}
       </div>
     </div>

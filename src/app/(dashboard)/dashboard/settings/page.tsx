@@ -1,92 +1,232 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Bell, CreditCard, ChevronRight, Mail, MessageSquare, Smartphone } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import {
+  Bell,
+  ChevronRight,
+  CreditCard,
+  Mail,
+  MessageSquare,
+  Smartphone,
+  User,
+  Heart,
+  Award,
+  Palette,
+} from "lucide-react";
+import { GlassCard, GlassPill } from "@/components/ui/glass";
+import { cn } from "@/lib/utils";
 
-const notifications = [
-  {
-    icon: Mail,
-    title: "Email Notifications",
-    description: "Booking confirmations, itinerary changes, and receipts",
-    enabled: true,
-  },
-  {
-    icon: MessageSquare,
-    title: "SMS Alerts",
-    description: "Flight delays, gate changes, and cancellation alerts",
-    enabled: false,
-  },
-  {
-    icon: Smartphone,
-    title: "Push Notifications",
-    description: "Real-time updates on your mobile device",
-    enabled: false,
-  },
-];
+interface ProfileData {
+  first_name?: string;
+  last_name?: string;
+  email?: string;
+}
+
+function ProfileHeader({ profile }: { profile: ProfileData | null }) {
+  const initials = profile
+    ? [profile.first_name, profile.last_name]
+        .filter(Boolean)
+        .map((n) => n![0])
+        .join("")
+        .toUpperCase()
+    : "?";
+
+  const name = profile
+    ? [profile.first_name, profile.last_name].filter(Boolean).join(" ")
+    : "Loading...";
+
+  return (
+    <Link href="/dashboard/profile">
+      <GlassCard tier="subtle" hover padding="md">
+        <div className="flex items-center gap-4">
+          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[var(--glass-accent-blue)] to-[var(--glass-accent-blue)]/60 text-lg font-bold text-white">
+            {initials}
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-base font-semibold text-[var(--glass-text-primary)] truncate">
+              {name}
+            </p>
+            {profile?.email && (
+              <p className="text-sm text-[var(--glass-text-secondary)] truncate">
+                {profile.email}
+              </p>
+            )}
+          </div>
+          <ChevronRight className="h-4 w-4 shrink-0 text-[var(--glass-text-tertiary)]" />
+        </div>
+      </GlassCard>
+    </Link>
+  );
+}
+
+interface SettingsRowProps {
+  icon: React.ElementType;
+  label: string;
+  value?: string;
+  href?: string;
+  badge?: { text: string; variant: "green" | "default" };
+  last?: boolean;
+}
+
+function SettingsRow({ icon: Icon, label, value, href, badge, last }: SettingsRowProps) {
+  const content = (
+    <div
+      className={cn(
+        "flex items-center justify-between px-4 py-3.5 transition-colors",
+        href && "hover:bg-[var(--glass-standard)]/30 cursor-pointer",
+        !last && "border-b border-[var(--glass-border)]/50"
+      )}
+    >
+      <div className="flex items-center gap-3">
+        <Icon className="h-4 w-4 text-[var(--glass-text-tertiary)]" />
+        <span className="text-sm text-[var(--glass-text-primary)]">{label}</span>
+      </div>
+      <div className="flex items-center gap-2">
+        {badge && (
+          <GlassPill variant={badge.variant} size="sm">
+            {badge.text}
+          </GlassPill>
+        )}
+        {value && (
+          <span className="text-sm text-[var(--glass-text-tertiary)]">{value}</span>
+        )}
+        {href && (
+          <ChevronRight className="h-4 w-4 text-[var(--glass-text-tertiary)]" />
+        )}
+      </div>
+    </div>
+  );
+
+  if (href) {
+    return <Link href={href}>{content}</Link>;
+  }
+  return content;
+}
+
+function SettingsGroup({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div>
+      <p className="mb-1.5 px-1 text-xs font-medium uppercase tracking-wider text-[var(--glass-text-tertiary)]">
+        {title}
+      </p>
+      <GlassCard tier="subtle" hover={false} padding="none" className="overflow-hidden">
+        {children}
+      </GlassCard>
+    </div>
+  );
+}
 
 export default function SettingsPage() {
-  return (
-    <div className="animate-in fade-in duration-300 p-6">
-      <h1 className="text-2xl font-semibold">Settings</h1>
-      <p className="mt-1 text-sm text-muted-foreground">
-        Manage your notification preferences and account settings.
-      </p>
+  const [profile, setProfile] = useState<ProfileData | null>(null);
 
-      <div className="mt-6 max-w-2xl space-y-6">
-        <Card className="border-white/10 bg-white/[0.02]">
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Bell className="h-4 w-4" />
-              Notifications
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {notifications.map((item) => (
-              <div
-                key={item.title}
-                className="flex items-center justify-between rounded-lg border border-white/10 px-4 py-3"
-              >
-                <div className="flex items-start gap-3">
-                  <item.icon className="mt-0.5 h-4 w-4 text-muted-foreground" />
-                  <div>
-                    <p className="text-sm font-medium">{item.title}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {item.description}
-                    </p>
-                  </div>
-                </div>
-                <Badge
-                  variant="outline"
-                  className={
-                    item.enabled
-                      ? "border-green-500/20 bg-green-500/10 text-green-400"
-                      : "border-white/10 text-muted-foreground"
-                  }
-                >
-                  {item.enabled ? "Active" : "Coming soon"}
-                </Badge>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-        <Link href="/dashboard/settings/payment">
-          <Card className="cursor-pointer border-white/10 bg-white/[0.02] transition-colors hover:bg-white/[0.04]">
-            <CardContent className="flex items-center justify-between p-4">
-              <div className="flex items-center gap-3">
-                <CreditCard className="h-4 w-4 text-muted-foreground" />
-                <div>
-                  <p className="text-sm font-medium">Payment Methods</p>
-                  <p className="text-xs text-muted-foreground">
-                    Manage saved cards for flight bookings
-                  </p>
-                </div>
-              </div>
-              <ChevronRight className="h-4 w-4 text-muted-foreground" />
-            </CardContent>
-          </Card>
-        </Link>
+  useEffect(() => {
+    async function fetchProfile() {
+      try {
+        const res = await fetch("/api/profile");
+        if (!res.ok) return;
+        const json = await res.json();
+        const p = json.data?.profile;
+        const email = json.data?.email;
+        if (p) {
+          setProfile({
+            first_name: p.first_name,
+            last_name: p.last_name,
+            email,
+          });
+        }
+      } catch {
+        // Fail silently — not critical
+      }
+    }
+    fetchProfile();
+  }, []);
+
+  return (
+    <div className="p-4 sm:p-6">
+      <div className="mb-6">
+        <h1 className="text-3xl font-bold tracking-tight text-[var(--glass-text-primary)] sm:text-4xl">
+          Settings
+        </h1>
+        <p className="mt-1 text-sm text-[var(--glass-text-secondary)]">
+          Manage your account and preferences.
+        </p>
+      </div>
+
+      <div className="max-w-2xl space-y-6">
+        {/* Profile card */}
+        <ProfileHeader profile={profile} />
+
+        {/* Account group */}
+        <SettingsGroup title="Account">
+          <SettingsRow
+            icon={User}
+            label="Personal Info"
+            href="/dashboard/profile"
+          />
+          <SettingsRow
+            icon={Award}
+            label="Loyalty Programs"
+            href="/dashboard/profile"
+          />
+          <SettingsRow
+            icon={Heart}
+            label="Travel Preferences"
+            href="/dashboard/profile"
+            last
+          />
+        </SettingsGroup>
+
+        {/* Payment group */}
+        <SettingsGroup title="Payment">
+          <SettingsRow
+            icon={CreditCard}
+            label="Payment Methods"
+            href="/dashboard/settings/payment"
+            last
+          />
+        </SettingsGroup>
+
+        {/* Notifications group */}
+        <SettingsGroup title="Notifications">
+          <SettingsRow
+            icon={Mail}
+            label="Email Notifications"
+            badge={{ text: "Active", variant: "green" }}
+          />
+          <SettingsRow
+            icon={MessageSquare}
+            label="SMS Alerts"
+            badge={{ text: "Coming soon", variant: "default" }}
+          />
+          <SettingsRow
+            icon={Smartphone}
+            label="Push Notifications"
+            badge={{ text: "Coming soon", variant: "default" }}
+            last
+          />
+        </SettingsGroup>
+
+        {/* App group */}
+        <SettingsGroup title="App">
+          <SettingsRow
+            icon={Palette}
+            label="Appearance"
+            value="System"
+          />
+          <SettingsRow
+            icon={Bell}
+            label="Notification Sound"
+            value="Default"
+            last
+          />
+        </SettingsGroup>
       </div>
     </div>
   );

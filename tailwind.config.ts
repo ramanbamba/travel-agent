@@ -120,6 +120,14 @@ const config: Config = {
           from: { height: "4rem", backdropFilter: "blur(0px)" },
           to: { height: "3.5rem", backdropFilter: "blur(24px) saturate(1.8)" },
         },
+        confetti: {
+          "0%": { opacity: "1", transform: "translateY(0) rotate(0deg)" },
+          "100%": { opacity: "0", transform: "translateY(400px) rotate(720deg)" },
+        },
+        "draw-check": {
+          "0%": { strokeDashoffset: "1" },
+          "100%": { strokeDashoffset: "0" },
+        },
       },
       animation: {
         "glass-in": "glass-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards",
@@ -127,6 +135,8 @@ const config: Config = {
         "sheet-up": "sheet-up 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards",
         "sheet-down": "sheet-down 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards",
         "pill-in": "pill-in 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards",
+        confetti: "confetti var(--tw-animate-duration, 2s) cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards",
+        "draw-check": "draw-check 0.6s cubic-bezier(0.65, 0, 0.35, 1) 0.2s forwards",
       },
     },
   },

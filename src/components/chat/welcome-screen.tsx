@@ -1,61 +1,44 @@
-import { Plane, Globe, Clock } from "lucide-react";
+"use client";
+
+import { MapPin, ArrowRight } from "lucide-react";
 
 interface WelcomeScreenProps {
   onSuggestedPrompt: (prompt: string) => void;
 }
 
 const suggestions = [
-  {
-    icon: Plane,
-    label: "Book a flight",
-    prompt: "Book a flight from JFK to London next Friday",
-  },
-  {
-    icon: Globe,
-    label: "Round trip",
-    prompt: "Round trip from SFO to Tokyo, departing March 15, returning March 22",
-  },
-  {
-    icon: Clock,
-    label: "Last minute",
-    prompt: "Find me the cheapest flight to Miami this weekend",
-  },
+  { route: "SFO → London", prompt: "Book a flight from SFO to London next Friday" },
+  { route: "NYC → Tokyo", prompt: "Round trip from JFK to Tokyo, departing March 15, returning March 22" },
+  { route: "LAX → Paris", prompt: "Find me a business class flight to Paris next month" },
+  { route: "ORD → Miami", prompt: "Find me the cheapest flight to Miami this weekend" },
 ];
 
 export function WelcomeScreen({ onSuggestedPrompt }: WelcomeScreenProps) {
   return (
-    <div className="flex flex-1 flex-col items-center justify-center px-4">
-      <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-white/10 bg-white/5">
-        <svg
-          width="28"
-          height="28"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          className="text-muted-foreground"
-        >
-          <path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z" />
-        </svg>
+    <div className="flex flex-1 flex-col items-center justify-center px-6">
+      {/* Icon */}
+      <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[var(--glass-accent-blue-light)]">
+        <MapPin className="h-6 w-6 text-[var(--glass-accent-blue)]" strokeWidth={1.5} />
       </div>
 
-      <h2 className="mt-6 text-xl font-semibold">Where are you headed?</h2>
-      <p className="mt-2 max-w-md text-center text-sm text-muted-foreground">
-        Tell me where you want to fly and I&apos;ll find the best options for
-        you. Just type naturally.
+      {/* Title */}
+      <h1 className="mt-6 text-center font-display text-[2.5rem] font-bold leading-[1.1] tracking-tight text-[var(--glass-text-primary)]">
+        Where to?
+      </h1>
+      <p className="mt-3 max-w-sm text-center text-[15px] leading-relaxed text-[var(--glass-text-secondary)]">
+        Tell me your destination and I&apos;ll find the best flights for you.
       </p>
 
-      <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+      {/* Suggestion pills */}
+      <div className="mt-8 flex flex-wrap justify-center gap-2">
         {suggestions.map((s) => (
           <button
-            key={s.label}
+            key={s.route}
             onClick={() => onSuggestedPrompt(s.prompt)}
-            className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.02] px-4 py-3 text-left text-sm text-muted-foreground transition-colors hover:border-white/20 hover:bg-white/5 hover:text-foreground"
+            className="group flex items-center gap-2 rounded-[var(--glass-radius-pill)] border border-[var(--glass-border)] bg-[var(--glass-subtle)] px-4 py-2.5 text-[13px] font-medium text-[var(--glass-text-secondary)] backdrop-blur-[24px] [-webkit-backdrop-filter:blur(24px)_saturate(1.8)] [backdrop-filter:blur(24px)_saturate(1.8)] transition-all duration-200 ease-spring hover:border-[var(--glass-accent-blue)] hover:bg-[var(--glass-accent-blue-light)] hover:text-[var(--glass-accent-blue)] active:scale-95"
           >
-            <s.icon className="h-4 w-4 shrink-0" />
-            <span>{s.label}</span>
+            <span>{s.route}</span>
+            <ArrowRight className="h-3 w-3 opacity-0 transition-all duration-200 ease-spring group-hover:opacity-100 group-hover:translate-x-0.5" />
           </button>
         ))}
       </div>

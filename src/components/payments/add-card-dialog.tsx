@@ -8,22 +8,20 @@ import {
   useElements,
 } from "@stripe/react-stripe-js";
 import { getStripe } from "@/lib/stripe/browser";
-import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+import { GlassButton, GlassDialog } from "@/components/ui/glass";
 
 interface AddCardDialogProps {
   trigger: React.ReactNode;
   onCardAdded: () => void;
 }
 
-function CardForm({ onCardAdded, onClose }: { onCardAdded: () => void; onClose: () => void }) {
+function CardForm({
+  onCardAdded,
+  onClose,
+}: {
+  onCardAdded: () => void;
+  onClose: () => void;
+}) {
   const stripe = useStripe();
   const elements = useElements();
   const [loading, setLoading] = useState(false);
@@ -93,24 +91,33 @@ function CardForm({ onCardAdded, onClose }: { onCardAdded: () => void; onClose: 
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="rounded-lg border border-white/10 bg-white/[0.02] p-4">
+      <div className="rounded-[var(--glass-radius-sm)] border border-[var(--glass-border)] bg-[var(--glass-subtle)] p-4">
         <CardElement
           options={{
             style: {
               base: {
                 fontSize: "16px",
-                color: "#e5e5e5",
-                "::placeholder": { color: "#737373" },
+                color: "var(--glass-text-primary-raw, #1c1c1e)",
+                "::placeholder": {
+                  color: "var(--glass-text-tertiary-raw, #8e8e93)",
+                },
               },
               invalid: { color: "#ef4444" },
             },
           }}
         />
       </div>
-      {error && <p className="text-sm text-red-400">{error}</p>}
-      <Button type="submit" disabled={!stripe || loading} className="w-full">
+      {error && (
+        <p className="text-sm text-[var(--glass-accent-red)]">{error}</p>
+      )}
+      <GlassButton
+        type="submit"
+        disabled={!stripe || loading}
+        className="w-full"
+        size="lg"
+      >
         {loading ? "Saving..." : "Add Card"}
-      </Button>
+      </GlassButton>
     </form>
   );
 }
@@ -119,23 +126,21 @@ export function AddCardDialog({ trigger, onCardAdded }: AddCardDialogProps) {
   const [open, setOpen] = useState(false);
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>{trigger}</DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Add Payment Method</DialogTitle>
-          <DialogDescription>
-            Your card details are securely handled by Stripe. We never store
-            your full card number.
-          </DialogDescription>
-        </DialogHeader>
+    <>
+      <span onClick={() => setOpen(true)}>{trigger}</span>
+      <GlassDialog
+        open={open}
+        onClose={() => setOpen(false)}
+        title="Add Payment Method"
+        description="Your card details are securely handled by Stripe. We never store your full card number."
+      >
         <Elements stripe={getStripe()}>
           <CardForm
             onCardAdded={onCardAdded}
             onClose={() => setOpen(false)}
           />
         </Elements>
-      </DialogContent>
-    </Dialog>
+      </GlassDialog>
+    </>
   );
 }

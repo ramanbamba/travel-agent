@@ -18,8 +18,10 @@ export function ChatSessionsList({
   if (sessions.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-8 text-center">
-        <MessageSquare className="h-5 w-5 text-muted-foreground" />
-        <p className="mt-2 text-xs text-muted-foreground">No chat history</p>
+        <MessageSquare className="h-5 w-5 text-[var(--glass-text-tertiary)]" />
+        <p className="mt-2 text-xs text-[var(--glass-text-tertiary)]">
+          No chat history
+        </p>
       </div>
     );
   }
@@ -38,14 +40,22 @@ export function ChatSessionsList({
             key={session.id}
             onClick={() => onSelect(session.id)}
             className={cn(
-              "flex flex-col items-start rounded-md px-3 py-2 text-left text-sm transition-colors",
+              "flex flex-col items-start rounded-xl px-3 py-2 text-left text-sm",
+              "transition-all duration-200 ease-expo-out",
               isActive
-                ? "bg-white/10 text-foreground"
-                : "text-muted-foreground hover:bg-white/5 hover:text-foreground"
+                ? [
+                    "bg-[var(--glass-accent-blue-light)]",
+                    "text-[var(--glass-accent-blue)]",
+                  ]
+                : [
+                    "text-[var(--glass-text-secondary)]",
+                    "hover:bg-[var(--glass-subtle)]",
+                    "hover:text-[var(--glass-text-primary)]",
+                  ]
             )}
           >
             <span className="line-clamp-1 font-medium">{session.title}</span>
-            <span className="text-xs opacity-60">{date}</span>
+            <span className="text-[11px] opacity-60">{date}</span>
           </button>
         );
       })}

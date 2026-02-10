@@ -56,6 +56,8 @@
   --glass-accent-amber-light: rgba(255, 159, 10, 0.08);
   --glass-accent-red: #ff3b30;
   --glass-accent-red-light: rgba(255, 59, 48, 0.08);
+  --glass-accent-orange: #ff9500;
+  --glass-accent-orange-light: rgba(255, 149, 0, 0.08);
 
   /* Glass effect values */
   --glass-blur: 24px;
@@ -143,6 +145,8 @@
   --glass-accent-amber-light: rgba(255, 214, 10, 0.12);
   --glass-accent-red: #ff453a;
   --glass-accent-red-light: rgba(255, 69, 58, 0.12);
+  --glass-accent-orange: #ff9f0a;
+  --glass-accent-orange-light: rgba(255, 159, 10, 0.12);
 
   /* Gradient mesh — more vibrant in dark */
   --mesh-color-1: rgba(10, 132, 255, 0.08);

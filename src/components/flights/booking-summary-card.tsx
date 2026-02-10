@@ -1,16 +1,20 @@
 "use client";
 
 import { useState } from "react";
-import { Plane, User, CreditCard, Armchair, Award, ShieldCheck } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
+import { Plane, User, Armchair, Award, ShieldCheck, CreditCard } from "lucide-react";
+import { cn } from "@/lib/utils";
 import dynamic from "next/dynamic";
 
-const PaymentSelector = dynamic(() =>
-  import("./payment-selector").then((mod) => mod.PaymentSelector),
-  { ssr: false, loading: () => <div className="flex justify-center py-6"><div className="h-5 w-5 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" /></div> }
+const PaymentSelector = dynamic(
+  () => import("./payment-selector").then((mod) => mod.PaymentSelector),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex justify-center py-6">
+        <div className="h-5 w-5 animate-spin rounded-full border-2 border-[var(--glass-text-tertiary)] border-t-transparent" />
+      </div>
+    ),
+  }
 );
 import type { BookingSummary } from "@/types/flights";
 
@@ -20,7 +24,9 @@ interface BookingSummaryCardProps {
 }
 
 function formatSeatPref(pref: string) {
-  return pref.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+  return pref
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
 export function BookingSummaryCard({
@@ -38,23 +44,37 @@ export function BookingSummaryCard({
   }
 
   return (
-    <Card className="w-full border-white/10 bg-white/[0.03]">
-      <CardHeader className="pb-3">
-        <h3 className="text-sm font-semibold">Booking Summary</h3>
-      </CardHeader>
-      <CardContent className="space-y-4">
+    <div
+      className={cn(
+        "w-full",
+        "rounded-[var(--glass-radius-card)]",
+        "bg-[var(--glass-standard)]",
+        "backdrop-blur-[24px] [backdrop-filter:blur(24px)_saturate(1.8)] [-webkit-backdrop-filter:blur(24px)_saturate(1.8)]",
+        "border border-[var(--glass-border)]",
+        "shadow-[var(--glass-shadow-sm)] [box-shadow:var(--glass-shadow-sm),var(--glass-inner-glow)]"
+      )}
+    >
+      {/* Header */}
+      <div className="border-b border-[var(--glass-border)] px-5 py-3">
+        <h3 className="text-sm font-semibold text-[var(--glass-text-primary)]">
+          Booking Summary
+        </h3>
+      </div>
+
+      <div className="space-y-3.5 p-5">
         {/* Flight details */}
         <div className="flex items-start gap-3">
-          <Plane className="mt-0.5 h-4 w-4 text-muted-foreground" />
-          <div className="space-y-1 text-sm">
-            <p className="font-medium">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--glass-accent-blue-light)]">
+            <Plane className="h-4 w-4 text-[var(--glass-accent-blue)]" />
+          </div>
+          <div className="space-y-0.5 text-sm">
+            <p className="font-semibold text-[var(--glass-text-primary)]">
               {segment.departure.airportCode} → {segment.arrival.airportCode}
             </p>
-            <p className="text-muted-foreground">
-              {segment.airline} {segment.flightNumber} &middot;{" "}
-              {summary.flight.totalDuration}
+            <p className="text-[var(--glass-text-tertiary)]">
+              {segment.airline} {segment.flightNumber} · {summary.flight.totalDuration}
             </p>
-            <p className="text-muted-foreground">
+            <p className="text-[var(--glass-text-tertiary)]">
               {new Date(segment.departure.time).toLocaleDateString("en-US", {
                 weekday: "short",
                 month: "short",
@@ -72,38 +92,45 @@ export function BookingSummaryCard({
 
         {/* Passenger */}
         <div className="flex items-start gap-3">
-          <User className="mt-0.5 h-4 w-4 text-muted-foreground" />
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--glass-subtle)]">
+            <User className="h-4 w-4 text-[var(--glass-text-secondary)]" />
+          </div>
           <div className="text-sm">
-            <p className="font-medium">
+            <p className="font-medium text-[var(--glass-text-primary)]">
               {passenger.firstName} {passenger.lastName}
             </p>
-            <p className="text-muted-foreground">{passenger.email}</p>
+            <p className="text-[var(--glass-text-tertiary)]">{passenger.email}</p>
           </div>
         </div>
 
         {/* Seat preference */}
-        {passenger.seatPreference &&
-          passenger.seatPreference !== "no_preference" && (
-            <div className="flex items-start gap-3">
-              <Armchair className="mt-0.5 h-4 w-4 text-muted-foreground" />
-              <div className="text-sm">
-                <span className="text-muted-foreground">Seat: </span>
-                <span className="font-medium">
-                  {formatSeatPref(passenger.seatPreference)}
-                </span>
-              </div>
+        {passenger.seatPreference && passenger.seatPreference !== "no_preference" && (
+          <div className="flex items-start gap-3">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--glass-subtle)]">
+              <Armchair className="h-4 w-4 text-[var(--glass-text-secondary)]" />
             </div>
-          )}
+            <div className="text-sm">
+              <span className="text-[var(--glass-text-tertiary)]">Seat: </span>
+              <span className="font-medium text-[var(--glass-text-primary)]">
+                {formatSeatPref(passenger.seatPreference)}
+              </span>
+            </div>
+          </div>
+        )}
 
         {/* Loyalty program */}
         {passenger.loyaltyProgram && (
           <div className="flex items-start gap-3">
-            <Award className="mt-0.5 h-4 w-4 text-muted-foreground" />
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--glass-subtle)]">
+              <Award className="h-4 w-4 text-[var(--glass-text-secondary)]" />
+            </div>
             <div className="text-sm">
-              <span className="text-muted-foreground">Loyalty: </span>
-              <span className="font-medium">{passenger.loyaltyProgram}</span>
+              <span className="text-[var(--glass-text-tertiary)]">Loyalty: </span>
+              <span className="font-medium text-[var(--glass-text-primary)]">
+                {passenger.loyaltyProgram}
+              </span>
               {passenger.loyaltyNumber && (
-                <span className="ml-1 text-muted-foreground">
+                <span className="ml-1 text-[var(--glass-text-tertiary)]">
                   ({passenger.loyaltyNumber})
                 </span>
               )}
@@ -113,56 +140,77 @@ export function BookingSummaryCard({
 
         {/* Passport status */}
         <div className="flex items-start gap-3">
-          <ShieldCheck className="mt-0.5 h-4 w-4 text-muted-foreground" />
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--glass-subtle)]">
+            <ShieldCheck className="h-4 w-4 text-[var(--glass-text-secondary)]" />
+          </div>
           <div className="flex items-center gap-2 text-sm">
-            <span className="text-muted-foreground">Passport:</span>
+            <span className="text-[var(--glass-text-tertiary)]">Passport:</span>
             {passenger.passportOnFile ? (
-              <Badge variant="outline" className="border-green-500/30 text-green-400 text-[10px]">
+              <span className="rounded-full bg-[var(--glass-accent-green-light)] px-2 py-0.5 text-[11px] font-medium text-[var(--glass-accent-green)]">
                 On file
-              </Badge>
+              </span>
             ) : (
-              <Badge variant="outline" className="border-yellow-500/30 text-yellow-400 text-[10px]">
+              <span className="rounded-full bg-[var(--glass-accent-orange)]/10 px-2 py-0.5 text-[11px] font-medium text-[var(--glass-accent-orange)]">
                 Not added
-              </Badge>
+              </span>
             )}
           </div>
         </div>
 
-        <Separator className="bg-white/5" />
+        {/* Separator */}
+        <div className="border-t border-[var(--glass-border)]" />
 
-        {/* Price */}
+        {/* Price breakdown */}
         <div className="flex items-start gap-3">
-          <CreditCard className="mt-0.5 h-4 w-4 text-muted-foreground" />
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--glass-subtle)]">
+            <CreditCard className="h-4 w-4 text-[var(--glass-text-secondary)]" />
+          </div>
           <div className="w-full space-y-1.5 text-sm">
             {summary.totalPrice.serviceFee ? (
               <>
                 <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">Flight fare</span>
-                  <span>
-                    ${(summary.totalPrice.amount - summary.totalPrice.serviceFee).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}{" "}
+                  <span className="text-[var(--glass-text-tertiary)]">Flight fare</span>
+                  <span className="text-[var(--glass-text-primary)]">
+                    $
+                    {(
+                      summary.totalPrice.amount - summary.totalPrice.serviceFee
+                    ).toLocaleString(undefined, {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })}{" "}
                     {summary.totalPrice.currency}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">Service fee</span>
-                  <span>
-                    ${summary.totalPrice.serviceFee.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}{" "}
+                  <span className="text-[var(--glass-text-tertiary)]">Service fee</span>
+                  <span className="text-[var(--glass-text-primary)]">
+                    $
+                    {summary.totalPrice.serviceFee.toLocaleString(undefined, {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })}{" "}
                     {summary.totalPrice.currency}
                   </span>
                 </div>
-                <Separator className="bg-white/5" />
+                <div className="border-t border-[var(--glass-border)]" />
                 <div className="flex items-center justify-between">
-                  <span className="font-medium">Total</span>
-                  <span className="text-lg font-bold">
-                    ${summary.totalPrice.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}{" "}
+                  <span className="font-medium text-[var(--glass-text-primary)]">
+                    Total
+                  </span>
+                  <span className="text-lg font-bold text-[var(--glass-text-primary)]">
+                    $
+                    {summary.totalPrice.amount.toLocaleString(undefined, {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })}{" "}
                     {summary.totalPrice.currency}
                   </span>
                 </div>
               </>
             ) : (
               <div className="flex items-center justify-between">
-                <span className="text-muted-foreground">Total</span>
-                <span className="text-lg font-bold">
+                <span className="text-[var(--glass-text-tertiary)]">Total</span>
+                <span className="text-lg font-bold text-[var(--glass-text-primary)]">
                   ${summary.totalPrice.amount.toLocaleString()}{" "}
                   {summary.totalPrice.currency}
                 </span>
@@ -171,10 +219,10 @@ export function BookingSummaryCard({
           </div>
         </div>
 
-        {/* Payment selector (shown after clicking Confirm & Pay) */}
+        {/* Payment selector */}
         {showPayment && onConfirm && (
           <>
-            <Separator className="bg-white/5" />
+            <div className="border-t border-[var(--glass-border)]" />
             <PaymentSelector
               amount={summary.totalPrice.amount}
               currency={summary.totalPrice.currency}
@@ -184,14 +232,28 @@ export function BookingSummaryCard({
             />
           </>
         )}
-      </CardContent>
+      </div>
+
+      {/* Confirm & Pay button */}
       {onConfirm && !showPayment && (
-        <CardFooter>
-          <Button className="w-full" onClick={() => setShowPayment(true)}>
+        <div className="border-t border-[var(--glass-border)] px-5 py-4">
+          <button
+            onClick={() => setShowPayment(true)}
+            className={cn(
+              "flex w-full items-center justify-center",
+              "rounded-[var(--glass-radius-button)] px-4 py-2.5",
+              "text-sm font-semibold text-white",
+              "bg-[var(--glass-accent-blue)]",
+              "shadow-[0_1px_2px_rgba(0,0,0,0.1),0_2px_8px_rgba(0,113,227,0.25)]",
+              "transition-all duration-200 ease-spring",
+              "hover:shadow-[0_2px_8px_rgba(0,0,0,0.1),0_4px_16px_rgba(0,113,227,0.3)]",
+              "active:scale-[0.97]"
+            )}
+          >
             Confirm & Pay
-          </Button>
-        </CardFooter>
+          </button>
+        </div>
       )}
-    </Card>
+    </div>
   );
 }

@@ -4,7 +4,6 @@ import { useEffect, useRef } from "react";
 import type { ChatMessage } from "@/types/chat";
 import { ChatBubble } from "./chat-bubble";
 import { TypingIndicator } from "./typing-indicator";
-import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface ChatMessagesProps {
   messages: ChatMessage[];
@@ -20,18 +19,26 @@ export function ChatMessages({
   onConfirmBooking,
 }: ChatMessagesProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isLoading]);
 
   return (
-    <ScrollArea className="flex-1" role="log" aria-label="Chat messages" aria-live="polite">
+    <div
+      ref={scrollRef}
+      className="flex-1 overflow-y-auto overscroll-contain [-webkit-overflow-scrolling:touch]"
+      role="log"
+      aria-label="Chat messages"
+      aria-live="polite"
+    >
       <div className="mx-auto max-w-3xl py-4">
-        {messages.map((msg) => (
+        {messages.map((msg, i) => (
           <ChatBubble
             key={msg.id}
             message={msg}
+            index={i}
             onSelectFlight={onSelectFlight}
             onConfirmBooking={onConfirmBooking}
           />
@@ -39,6 +46,6 @@ export function ChatMessages({
         {isLoading && <TypingIndicator />}
         <div ref={bottomRef} />
       </div>
-    </ScrollArea>
+    </div>
   );
 }
