@@ -1,11 +1,15 @@
 "use client";
 
 import { cn } from "@/lib/utils";
+import { GlassCard } from "@/components/ui/glass";
+
+type SlideDirection = "forward" | "back";
 
 interface StepWrapperProps {
   title: string;
   subtitle: string;
   children: React.ReactNode;
+  direction?: SlideDirection;
   className?: string;
 }
 
@@ -13,35 +17,34 @@ export function StepWrapper({
   title,
   subtitle,
   children,
+  direction = "forward",
   className,
 }: StepWrapperProps) {
   return (
-    <div className={cn("animate-slide-in-right", className)}>
-      {/* Avatar + chat bubble */}
-      <div className="mb-6 flex items-start gap-3">
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white">
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="black"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z" />
-          </svg>
+    <div
+      className={cn(
+        "flex min-h-[100dvh] flex-col items-center justify-center px-4 py-20",
+        direction === "forward"
+          ? "animate-step-slide-left"
+          : "animate-step-slide-right",
+        className
+      )}
+    >
+      <div className="w-full max-w-lg">
+        {/* Title block */}
+        <div className="mb-8 text-center">
+          <h2 className="text-3xl font-bold tracking-tight text-[var(--glass-text-primary)] sm:text-4xl">
+            {title}
+          </h2>
+          <p className="mt-2 text-base text-[var(--glass-text-secondary)]">
+            {subtitle}
+          </p>
         </div>
-        <div>
-          <h2 className="text-lg font-semibold text-white">{title}</h2>
-          <p className="text-sm text-white/60">{subtitle}</p>
-        </div>
-      </div>
 
-      {/* Glass card */}
-      <div className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm">
-        {children}
+        {/* Glass card container */}
+        <GlassCard tier="standard" padding="lg" hover={false}>
+          {children}
+        </GlassCard>
       </div>
     </div>
   );

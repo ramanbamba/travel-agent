@@ -7,8 +7,7 @@ import {
   type PersonalInfoValues,
 } from "@/lib/validations/onboarding";
 import { StepWrapper } from "./step-wrapper";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { GlassButton, GlassInput } from "@/components/ui/glass";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -22,12 +21,14 @@ interface StepPersonalInfoProps {
   defaultValues: Partial<PersonalInfoValues>;
   onNext: (data: PersonalInfoValues) => void;
   isSaving: boolean;
+  direction?: "forward" | "back";
 }
 
 export function StepPersonalInfo({
   defaultValues,
   onNext,
   isSaving,
+  direction = "forward",
 }: StepPersonalInfoProps) {
   const {
     register,
@@ -52,72 +53,76 @@ export function StepPersonalInfo({
     <StepWrapper
       title="Let's get to know you"
       subtitle="We'll use this information for your flight bookings."
+      direction={direction}
     >
       <form onSubmit={handleSubmit(onNext)} className="space-y-4">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <div className="space-y-2">
-            <Label htmlFor="first_name" className="text-white/80">
+            <Label htmlFor="first_name" className="text-[var(--glass-text-secondary)]">
               First name *
             </Label>
-            <Input
+            <GlassInput
               id="first_name"
               placeholder="John"
-              className="border-white/10 bg-white/5 text-white placeholder:text-white/30"
+              error={!!errors.first_name}
+              className="py-3 text-base"
               {...register("first_name")}
             />
             {errors.first_name && (
-              <p className="text-xs text-red-400">{errors.first_name.message}</p>
+              <p className="text-xs text-[var(--glass-accent-red)]">{errors.first_name.message}</p>
             )}
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="middle_name" className="text-white/80">
+            <Label htmlFor="middle_name" className="text-[var(--glass-text-secondary)]">
               Middle name
             </Label>
-            <Input
+            <GlassInput
               id="middle_name"
               placeholder="Michael"
-              className="border-white/10 bg-white/5 text-white placeholder:text-white/30"
+              className="py-3 text-base"
               {...register("middle_name")}
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="last_name" className="text-white/80">
+            <Label htmlFor="last_name" className="text-[var(--glass-text-secondary)]">
               Last name *
             </Label>
-            <Input
+            <GlassInput
               id="last_name"
               placeholder="Smith"
-              className="border-white/10 bg-white/5 text-white placeholder:text-white/30"
+              error={!!errors.last_name}
+              className="py-3 text-base"
               {...register("last_name")}
             />
             {errors.last_name && (
-              <p className="text-xs text-red-400">{errors.last_name.message}</p>
+              <p className="text-xs text-[var(--glass-accent-red)]">{errors.last_name.message}</p>
             )}
           </div>
         </div>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="space-y-2">
-            <Label htmlFor="date_of_birth" className="text-white/80">
+            <Label htmlFor="date_of_birth" className="text-[var(--glass-text-secondary)]">
               Date of birth *
             </Label>
-            <Input
+            <GlassInput
               id="date_of_birth"
               type="date"
-              className="border-white/10 bg-white/5 text-white placeholder:text-white/30"
+              error={!!errors.date_of_birth}
+              className="py-3 text-base"
               {...register("date_of_birth")}
             />
             {errors.date_of_birth && (
-              <p className="text-xs text-red-400">
+              <p className="text-xs text-[var(--glass-accent-red)]">
                 {errors.date_of_birth.message}
               </p>
             )}
           </div>
 
           <div className="space-y-2">
-            <Label className="text-white/80">Gender *</Label>
+            <Label className="text-[var(--glass-text-secondary)]">Gender *</Label>
             <Select
               value={genderValue}
               onValueChange={(val) =>
@@ -126,7 +131,7 @@ export function StepPersonalInfo({
                 })
               }
             >
-              <SelectTrigger className="border-white/10 bg-white/5 text-white">
+              <SelectTrigger className="h-auto rounded-[var(--glass-radius-input)] border-[var(--glass-border)] bg-[var(--glass-subtle)] py-3 text-base text-[var(--glass-text-primary)]">
                 <SelectValue placeholder="Select gender" />
               </SelectTrigger>
               <SelectContent>
@@ -136,15 +141,15 @@ export function StepPersonalInfo({
               </SelectContent>
             </Select>
             {errors.gender && (
-              <p className="text-xs text-red-400">{errors.gender.message}</p>
+              <p className="text-xs text-[var(--glass-accent-red)]">{errors.gender.message}</p>
             )}
           </div>
         </div>
 
         <div className="flex justify-end pt-4">
-          <Button type="submit" disabled={isSaving} className="min-w-[120px]">
+          <GlassButton type="submit" disabled={isSaving} size="lg">
             {isSaving ? "Saving..." : "Continue"}
-          </Button>
+          </GlassButton>
         </div>
       </form>
     </StepWrapper>

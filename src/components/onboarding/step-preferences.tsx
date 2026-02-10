@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -7,7 +8,7 @@ import {
   type PreferencesValues,
 } from "@/lib/validations/onboarding";
 import { StepWrapper } from "./step-wrapper";
-import { Button } from "@/components/ui/button";
+import { GlassButton } from "@/components/ui/glass";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -41,6 +42,7 @@ interface StepPreferencesProps {
   onNext: (data: PreferencesValues) => void;
   onBack: () => void;
   isSaving: boolean;
+  direction?: "forward" | "back";
 }
 
 export function StepPreferences({
@@ -48,7 +50,11 @@ export function StepPreferences({
   onNext,
   onBack,
   isSaving,
+  direction = "forward",
 }: StepPreferencesProps) {
+  const formRef = useRef<HTMLFormElement>(null);
+  const autoAdvanceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const {
     handleSubmit,
     watch,
@@ -67,6 +73,30 @@ export function StepPreferences({
   const mealValue = watch("meal_preference");
   const assistanceValues = watch("special_assistance") ?? [];
 
+  // Auto-advance after seat selection if meal is already selected
+  useEffect(() => {
+    if (autoAdvanceRef.current) {
+      clearTimeout(autoAdvanceRef.current);
+    }
+
+    if (
+      seatValue &&
+      seatValue !== "no_preference" &&
+      mealValue &&
+      mealValue !== "no_preference"
+    ) {
+      autoAdvanceRef.current = setTimeout(() => {
+        formRef.current?.requestSubmit();
+      }, 500);
+    }
+
+    return () => {
+      if (autoAdvanceRef.current) {
+        clearTimeout(autoAdvanceRef.current);
+      }
+    };
+  }, [seatValue, mealValue]);
+
   const toggleAssistance = (id: string) => {
     const current = assistanceValues;
     const updated = current.includes(id)
@@ -79,11 +109,12 @@ export function StepPreferences({
     <StepWrapper
       title="Your travel preferences"
       subtitle="We'll apply these defaults to every booking. You can always change them later."
+      direction={direction}
     >
-      <form onSubmit={handleSubmit(onNext)} className="space-y-6">
+      <form ref={formRef} onSubmit={handleSubmit(onNext)} className="space-y-6">
         {/* Seat preference */}
         <div className="space-y-3">
-          <Label className="text-white/80">Seat preference</Label>
+          <Label className="text-[var(--glass-text-secondary)]">Seat preference</Label>
           <SeatSelector
             value={seatValue}
             onChange={(val) =>
@@ -91,7 +122,7 @@ export function StepPreferences({
             }
           />
           {errors.seat_preference && (
-            <p className="text-xs text-red-400">
+            <p className="text-xs text-[var(--glass-accent-red)]">
               {errors.seat_preference.message}
             </p>
           )}
@@ -99,7 +130,7 @@ export function StepPreferences({
 
         {/* Meal preference */}
         <div className="space-y-2">
-          <Label className="text-white/80">Meal preference</Label>
+          <Label className="text-[var(--glass-text-secondary)]">Meal preference</Label>
           <Select
             value={mealValue}
             onValueChange={(val) =>
@@ -110,7 +141,7 @@ export function StepPreferences({
               )
             }
           >
-            <SelectTrigger className="border-white/10 bg-white/5 text-white">
+            <SelectTrigger className="h-auto rounded-[var(--glass-radius-input)] border-[var(--glass-border)] bg-[var(--glass-subtle)] py-3 text-base text-[var(--glass-text-primary)]">
               <SelectValue placeholder="Select meal preference" />
             </SelectTrigger>
             <SelectContent>
@@ -122,7 +153,7 @@ export function StepPreferences({
             </SelectContent>
           </Select>
           {errors.meal_preference && (
-            <p className="text-xs text-red-400">
+            <p className="text-xs text-[var(--glass-accent-red)]">
               {errors.meal_preference.message}
             </p>
           )}
@@ -130,35 +161,30 @@ export function StepPreferences({
 
         {/* Special assistance */}
         <div className="space-y-3">
-          <Label className="text-white/80">Special assistance</Label>
+          <Label className="text-[var(--glass-text-secondary)]">Special assistance</Label>
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             {ASSISTANCE_OPTIONS.map((opt) => (
               <label
                 key={opt.id}
-                className="flex items-center gap-3 rounded-lg border border-white/10 px-3 py-2.5 cursor-pointer hover:border-white/20 transition-colors"
+                className="flex cursor-pointer items-center gap-3 rounded-[var(--glass-radius-input)] border border-[var(--glass-border)] bg-[var(--glass-subtle)] px-3 py-2.5 transition-colors hover:bg-[var(--glass-standard)]"
               >
                 <Checkbox
                   checked={assistanceValues.includes(opt.id)}
                   onCheckedChange={() => toggleAssistance(opt.id)}
                 />
-                <span className="text-sm text-white/70">{opt.label}</span>
+                <span className="text-sm text-[var(--glass-text-secondary)]">{opt.label}</span>
               </label>
             ))}
           </div>
         </div>
 
         <div className="flex justify-between pt-4">
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={onBack}
-            className="text-white/60 hover:text-white"
-          >
+          <GlassButton type="button" variant="ghost" onClick={onBack} size="lg">
             Back
-          </Button>
-          <Button type="submit" disabled={isSaving} className="min-w-[120px]">
+          </GlassButton>
+          <GlassButton type="submit" disabled={isSaving} size="lg">
             {isSaving ? "Saving..." : "Continue"}
-          </Button>
+          </GlassButton>
         </div>
       </form>
     </StepWrapper>

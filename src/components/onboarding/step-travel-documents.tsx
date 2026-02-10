@@ -7,8 +7,7 @@ import {
   type TravelDocumentsValues,
 } from "@/lib/validations/onboarding";
 import { StepWrapper } from "./step-wrapper";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { GlassButton, GlassInput, GlassCard } from "@/components/ui/glass";
 import { Label } from "@/components/ui/label";
 import { Shield } from "lucide-react";
 
@@ -17,6 +16,7 @@ interface StepTravelDocumentsProps {
   onNext: (data: TravelDocumentsValues) => void;
   onBack: () => void;
   isSaving: boolean;
+  direction?: "forward" | "back";
 }
 
 export function StepTravelDocuments({
@@ -24,6 +24,7 @@ export function StepTravelDocuments({
   onNext,
   onBack,
   isSaving,
+  direction = "forward",
 }: StepTravelDocumentsProps) {
   const {
     register,
@@ -42,25 +43,29 @@ export function StepTravelDocuments({
     <StepWrapper
       title="Travel documents"
       subtitle="Required for booking flights. Your data is encrypted and secure."
+      direction={direction}
     >
       <form onSubmit={handleSubmit(onNext)} className="space-y-4">
         {/* Security trust banner */}
-        <div className="flex items-center gap-2 rounded-lg border border-emerald-500/20 bg-emerald-500/5 px-3 py-2 text-sm text-emerald-400">
-          <Shield className="h-4 w-4 shrink-0" />
-          <span>
-            Your passport data is encrypted with AES-256 and stored in a
-            secure vault.
-          </span>
-        </div>
+        <GlassCard tier="subtle" hover={false} padding="sm">
+          <div className="flex items-center gap-2 text-sm text-[var(--glass-accent-green)]">
+            <Shield className="h-4 w-4 shrink-0" />
+            <span>
+              Your passport data is encrypted with AES-256 and stored in a
+              secure vault.
+            </span>
+          </div>
+        </GlassCard>
 
         <div className="space-y-2">
-          <Label htmlFor="passport_number" className="text-white/80">
+          <Label htmlFor="passport_number" className="text-[var(--glass-text-secondary)]">
             Passport number *
           </Label>
-          <Input
+          <GlassInput
             id="passport_number"
             placeholder="AB1234567"
-            className="border-white/10 bg-white/5 text-white uppercase placeholder:text-white/30 placeholder:normal-case"
+            error={!!errors.passport_number}
+            className="py-3 text-base uppercase placeholder:normal-case"
             {...register("passport_number", {
               onChange: (e) => {
                 e.target.value = e.target.value.toUpperCase();
@@ -68,7 +73,7 @@ export function StepTravelDocuments({
             })}
           />
           {errors.passport_number && (
-            <p className="text-xs text-red-400">
+            <p className="text-xs text-[var(--glass-accent-red)]">
               {errors.passport_number.message}
             </p>
           )}
@@ -76,13 +81,14 @@ export function StepTravelDocuments({
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="space-y-2">
-            <Label htmlFor="ktn" className="text-white/80">
+            <Label htmlFor="ktn" className="text-[var(--glass-text-secondary)]">
               Known Traveller Number (KTN)
             </Label>
-            <Input
+            <GlassInput
               id="ktn"
               placeholder="Optional"
-              className="border-white/10 bg-white/5 text-white uppercase placeholder:text-white/30 placeholder:normal-case"
+              error={!!errors.ktn}
+              className="py-3 text-base uppercase placeholder:normal-case"
               {...register("ktn", {
                 onChange: (e) => {
                   e.target.value = e.target.value.toUpperCase();
@@ -90,18 +96,19 @@ export function StepTravelDocuments({
               })}
             />
             {errors.ktn && (
-              <p className="text-xs text-red-400">{errors.ktn.message}</p>
+              <p className="text-xs text-[var(--glass-accent-red)]">{errors.ktn.message}</p>
             )}
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="redress_number" className="text-white/80">
+            <Label htmlFor="redress_number" className="text-[var(--glass-text-secondary)]">
               Redress number
             </Label>
-            <Input
+            <GlassInput
               id="redress_number"
               placeholder="Optional"
-              className="border-white/10 bg-white/5 text-white uppercase placeholder:text-white/30 placeholder:normal-case"
+              error={!!errors.redress_number}
+              className="py-3 text-base uppercase placeholder:normal-case"
               {...register("redress_number", {
                 onChange: (e) => {
                   e.target.value = e.target.value.toUpperCase();
@@ -109,7 +116,7 @@ export function StepTravelDocuments({
               })}
             />
             {errors.redress_number && (
-              <p className="text-xs text-red-400">
+              <p className="text-xs text-[var(--glass-accent-red)]">
                 {errors.redress_number.message}
               </p>
             )}
@@ -117,17 +124,12 @@ export function StepTravelDocuments({
         </div>
 
         <div className="flex justify-between pt-4">
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={onBack}
-            className="text-white/60 hover:text-white"
-          >
+          <GlassButton type="button" variant="ghost" onClick={onBack} size="lg">
             Back
-          </Button>
-          <Button type="submit" disabled={isSaving} className="min-w-[120px]">
+          </GlassButton>
+          <GlassButton type="submit" disabled={isSaving} size="lg">
             {isSaving ? "Saving..." : "Continue"}
-          </Button>
+          </GlassButton>
         </div>
       </form>
     </StepWrapper>

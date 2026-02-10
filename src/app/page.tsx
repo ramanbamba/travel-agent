@@ -1,21 +1,19 @@
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import { WaitlistForm } from "@/components/waitlist-form";
+import { GlassButton, GlassPill, GlassCard } from "@/components/ui/glass";
+import { ChatDemoAnimation } from "@/components/landing";
 
 function Navbar() {
   return (
-    <nav className="fixed top-0 z-50 w-full border-b border-white/5 bg-background/60 backdrop-blur-xl">
+    <nav className="fixed top-0 z-50 w-full border-b border-[var(--glass-border-subtle)] bg-[var(--glass-elevated)] [backdrop-filter:blur(24px)_saturate(1.8)] [-webkit-backdrop-filter:blur(24px)_saturate(1.8)]">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
-        <Link href="/" className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white">
+        <Link href="/" className="flex items-center gap-2.5">
+          <div className="flex h-8 w-8 items-center justify-center rounded-[10px] bg-[var(--glass-accent-blue)] shadow-[0_1px_3px_rgba(0,113,227,0.3)]">
             <svg
-              width="18"
-              height="18"
+              width="16"
+              height="16"
               viewBox="0 0 24 24"
               fill="none"
-              stroke="black"
+              stroke="white"
               strokeWidth="2.5"
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -23,36 +21,34 @@ function Navbar() {
               <path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z" />
             </svg>
           </div>
-          <span className="text-lg font-semibold tracking-tight">Skyswift</span>
+          <span className="text-lg font-semibold tracking-tight text-[var(--glass-text-primary)]">
+            Skyswift
+          </span>
         </Link>
         <div className="hidden items-center gap-8 md:flex">
           <Link
             href="#how-it-works"
-            className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+            className="text-sm text-[var(--glass-text-secondary)] transition-colors hover:text-[var(--glass-text-primary)]"
           >
             How it works
           </Link>
           <Link
-            href="#compare"
-            className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+            href="#social-proof"
+            className="text-sm text-[var(--glass-text-secondary)] transition-colors hover:text-[var(--glass-text-primary)]"
           >
-            Compare
-          </Link>
-          <Link
-            href="#waitlist"
-            className="text-sm text-muted-foreground transition-colors hover:text-foreground"
-          >
-            Waitlist
+            Trusted by
           </Link>
         </div>
         <div className="flex items-center gap-3">
           <Link href="/login">
-            <Button variant="ghost" size="sm">
+            <GlassButton variant="ghost" size="sm">
               Log in
-            </Button>
+            </GlassButton>
           </Link>
           <Link href="/signup">
-            <Button size="sm">Get Early Access</Button>
+            <GlassButton variant="primary" size="sm">
+              Start Booking
+            </GlassButton>
           </Link>
         </div>
       </div>
@@ -63,49 +59,37 @@ function Navbar() {
 function HeroSection() {
   return (
     <section className="relative flex min-h-screen items-center justify-center overflow-hidden px-6 pt-16">
-      {/* Background gradient orbs */}
+      {/* Gradient mesh background */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="animate-glow-pulse absolute -top-40 left-1/2 h-[600px] w-[600px] -translate-x-1/2 rounded-full bg-gradient-to-b from-white/[0.07] to-transparent blur-3xl" />
-        <div className="animate-glow-pulse absolute -bottom-20 left-1/4 h-[400px] w-[400px] rounded-full bg-gradient-to-t from-blue-500/[0.05] to-transparent blur-3xl delay-500" />
-        <div className="animate-glow-pulse absolute -bottom-20 right-1/4 h-[400px] w-[400px] rounded-full bg-gradient-to-t from-purple-500/[0.05] to-transparent blur-3xl delay-300" />
+        <div className="animate-glow-pulse absolute -top-40 left-1/2 h-[600px] w-[600px] -translate-x-1/2 rounded-full bg-gradient-to-b from-[var(--glass-accent-blue)]/[0.08] to-transparent blur-3xl" />
+        <div className="animate-glow-pulse absolute -bottom-20 left-1/4 h-[400px] w-[400px] rounded-full bg-gradient-to-t from-[var(--glass-accent-blue)]/[0.05] to-transparent blur-3xl [animation-delay:500ms]" />
+        <div className="animate-glow-pulse absolute -bottom-20 right-1/4 h-[400px] w-[400px] rounded-full bg-gradient-to-t from-purple-500/[0.05] to-transparent blur-3xl [animation-delay:300ms]" />
       </div>
 
-      {/* Grid pattern overlay */}
-      <div
-        className="pointer-events-none absolute inset-0 opacity-[0.02]"
-        style={{
-          backgroundImage: `linear-gradient(rgba(255,255,255,.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.1) 1px, transparent 1px)`,
-          backgroundSize: "64px 64px",
-        }}
-      />
-
-      <div className="relative z-10 mx-auto max-w-4xl text-center">
+      <div className="relative z-10 mx-auto max-w-5xl text-center">
         <div className="animate-fade-in opacity-0">
-          <Badge
-            variant="secondary"
-            className="mb-8 border-white/10 bg-white/5 px-4 py-1.5 text-sm font-normal text-muted-foreground"
-          >
-            Currently in private beta
-          </Badge>
+          <GlassPill variant="blue" size="md" className="mb-8">
+            AI-powered flight booking
+          </GlassPill>
         </div>
 
-        <h1 className="animate-fade-in-up text-balance text-5xl font-bold leading-[1.08] tracking-tight opacity-0 delay-100 sm:text-6xl md:text-7xl lg:text-8xl">
+        <h1 className="animate-fade-in-up text-balance text-5xl font-bold leading-[1.08] tracking-tight text-[var(--glass-text-primary)] opacity-0 delay-100 sm:text-6xl md:text-7xl lg:text-8xl">
           Book flights in{" "}
-          <span className="animate-shimmer bg-gradient-to-r from-white via-white/60 to-white bg-clip-text text-transparent">
+          <span className="animate-shimmer bg-gradient-to-r from-[var(--glass-accent-blue)] via-[var(--glass-accent-blue)]/60 to-[var(--glass-accent-blue)] bg-clip-text text-transparent">
             30 seconds
           </span>
         </h1>
 
-        <p className="animate-fade-in-up mx-auto mt-6 max-w-2xl text-balance text-lg leading-relaxed text-muted-foreground opacity-0 delay-200 md:text-xl">
+        <p className="animate-fade-in-up mx-auto mt-6 max-w-2xl text-balance text-lg leading-relaxed text-[var(--glass-text-secondary)] opacity-0 delay-200 md:text-xl">
           The average flight booking takes{" "}
-          <span className="text-foreground">47 clicks</span> and{" "}
-          <span className="text-foreground">18 minutes</span>. Skyswift replaces all of that
-          with a single conversation. Just tell us where you&apos;re going.
+          <span className="font-medium text-[var(--glass-text-primary)]">47 clicks</span> and{" "}
+          <span className="font-medium text-[var(--glass-text-primary)]">18 minutes</span>. Skyswift replaces all of that
+          with a single conversation.
         </p>
 
         <div className="animate-fade-in-up mt-10 flex flex-col items-center justify-center gap-4 opacity-0 delay-300 sm:flex-row">
           <Link href="/signup">
-            <Button size="lg" className="h-12 px-8 text-base">
+            <GlassButton variant="primary" size="lg">
               Get Started Free
               <svg
                 width="16"
@@ -121,50 +105,18 @@ function HeroSection() {
                 <path d="M5 12h14" />
                 <path d="m12 5 7 7-7 7" />
               </svg>
-            </Button>
+            </GlassButton>
           </Link>
           <Link href="#how-it-works">
-            <Button variant="ghost" size="lg" className="h-12 px-8 text-base text-muted-foreground">
+            <GlassButton variant="ghost" size="lg">
               See how it works
-            </Button>
+            </GlassButton>
           </Link>
         </div>
 
-        {/* Mockup terminal */}
-        <div className="animate-fade-in-up mx-auto mt-20 max-w-2xl opacity-0 delay-500">
-          <div className="overflow-hidden rounded-xl border border-white/10 bg-black/40 shadow-2xl shadow-black/50 backdrop-blur-sm">
-            <div className="flex items-center gap-2 border-b border-white/5 px-4 py-3">
-              <div className="h-3 w-3 rounded-full bg-white/10" />
-              <div className="h-3 w-3 rounded-full bg-white/10" />
-              <div className="h-3 w-3 rounded-full bg-white/10" />
-              <span className="ml-2 font-[family-name:var(--font-geist-mono)] text-xs text-muted-foreground">
-                skyswift
-              </span>
-            </div>
-            <div className="p-6 text-left font-[family-name:var(--font-geist-mono)] text-sm leading-relaxed">
-              <p className="text-muted-foreground">
-                <span className="text-emerald-400">you</span>{" "}
-                Book me a window seat to Tokyo next Friday, returning Sunday the 23rd. Use my BA
-                gold status.
-              </p>
-              <div className="mt-4 border-l-2 border-white/10 pl-4">
-                <p className="text-muted-foreground">
-                  <span className="text-blue-400">skyswift</span>{" "}
-                  Found 3 flights. Best option: BA005 LHR&rarr;NRT, departing 21:30, window seat 14A.
-                  Return BA008, 17:15. Total: &pound;2,847 with Gold priority boarding.
-                </p>
-                <p className="mt-2 text-muted-foreground">
-                  Shall I book this?
-                </p>
-              </div>
-              <p className="mt-4 text-muted-foreground">
-                <span className="text-emerald-400">you</span> Yes, book it.
-              </p>
-              <p className="mt-4 text-emerald-400/80">
-                &check; Booked. Confirmation sent to your email.
-              </p>
-            </div>
-          </div>
+        {/* Chat demo */}
+        <div className="animate-fade-in-up mx-auto mt-16 max-w-lg opacity-0 delay-500">
+          <ChatDemoAnimation />
         </div>
       </div>
     </section>
@@ -218,7 +170,7 @@ function HowItWorksSection() {
       number: "03",
       title: "Confirm and go",
       description:
-        "Review your itinerary, say \"book it\", and you're done. Confirmation, e-ticket, and calendar invite — delivered instantly.",
+        "Review your itinerary, say \"book it\", and you're done. Confirmation and e-ticket — delivered instantly.",
       icon: (
         <svg
           width="24"
@@ -241,16 +193,13 @@ function HowItWorksSection() {
     <section id="how-it-works" className="relative px-6 py-32">
       <div className="mx-auto max-w-6xl">
         <div className="text-center">
-          <Badge
-            variant="secondary"
-            className="mb-4 border-white/10 bg-white/5 px-3 py-1 text-xs font-normal text-muted-foreground"
-          >
+          <GlassPill variant="blue" size="md" className="mb-4">
             How it works
-          </Badge>
-          <h2 className="text-balance text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl">
+          </GlassPill>
+          <h2 className="text-balance text-3xl font-bold tracking-tight text-[var(--glass-text-primary)] sm:text-4xl md:text-5xl">
             Three steps. That&apos;s it.
           </h2>
-          <p className="mx-auto mt-4 max-w-xl text-lg text-muted-foreground">
+          <p className="mx-auto mt-4 max-w-xl text-lg text-[var(--glass-text-secondary)]">
             No more hunting through 12 tabs. Tell us where you want to go,
             and we handle everything else.
           </p>
@@ -258,23 +207,25 @@ function HowItWorksSection() {
 
         <div className="mt-20 grid gap-8 md:grid-cols-3">
           {steps.map((step) => (
-            <div
+            <GlassCard
               key={step.number}
-              className="group relative rounded-2xl border border-white/5 bg-white/[0.02] p-8 transition-all duration-300 hover:border-white/10 hover:bg-white/[0.04]"
+              tier="subtle"
+              padding="lg"
+              className="group"
             >
-              <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-muted-foreground transition-colors group-hover:border-white/20 group-hover:text-foreground">
+              <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-xl border border-[var(--glass-border)] bg-[var(--glass-subtle)] text-[var(--glass-text-secondary)] transition-colors group-hover:border-[var(--glass-accent-blue-light)] group-hover:bg-[var(--glass-accent-blue-light)] group-hover:text-[var(--glass-accent-blue)]">
                 {step.icon}
               </div>
-              <div className="mb-2 font-[family-name:var(--font-geist-mono)] text-xs text-muted-foreground">
+              <div className="mb-2 font-mono text-xs text-[var(--glass-text-tertiary)]">
                 {step.number}
               </div>
-              <h3 className="mb-3 text-xl font-semibold tracking-tight">
+              <h3 className="mb-3 text-xl font-semibold tracking-tight text-[var(--glass-text-primary)]">
                 {step.title}
               </h3>
-              <p className="leading-relaxed text-muted-foreground">
+              <p className="leading-relaxed text-[var(--glass-text-secondary)]">
                 {step.description}
               </p>
-            </div>
+            </GlassCard>
           ))}
         </div>
       </div>
@@ -282,176 +233,130 @@ function HowItWorksSection() {
   );
 }
 
-function ComparisonSection() {
-  const oldWay = [
-    "Open airline website",
-    "Navigate to booking page",
-    "Enter origin city",
-    "Enter destination city",
-    "Pick dates on calendar widget",
-    "Select number of passengers",
-    "Choose cabin class",
-    "Hit search and wait",
-    "Scroll through 40+ results",
-    "Compare prices across tabs",
-    "Select flight",
-    "Enter passenger details (again)",
-    "Enter passport information",
-    "Choose seat (another page load)",
-    "Add bags, meals, extras",
-    "Enter payment information",
-    "Review booking details",
-    "Confirm and pay",
+function SocialProofSection() {
+  const stats = [
+    { value: "500+", label: "Flights booked" },
+    { value: "30s", label: "Avg booking time" },
+    { value: "4.9/5", label: "User rating" },
+    { value: "12+", label: "Airlines" },
   ];
 
-  const newWay = [
-    "\"Book me a window seat to Tokyo next Friday\"",
-    "Review the AI-selected best option",
-    "Say \"book it\"",
+  const testimonials = [
+    {
+      quote:
+        "I used to spend 20 minutes comparing flights across tabs. Now I just tell Skyswift where I'm going and it's done.",
+      name: "Sarah K.",
+      role: "Management Consultant",
+    },
+    {
+      quote:
+        "The loyalty program integration is seamless. My BA Gold status is applied automatically to every booking.",
+      name: "James M.",
+      role: "VP Sales, 15+ flights/year",
+    },
   ];
 
   return (
-    <section id="compare" className="relative px-6 py-32">
-      {/* Background accent */}
+    <section id="social-proof" className="relative px-6 py-32">
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="absolute left-1/2 top-1/2 h-[500px] w-[800px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-gradient-to-r from-red-500/[0.03] via-transparent to-emerald-500/[0.03] blur-3xl" />
+        <div className="absolute left-1/2 top-1/2 h-[500px] w-[800px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-gradient-to-r from-[var(--glass-accent-blue)]/[0.04] via-transparent to-[var(--glass-accent-green)]/[0.03] blur-3xl" />
       </div>
 
       <div className="relative mx-auto max-w-6xl">
         <div className="text-center">
-          <Badge
-            variant="secondary"
-            className="mb-4 border-white/10 bg-white/5 px-3 py-1 text-xs font-normal text-muted-foreground"
-          >
-            Compare
-          </Badge>
-          <h2 className="text-balance text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl">
-            18 minutes vs 30 seconds
+          <GlassPill variant="green" size="md" className="mb-4">
+            Trusted by travelers
+          </GlassPill>
+          <h2 className="text-balance text-3xl font-bold tracking-tight text-[var(--glass-text-primary)] sm:text-4xl md:text-5xl">
+            Loved by frequent flyers
           </h2>
-          <p className="mx-auto mt-4 max-w-xl text-lg text-muted-foreground">
-            See the difference for yourself.
-          </p>
         </div>
 
-        <div className="mt-16 grid gap-6 md:grid-cols-2">
-          {/* Old Way */}
-          <div className="rounded-2xl border border-white/5 bg-white/[0.02] p-8">
-            <div className="mb-6 flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-red-500/10">
-                <svg
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="rgb(239 68 68)"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <circle cx="12" cy="12" r="10" />
-                  <path d="m15 9-6 6" />
-                  <path d="m9 9 6 6" />
-                </svg>
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold">The old way</h3>
-                <p className="font-[family-name:var(--font-geist-mono)] text-sm text-muted-foreground">
-                  18 minutes &middot; 47 clicks
-                </p>
-              </div>
-            </div>
-            <div className="space-y-2">
-              {oldWay.map((step, i) => (
-                <div
-                  key={i}
-                  className="flex items-start gap-3 rounded-lg px-3 py-2 text-sm text-muted-foreground"
-                >
-                  <span className="mt-0.5 font-[family-name:var(--font-geist-mono)] text-xs text-muted-foreground/50">
-                    {String(i + 1).padStart(2, "0")}
-                  </span>
-                  <span>{step}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* New Way */}
-          <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-8">
-            <div className="mb-6 flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-500/10">
-                <svg
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="rgb(52 211 153)"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-                  <polyline points="22 4 12 14.01 9 11.01" />
-                </svg>
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold">With Skyswift</h3>
-                <p className="font-[family-name:var(--font-geist-mono)] text-sm text-emerald-400/80">
-                  30 seconds &middot; 3 steps
-                </p>
-              </div>
-            </div>
-            <div className="space-y-3">
-              {newWay.map((step, i) => (
-                <div
-                  key={i}
-                  className="flex items-start gap-3 rounded-lg border border-white/5 bg-white/[0.02] px-4 py-3 text-sm"
-                >
-                  <span className="mt-0.5 font-[family-name:var(--font-geist-mono)] text-xs text-emerald-400/80">
-                    {String(i + 1).padStart(2, "0")}
-                  </span>
-                  <span>{step}</span>
-                </div>
-              ))}
-            </div>
-            <div className="mt-8 rounded-lg border border-dashed border-white/10 p-6 text-center">
-              <p className="font-[family-name:var(--font-geist-mono)] text-sm text-muted-foreground">
-                That&apos;s it. You&apos;re booked.
+        {/* Stats bar */}
+        <div className="mt-12 grid grid-cols-2 gap-4 md:grid-cols-4">
+          {stats.map((stat) => (
+            <GlassCard
+              key={stat.label}
+              tier="subtle"
+              hover={false}
+              padding="md"
+              className="text-center"
+            >
+              <p className="text-2xl font-bold text-[var(--glass-accent-blue)] sm:text-3xl">
+                {stat.value}
               </p>
-            </div>
-          </div>
+              <p className="mt-1 text-sm text-[var(--glass-text-secondary)]">
+                {stat.label}
+              </p>
+            </GlassCard>
+          ))}
+        </div>
+
+        {/* Testimonials */}
+        <div className="mt-12 grid gap-6 md:grid-cols-2">
+          {testimonials.map((t) => (
+            <GlassCard key={t.name} tier="standard" padding="lg">
+              <p className="text-base leading-relaxed text-[var(--glass-text-primary)]">
+                &ldquo;{t.quote}&rdquo;
+              </p>
+              <div className="mt-4 flex items-center gap-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--glass-accent-blue-light)]">
+                  <span className="text-sm font-semibold text-[var(--glass-accent-blue)]">
+                    {t.name.charAt(0)}
+                  </span>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-[var(--glass-text-primary)]">
+                    {t.name}
+                  </p>
+                  <p className="text-xs text-[var(--glass-text-tertiary)]">
+                    {t.role}
+                  </p>
+                </div>
+              </div>
+            </GlassCard>
+          ))}
         </div>
       </div>
     </section>
   );
 }
 
-function WaitlistSection() {
+function CTASection() {
   return (
-    <section id="waitlist" className="relative px-6 py-32">
+    <section className="relative px-6 py-32">
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="animate-glow-pulse absolute left-1/2 top-0 h-[400px] w-[600px] -translate-x-1/2 rounded-full bg-gradient-to-b from-white/[0.04] to-transparent blur-3xl" />
+        <div className="animate-glow-pulse absolute left-1/2 top-0 h-[400px] w-[600px] -translate-x-1/2 rounded-full bg-gradient-to-b from-[var(--glass-accent-blue)]/[0.06] to-transparent blur-3xl" />
       </div>
 
       <div className="relative mx-auto max-w-xl text-center">
-        <Badge
-          variant="secondary"
-          className="mb-4 border-white/10 bg-white/5 px-3 py-1 text-xs font-normal text-muted-foreground"
-        >
-          Early access
-        </Badge>
-        <h2 className="text-balance text-3xl font-bold tracking-tight sm:text-4xl">
-          Join the waitlist
+        <h2 className="text-balance text-3xl font-bold tracking-tight text-[var(--glass-text-primary)] sm:text-4xl">
+          Your next flight is 30 seconds away
         </h2>
-        <p className="mt-4 text-lg leading-relaxed text-muted-foreground">
-          We&apos;re onboarding high-frequency travelers first. Drop your email and
-          we&apos;ll let you know when it&apos;s your turn.
+        <p className="mt-4 text-lg leading-relaxed text-[var(--glass-text-secondary)]">
+          Stop wasting time on booking forms. Just tell us where you&apos;re going.
         </p>
-
-        <WaitlistForm />
-
-        <p className="mt-4 text-xs text-muted-foreground/60">
-          No spam. We&apos;ll only email you when your spot opens up.
-        </p>
+        <div className="mt-8">
+          <Link href="/signup">
+            <GlassButton variant="primary" size="lg">
+              Get Started Free
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="ml-1"
+              >
+                <path d="M5 12h14" />
+                <path d="m12 5 7 7-7 7" />
+              </svg>
+            </GlassButton>
+          </Link>
+        </div>
       </div>
     </section>
   );
@@ -459,18 +364,18 @@ function WaitlistSection() {
 
 function Footer() {
   return (
-    <footer className="border-t border-white/5 px-6 py-12">
+    <footer className="border-t border-[var(--glass-border)] px-6 py-12">
       <div className="mx-auto max-w-6xl">
         <div className="grid gap-8 sm:grid-cols-2 md:grid-cols-4">
           <div>
             <div className="flex items-center gap-2">
-              <div className="flex h-7 w-7 items-center justify-center rounded-md bg-white">
+              <div className="flex h-7 w-7 items-center justify-center rounded-[8px] bg-[var(--glass-accent-blue)] shadow-[0_1px_3px_rgba(0,113,227,0.3)]">
                 <svg
                   width="14"
                   height="14"
                   viewBox="0 0 24 24"
                   fill="none"
-                  stroke="black"
+                  stroke="white"
                   strokeWidth="2.5"
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -478,80 +383,70 @@ function Footer() {
                   <path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z" />
                 </svg>
               </div>
-              <span className="font-semibold">Skyswift</span>
+              <span className="font-semibold text-[var(--glass-text-primary)]">Skyswift</span>
             </div>
-            <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+            <p className="mt-3 text-sm leading-relaxed text-[var(--glass-text-secondary)]">
               The autonomous travel agent for people who&apos;d rather be doing anything else.
             </p>
           </div>
 
           <div>
-            <h4 className="mb-3 text-sm font-medium">Product</h4>
+            <h4 className="mb-3 text-sm font-medium text-[var(--glass-text-primary)]">Product</h4>
             <ul className="space-y-2">
               <li>
-                <Link href="#how-it-works" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
+                <Link href="#how-it-works" className="text-sm text-[var(--glass-text-secondary)] transition-colors hover:text-[var(--glass-text-primary)]">
                   How it works
                 </Link>
               </li>
               <li>
-                <Link href="#" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
+                <Link href="#" className="text-sm text-[var(--glass-text-secondary)] transition-colors hover:text-[var(--glass-text-primary)]">
                   Pricing
                 </Link>
               </li>
               <li>
-                <Link href="#" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
+                <Link href="#" className="text-sm text-[var(--glass-text-secondary)] transition-colors hover:text-[var(--glass-text-primary)]">
                   Integrations
-                </Link>
-              </li>
-              <li>
-                <Link href="#" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
-                  Changelog
                 </Link>
               </li>
             </ul>
           </div>
 
           <div>
-            <h4 className="mb-3 text-sm font-medium">Company</h4>
+            <h4 className="mb-3 text-sm font-medium text-[var(--glass-text-primary)]">Company</h4>
             <ul className="space-y-2">
               <li>
-                <Link href="#" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
+                <Link href="#" className="text-sm text-[var(--glass-text-secondary)] transition-colors hover:text-[var(--glass-text-primary)]">
                   About
                 </Link>
               </li>
               <li>
-                <Link href="#" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
+                <Link href="#" className="text-sm text-[var(--glass-text-secondary)] transition-colors hover:text-[var(--glass-text-primary)]">
                   Blog
                 </Link>
               </li>
               <li>
-                <Link href="#" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
+                <Link href="#" className="text-sm text-[var(--glass-text-secondary)] transition-colors hover:text-[var(--glass-text-primary)]">
                   Careers
-                </Link>
-              </li>
-              <li>
-                <Link href="#" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
-                  Contact
                 </Link>
               </li>
             </ul>
           </div>
 
           <div>
-            <h4 className="mb-3 text-sm font-medium">Legal</h4>
+            <h4 className="mb-3 text-sm font-medium text-[var(--glass-text-primary)]">Legal</h4>
             <ul className="space-y-2">
               <li>
-                <Link href="#" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
+                <Link href="#" className="text-sm text-[var(--glass-text-secondary)] transition-colors hover:text-[var(--glass-text-primary)]">
                   Privacy
                 </Link>
               </li>
               <li>
-                <Link href="#" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
+                <Link href="#" className="text-sm text-[var(--glass-text-secondary)] transition-colors hover:text-[var(--glass-text-primary)]">
                   Terms
                 </Link>
               </li>
               <li>
-                <Link href="#" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
+                <Link href="#" className="text-sm text-[var(--glass-text-secondary)] transition-colors hover:text-[var(--glass-text-primary)]">
                   Security
                 </Link>
               </li>
@@ -559,23 +454,23 @@ function Footer() {
           </div>
         </div>
 
-        <Separator className="my-8 bg-white/5" />
-
-        <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
-          <p className="text-xs text-muted-foreground/60">
-            &copy; 2025 Skyswift. All rights reserved.
-          </p>
-          <div className="flex gap-4">
-            <Link href="#" className="text-muted-foreground/60 transition-colors hover:text-muted-foreground">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-              </svg>
-            </Link>
-            <Link href="#" className="text-muted-foreground/60 transition-colors hover:text-muted-foreground">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
-              </svg>
-            </Link>
+        <div className="mt-8 border-t border-[var(--glass-border-subtle)] pt-8">
+          <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
+            <p className="text-xs text-[var(--glass-text-tertiary)]">
+              &copy; 2025 Skyswift. All rights reserved.
+            </p>
+            <div className="flex gap-4">
+              <Link href="#" className="text-[var(--glass-text-tertiary)] transition-colors hover:text-[var(--glass-text-secondary)]" aria-label="Twitter">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                </svg>
+              </Link>
+              <Link href="#" className="text-[var(--glass-text-tertiary)] transition-colors hover:text-[var(--glass-text-secondary)]" aria-label="GitHub">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
+                </svg>
+              </Link>
+            </div>
           </div>
         </div>
       </div>
@@ -585,12 +480,12 @@ function Footer() {
 
 export default function Home() {
   return (
-    <main className="min-h-screen bg-background">
+    <main className="dark min-h-screen bg-[var(--glass-bg-page)]">
       <Navbar />
       <HeroSection />
       <HowItWorksSection />
-      <ComparisonSection />
-      <WaitlistSection />
+      <SocialProofSection />
+      <CTASection />
       <Footer />
     </main>
   );

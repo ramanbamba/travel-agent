@@ -1,9 +1,14 @@
 "use client";
 
-import { StepWrapper } from "./step-wrapper";
-import { Button } from "@/components/ui/button";
-import type { PersonalInfoValues, TravelDocumentsValues, LoyaltyProgramsValues, PreferencesValues } from "@/lib/validations/onboarding";
-import { Check, Plane } from "lucide-react";
+import { GlassButton, GlassCard } from "@/components/ui/glass";
+import { Plane } from "lucide-react";
+import type {
+  PersonalInfoValues,
+  TravelDocumentsValues,
+  LoyaltyProgramsValues,
+  PreferencesValues,
+} from "@/lib/validations/onboarding";
+import { cn } from "@/lib/utils";
 
 interface StepSummaryProps {
   personalInfo: PersonalInfoValues;
@@ -13,6 +18,7 @@ interface StepSummaryProps {
   onComplete: () => void;
   onBack: () => void;
   isSaving: boolean;
+  direction?: "forward" | "back";
 }
 
 function maskPassport(value: string): string {
@@ -46,9 +52,37 @@ function formatMeal(value: string): string {
 function SummaryRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex justify-between py-1.5">
-      <span className="text-sm text-white/50">{label}</span>
-      <span className="text-sm text-white font-medium">{value}</span>
+      <span className="text-sm text-[var(--glass-text-tertiary)]">{label}</span>
+      <span className="text-sm font-medium text-[var(--glass-text-primary)]">{value}</span>
     </div>
+  );
+}
+
+// CSS confetti particles
+const CONFETTI_COLORS = [
+  "var(--glass-accent-blue)",
+  "var(--glass-accent-green)",
+  "var(--glass-accent-amber)",
+  "var(--glass-accent-red)",
+  "var(--glass-accent-orange)",
+];
+
+function ConfettiParticle({ index }: { index: number }) {
+  const color = CONFETTI_COLORS[index % CONFETTI_COLORS.length];
+  const left = 10 + (index * 17) % 80;
+  const delay = (index * 0.15) % 1;
+  const duration = 1.5 + (index % 3) * 0.5;
+
+  return (
+    <div
+      className="absolute top-0 h-2 w-2 rounded-full animate-confetti"
+      style={{
+        left: `${left}%`,
+        backgroundColor: color,
+        animationDelay: `${delay}s`,
+        animationDuration: `${duration}s`,
+      }}
+    />
   );
 }
 
@@ -60,6 +94,7 @@ export function StepSummary({
   onComplete,
   onBack,
   isSaving,
+  direction = "forward",
 }: StepSummaryProps) {
   const fullName = [
     personalInfo.first_name,
@@ -70,114 +105,138 @@ export function StepSummary({
     .join(" ");
 
   return (
-    <StepWrapper
-      title="You're all set!"
-      subtitle="Review your details below. You can update these anytime in settings."
+    <div
+      className={cn(
+        "flex min-h-[100dvh] flex-col items-center justify-center px-4 py-20",
+        direction === "forward"
+          ? "animate-step-slide-left"
+          : "animate-step-slide-right"
+      )}
     >
-      <div className="space-y-5">
-        {/* Personal Info */}
-        <div>
-          <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-white/40">
-            Personal Information
-          </h3>
-          <div className="divide-y divide-white/5">
-            <SummaryRow label="Name" value={fullName} />
-            <SummaryRow label="Date of birth" value={personalInfo.date_of_birth} />
-            <SummaryRow label="Gender" value={formatGender(personalInfo.gender)} />
+      <div className="w-full max-w-lg">
+        {/* Celebration header */}
+        <div className="relative mb-8 text-center">
+          {/* Confetti */}
+          <div className="pointer-events-none absolute inset-x-0 -top-8 h-40 overflow-hidden">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <ConfettiParticle key={i} index={i} />
+            ))}
           </div>
+
+          {/* Animated checkmark */}
+          <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-[var(--glass-accent-green)]">
+            <svg
+              width="36"
+              height="36"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="white"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="animate-draw-check"
+              pathLength="1"
+            >
+              <polyline points="20 6 9 17 4 12" pathLength="1" />
+            </svg>
+          </div>
+
+          <h2 className="text-3xl font-bold tracking-tight text-[var(--glass-text-primary)] sm:text-4xl">
+            You&apos;re all set!
+          </h2>
+          <p className="mt-2 text-base text-[var(--glass-text-secondary)]">
+            Review your details below. You can update these anytime in settings.
+          </p>
         </div>
 
-        {/* Travel Documents */}
-        <div>
-          <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-white/40">
-            Travel Documents
-          </h3>
-          <div className="divide-y divide-white/5">
-            <SummaryRow
-              label="Passport"
-              value={maskPassport(travelDocuments.passport_number)}
-            />
-            {travelDocuments.ktn && (
-              <SummaryRow label="KTN" value={travelDocuments.ktn} />
-            )}
-            {travelDocuments.redress_number && (
-              <SummaryRow
-                label="Redress"
-                value={travelDocuments.redress_number}
-              />
-            )}
-          </div>
-        </div>
-
-        {/* Loyalty Programs */}
-        {loyaltyPrograms.loyalty_programs.length > 0 && (
-          <div>
-            <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-white/40">
-              Loyalty Programs
+        {/* Review cards */}
+        <div className="space-y-4">
+          {/* Personal Info */}
+          <GlassCard tier="subtle" padding="md" hover={false}>
+            <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-[var(--glass-text-tertiary)]">
+              Personal Information
             </h3>
-            <div className="divide-y divide-white/5">
-              {loyaltyPrograms.loyalty_programs.map((lp, i) => (
-                <div key={i} className="flex items-center justify-between py-1.5">
-                  <span className="text-sm text-white/50">
-                    {lp.airline_name} — {lp.program_name}
-                  </span>
-                  <span className="text-sm text-white font-medium">
-                    {lp.member_number}
-                    {lp.tier ? ` (${lp.tier})` : ""}
-                  </span>
-                </div>
-              ))}
+            <div className="divide-y divide-[var(--glass-border-subtle)]">
+              <SummaryRow label="Name" value={fullName} />
+              <SummaryRow label="Date of birth" value={personalInfo.date_of_birth} />
+              <SummaryRow label="Gender" value={formatGender(personalInfo.gender)} />
             </div>
-          </div>
-        )}
+          </GlassCard>
 
-        {/* Preferences */}
-        <div>
-          <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-white/40">
-            Preferences
-          </h3>
-          <div className="divide-y divide-white/5">
-            <SummaryRow label="Seat" value={formatSeat(preferences.seat_preference)} />
-            <SummaryRow label="Meal" value={formatMeal(preferences.meal_preference)} />
-            {preferences.special_assistance && preferences.special_assistance.length > 0 && (
+          {/* Travel Documents */}
+          <GlassCard tier="subtle" padding="md" hover={false}>
+            <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-[var(--glass-text-tertiary)]">
+              Travel Documents
+            </h3>
+            <div className="divide-y divide-[var(--glass-border-subtle)]">
               <SummaryRow
-                label="Assistance"
-                value={preferences.special_assistance
-                  .map((a) => a.charAt(0).toUpperCase() + a.slice(1))
-                  .join(", ")}
+                label="Passport"
+                value={maskPassport(travelDocuments.passport_number)}
               />
-            )}
-          </div>
+              {travelDocuments.ktn && (
+                <SummaryRow label="KTN" value={travelDocuments.ktn} />
+              )}
+              {travelDocuments.redress_number && (
+                <SummaryRow
+                  label="Redress"
+                  value={travelDocuments.redress_number}
+                />
+              )}
+            </div>
+          </GlassCard>
+
+          {/* Loyalty Programs */}
+          {loyaltyPrograms.loyalty_programs.length > 0 && (
+            <GlassCard tier="subtle" padding="md" hover={false}>
+              <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-[var(--glass-text-tertiary)]">
+                Loyalty Programs
+              </h3>
+              <div className="divide-y divide-[var(--glass-border-subtle)]">
+                {loyaltyPrograms.loyalty_programs.map((lp, i) => (
+                  <div key={i} className="flex items-center justify-between py-1.5">
+                    <span className="text-sm text-[var(--glass-text-tertiary)]">
+                      {lp.airline_name} — {lp.program_name}
+                    </span>
+                    <span className="text-sm font-medium text-[var(--glass-text-primary)]">
+                      {lp.member_number}
+                      {lp.tier ? ` (${lp.tier})` : ""}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </GlassCard>
+          )}
+
+          {/* Preferences */}
+          <GlassCard tier="subtle" padding="md" hover={false}>
+            <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-[var(--glass-text-tertiary)]">
+              Preferences
+            </h3>
+            <div className="divide-y divide-[var(--glass-border-subtle)]">
+              <SummaryRow label="Seat" value={formatSeat(preferences.seat_preference)} />
+              <SummaryRow label="Meal" value={formatMeal(preferences.meal_preference)} />
+              {preferences.special_assistance && preferences.special_assistance.length > 0 && (
+                <SummaryRow
+                  label="Assistance"
+                  value={preferences.special_assistance
+                    .map((a) => a.charAt(0).toUpperCase() + a.slice(1))
+                    .join(", ")}
+                />
+              )}
+            </div>
+          </GlassCard>
         </div>
 
-        {/* Success banner */}
-        <div className="flex items-center gap-3 rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-4">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-500">
-            <Check className="h-4 w-4 text-white" />
-          </div>
-          <div>
-            <p className="text-sm font-medium text-emerald-400">
-              Profile complete
-            </p>
-            <p className="text-xs text-emerald-400/60">
-              You&apos;re ready to start booking flights with a single command.
-            </p>
-          </div>
-        </div>
-
-        <div className="flex justify-between pt-2">
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={onBack}
-            className="text-white/60 hover:text-white"
-          >
+        {/* Action buttons */}
+        <div className="mt-8 flex justify-between">
+          <GlassButton type="button" variant="ghost" onClick={onBack} size="lg">
             Back
-          </Button>
-          <Button
+          </GlassButton>
+          <GlassButton
             onClick={onComplete}
             disabled={isSaving}
-            className="min-w-[200px] bg-emerald-600 hover:bg-emerald-700"
+            size="lg"
+            className="min-w-[220px] active:scale-[0.97]"
           >
             {isSaving ? (
               "Saving..."
@@ -187,9 +246,9 @@ export function StepSummary({
                 Start booking flights
               </>
             )}
-          </Button>
+          </GlassButton>
         </div>
       </div>
-    </StepWrapper>
+    </div>
   );
 }

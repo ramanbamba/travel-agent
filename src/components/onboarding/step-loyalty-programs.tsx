@@ -9,8 +9,7 @@ import {
 } from "@/lib/validations/onboarding";
 import { airlines, type AirlineData } from "@/lib/data/airlines";
 import { StepWrapper } from "./step-wrapper";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { GlassButton, GlassInput, GlassCard } from "@/components/ui/glass";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -40,6 +39,7 @@ interface StepLoyaltyProgramsProps {
   onNext: (data: LoyaltyProgramsValues) => void;
   onBack: () => void;
   isSaving: boolean;
+  direction?: "forward" | "back";
 }
 
 export function StepLoyaltyPrograms({
@@ -47,6 +47,7 @@ export function StepLoyaltyPrograms({
   onNext,
   onBack,
   isSaving,
+  direction = "forward",
 }: StepLoyaltyProgramsProps) {
   const {
     register,
@@ -90,6 +91,7 @@ export function StepLoyaltyPrograms({
     <StepWrapper
       title="Loyalty programs"
       subtitle="Add your frequent flyer memberships so we can credit your miles."
+      direction={direction}
     >
       <form onSubmit={handleSubmit(onNext)} className="space-y-4">
         {fields.map((field, index) => {
@@ -97,145 +99,156 @@ export function StepLoyaltyPrograms({
           const airlineName = watch(`loyalty_programs.${index}.airline_name`);
 
           return (
-            <div
+            <GlassCard
               key={field.id}
-              className="space-y-3 rounded-xl border border-white/10 bg-white/5 p-4"
+              tier="subtle"
+              padding="md"
+              hover={false}
             >
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-white/80">
-                  Program {index + 1}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => remove(index)}
-                  className="text-white/40 hover:text-red-400 transition-colors"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-[var(--glass-text-secondary)]">
+                    Program {index + 1}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => remove(index)}
+                    className="text-[var(--glass-text-tertiary)] transition-colors hover:text-[var(--glass-accent-red)]"
+                    aria-label={`Remove program ${index + 1}`}
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
 
-              {/* Airline selector */}
-              <div className="space-y-2">
-                <Label className="text-white/60 text-xs">Airline</Label>
-                <input
-                  type="hidden"
-                  {...register(`loyalty_programs.${index}.airline_code`)}
-                />
-                <input
-                  type="hidden"
-                  {...register(`loyalty_programs.${index}.airline_name`)}
-                />
-                <input
-                  type="hidden"
-                  {...register(`loyalty_programs.${index}.program_name`)}
-                />
-                <Popover
-                  open={openPopoverIndex === index}
-                  onOpenChange={(open) =>
-                    setOpenPopoverIndex(open ? index : null)
-                  }
-                >
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      role="combobox"
-                      type="button"
-                      className={cn(
-                        "w-full justify-between border-white/10 bg-white/5 text-white hover:bg-white/10 hover:text-white",
-                        !airlineName && "text-white/30"
-                      )}
-                    >
-                      {airlineName || "Search for an airline..."}
-                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-[320px] p-0" align="start">
-                    <Command>
-                      <CommandInput placeholder="Search airlines..." />
-                      <CommandList>
-                        <CommandEmpty>No airline found.</CommandEmpty>
-                        <CommandGroup>
-                          {airlines.map((airline) => (
-                            <CommandItem
-                              key={airline.code}
-                              value={`${airline.name} ${airline.code}`}
-                              onSelect={() => selectAirline(index, airline)}
-                            >
-                              <Check
-                                className={cn(
-                                  "mr-2 h-4 w-4",
-                                  selectedAirline?.code === airline.code
-                                    ? "opacity-100"
-                                    : "opacity-0"
-                                )}
-                              />
-                              <span className="font-mono text-xs mr-2 text-muted-foreground">
-                                {airline.code}
-                              </span>
-                              {airline.name}
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                      </CommandList>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
-                {errors.loyalty_programs?.[index]?.airline_code && (
-                  <p className="text-xs text-red-400">
-                    {errors.loyalty_programs[index]?.airline_code?.message}
-                  </p>
-                )}
-              </div>
-
-              {/* Member number + tier */}
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                {/* Airline selector */}
                 <div className="space-y-2">
-                  <Label className="text-white/60 text-xs">
-                    Member number
-                  </Label>
-                  <Input
-                    placeholder="e.g. 12345678"
-                    className="border-white/10 bg-white/5 text-white placeholder:text-white/30"
-                    {...register(`loyalty_programs.${index}.member_number`)}
+                  <Label className="text-xs text-[var(--glass-text-tertiary)]">Airline</Label>
+                  <input
+                    type="hidden"
+                    {...register(`loyalty_programs.${index}.airline_code`)}
                   />
-                  {errors.loyalty_programs?.[index]?.member_number && (
-                    <p className="text-xs text-red-400">
-                      {errors.loyalty_programs[index]?.member_number?.message}
+                  <input
+                    type="hidden"
+                    {...register(`loyalty_programs.${index}.airline_name`)}
+                  />
+                  <input
+                    type="hidden"
+                    {...register(`loyalty_programs.${index}.program_name`)}
+                  />
+                  <Popover
+                    open={openPopoverIndex === index}
+                    onOpenChange={(open) =>
+                      setOpenPopoverIndex(open ? index : null)
+                    }
+                  >
+                    <PopoverTrigger asChild>
+                      <button
+                        type="button"
+                        role="combobox"
+                        aria-expanded={openPopoverIndex === index}
+                        aria-controls={`airline-list-${index}`}
+                        className={cn(
+                          "flex w-full items-center justify-between rounded-[var(--glass-radius-input)] border border-[var(--glass-border)] bg-[var(--glass-subtle)] px-3 py-3 text-base transition-colors",
+                          "hover:bg-[var(--glass-standard)]",
+                          airlineName
+                            ? "text-[var(--glass-text-primary)]"
+                            : "text-[var(--glass-text-tertiary)]"
+                        )}
+                      >
+                        {airlineName || "Search for an airline..."}
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[320px] p-0" align="start">
+                      <Command>
+                        <CommandInput placeholder="Search airlines..." />
+                        <CommandList>
+                          <CommandEmpty>No airline found.</CommandEmpty>
+                          <CommandGroup>
+                            {airlines.map((airline) => (
+                              <CommandItem
+                                key={airline.code}
+                                value={`${airline.name} ${airline.code}`}
+                                onSelect={() => selectAirline(index, airline)}
+                              >
+                                <Check
+                                  className={cn(
+                                    "mr-2 h-4 w-4",
+                                    selectedAirline?.code === airline.code
+                                      ? "opacity-100"
+                                      : "opacity-0"
+                                  )}
+                                />
+                                <span className="mr-2 font-mono text-xs text-[var(--glass-text-tertiary)]">
+                                  {airline.code}
+                                </span>
+                                {airline.name}
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+                  {errors.loyalty_programs?.[index]?.airline_code && (
+                    <p className="text-xs text-[var(--glass-accent-red)]">
+                      {errors.loyalty_programs[index]?.airline_code?.message}
                     </p>
                   )}
                 </div>
 
-                <div className="space-y-2">
-                  <Label className="text-white/60 text-xs">Tier</Label>
-                  <Select
-                    value={watch(`loyalty_programs.${index}.tier`) ?? ""}
-                    onValueChange={(val) =>
-                      setValue(`loyalty_programs.${index}.tier`, val, {
-                        shouldValidate: true,
-                      })
-                    }
-                  >
-                    <SelectTrigger className="border-white/10 bg-white/5 text-white">
-                      <SelectValue placeholder="Select tier" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {(selectedAirline?.tiers ?? []).map((tier) => (
-                        <SelectItem key={tier} value={tier}>
-                          {tier}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                {/* Member number + tier */}
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label className="text-xs text-[var(--glass-text-tertiary)]">
+                      Member number
+                    </Label>
+                    <GlassInput
+                      placeholder="e.g. 12345678"
+                      error={!!errors.loyalty_programs?.[index]?.member_number}
+                      className="py-3 text-base"
+                      {...register(`loyalty_programs.${index}.member_number`)}
+                    />
+                    {errors.loyalty_programs?.[index]?.member_number && (
+                      <p className="text-xs text-[var(--glass-accent-red)]">
+                        {errors.loyalty_programs[index]?.member_number?.message}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-xs text-[var(--glass-text-tertiary)]">Tier</Label>
+                    <Select
+                      value={watch(`loyalty_programs.${index}.tier`) ?? ""}
+                      onValueChange={(val) =>
+                        setValue(`loyalty_programs.${index}.tier`, val, {
+                          shouldValidate: true,
+                        })
+                      }
+                    >
+                      <SelectTrigger className="h-auto rounded-[var(--glass-radius-input)] border-[var(--glass-border)] bg-[var(--glass-subtle)] py-3 text-base text-[var(--glass-text-primary)]">
+                        <SelectValue placeholder="Select tier" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {(selectedAirline?.tiers ?? []).map((tier) => (
+                          <SelectItem key={tier} value={tier}>
+                            {tier}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
               </div>
-            </div>
+            </GlassCard>
           );
         })}
 
-        <Button
+        <GlassButton
           type="button"
-          variant="outline"
-          className="w-full border-dashed border-white/20 text-white/60 hover:border-white/40 hover:text-white hover:bg-white/5"
+          variant="secondary"
+          size="lg"
+          className="w-full border-dashed"
           onClick={() =>
             append({
               airline_code: "",
@@ -248,31 +261,26 @@ export function StepLoyaltyPrograms({
         >
           <Plus className="mr-2 h-4 w-4" />
           Add loyalty program
-        </Button>
+        </GlassButton>
 
         <div className="flex justify-between pt-4">
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={onBack}
-            className="text-white/60 hover:text-white"
-          >
+          <GlassButton type="button" variant="ghost" onClick={onBack} size="lg">
             Back
-          </Button>
+          </GlassButton>
           <div className="flex gap-2">
             {fields.length === 0 && (
-              <Button
+              <GlassButton
                 type="button"
                 variant="ghost"
                 onClick={() => onNext({ loyalty_programs: [] })}
-                className="text-white/60 hover:text-white"
+                size="lg"
               >
                 Skip for now
-              </Button>
+              </GlassButton>
             )}
-            <Button type="submit" disabled={isSaving} className="min-w-[120px]">
+            <GlassButton type="submit" disabled={isSaving} size="lg">
               {isSaving ? "Saving..." : "Continue"}
-            </Button>
+            </GlassButton>
           </div>
         </div>
       </form>
