@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   Bell,
+  Brain,
   ChevronRight,
   CreditCard,
   Mail,
@@ -179,6 +180,11 @@ export default function SettingsPage() {
             icon={Heart}
             label="Travel Preferences"
             href="/dashboard/profile"
+          />
+          <SettingsRow
+            icon={Brain}
+            label="Travel DNA"
+            href="/dashboard/settings/travel-dna"
             last
           />
         </SettingsGroup>

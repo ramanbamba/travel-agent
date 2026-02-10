@@ -226,6 +226,19 @@ export function OnboardingWizard({
     try {
       await saveProfile({ onboarding_completed: true });
 
+      // Seed preference engine (fire-and-forget)
+      fetch("/api/preferences/seed", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          seatPreference: preferences.seat_preference,
+          loyaltyAirlines: loyaltyPrograms.loyalty_programs.map((lp) => ({
+            code: lp.airline_code,
+            name: lp.airline_name,
+          })),
+        }),
+      }).catch(() => {});
+
       router.push("/dashboard");
       router.refresh();
     } catch (err) {
