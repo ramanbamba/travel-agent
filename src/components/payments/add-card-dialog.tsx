@@ -39,8 +39,10 @@ function CardForm({
       const setupRes = await fetch("/api/payments/setup-intent", {
         method: "POST",
       });
-      if (!setupRes.ok) throw new Error("Failed to create setup intent");
       const setupJson = await setupRes.json();
+      if (!setupRes.ok) {
+        throw new Error(setupJson.error || setupJson.message || "Failed to create setup intent");
+      }
       const clientSecret = setupJson.data?.clientSecret;
       if (!clientSecret) throw new Error("No client secret returned");
 

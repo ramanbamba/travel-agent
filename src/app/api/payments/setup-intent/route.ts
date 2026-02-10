@@ -21,11 +21,15 @@ export async function POST() {
     // Get or create Stripe customer
     let stripeCustomerId: string | null = null;
 
-    const { data: profile } = await supabase
+    const { data: profile, error: profileError } = await supabase
       .from("user_profiles")
       .select("stripe_customer_id")
       .eq("id", user.id)
       .single();
+
+    if (profileError) {
+      console.error("[setup-intent] Profile fetch error:", profileError.message);
+    }
 
     stripeCustomerId = profile?.stripe_customer_id ?? null;
 
@@ -36,10 +40,14 @@ export async function POST() {
       });
       stripeCustomerId = customer.id;
 
-      await supabase
+      const { error: updateError } = await supabase
         .from("user_profiles")
         .update({ stripe_customer_id: stripeCustomerId })
         .eq("id", user.id);
+
+      if (updateError) {
+        console.error("[setup-intent] Profile update error:", updateError.message);
+      }
     }
 
     const setupIntent = await stripe.setupIntents.create({
@@ -53,10 +61,11 @@ export async function POST() {
       message: "SetupIntent created",
     });
   } catch (err) {
+    console.error("[setup-intent] Error:", err);
     const message =
       err instanceof Error ? err.message : "Failed to create setup intent";
     return NextResponse.json<ApiResponse>(
-      { data: null, error: message, message: "Setup failed" },
+      { data: null, error: message, message },
       { status: 500 }
     );
   }

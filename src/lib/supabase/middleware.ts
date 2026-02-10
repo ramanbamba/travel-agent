@@ -37,6 +37,11 @@ export async function updateSession(request: NextRequest) {
     }
   );
 
+  // Skip auth refresh for webhook routes (no user session)
+  if (request.nextUrl.pathname.startsWith("/api/webhooks")) {
+    return supabaseResponse;
+  }
+
   const {
     data: { user },
   } = await supabase.auth.getUser();

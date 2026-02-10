@@ -177,6 +177,16 @@ function mapBaggage(slices: any[]): BaggageAllowance | undefined {
 
 // ── Passenger mapping (our → Duffel) ───────────────────────────────────────
 
+/** Ensure phone is E.164 format (+<country><number>). Fallback for test mode. */
+function normalizePhone(phone: string | undefined): string {
+  if (!phone) return "+12025551234"; // valid test fallback
+  const digits = phone.replace(/\D/g, "");
+  if (phone.startsWith("+") && digits.length >= 10) return phone;
+  if (digits.length === 10) return `+1${digits}`; // assume US
+  if (digits.length === 11 && digits.startsWith("1")) return `+${digits}`;
+  return `+${digits}`;
+}
+
 export function mapPassengerToDuffel(
   passenger: SupplyPassenger,
   passengerId: string
@@ -192,7 +202,7 @@ export function mapPassengerToDuffel(
     gender,
     title,
     email: passenger.email,
-    phone_number: passenger.phone ?? "+10000000000",
+    phone_number: normalizePhone(passenger.phone),
   };
 
   // Add passport as identity document if provided
