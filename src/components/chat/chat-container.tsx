@@ -1,7 +1,7 @@
 "use client";
 
 import { PlusCircle, History } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useChatMessages } from "@/hooks/use-chat-messages";
 import { ChatMessages } from "./chat-messages";
 import { ChatInput } from "./chat-input";
@@ -25,7 +25,17 @@ export function ChatContainer() {
   } = useChatMessages();
 
   const [showSessions, setShowSessions] = useState(false);
+  const [stats, setStats] = useState<{ totalBookings: number; routesLearned: number } | null>(null);
   const hasMessages = messages.length > 0;
+
+  useEffect(() => {
+    fetch("/api/chat/stats")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((json) => {
+        if (json?.data) setStats(json.data);
+      })
+      .catch(() => {});
+  }, []);
 
   return (
     <div className="flex h-full">
@@ -103,6 +113,13 @@ export function ChatContainer() {
               <span className="text-sm font-medium text-[var(--glass-text-secondary)]">
                 Booking chat
               </span>
+              {stats && (stats.totalBookings > 0 || stats.routesLearned > 0) && (
+                <span className="hidden sm:inline text-[11px] text-[var(--glass-text-tertiary)]">
+                  {stats.totalBookings > 0 && `${stats.totalBookings} flight${stats.totalBookings !== 1 ? "s" : ""} booked`}
+                  {stats.totalBookings > 0 && stats.routesLearned > 0 && " · "}
+                  {stats.routesLearned > 0 && `${stats.routesLearned} route${stats.routesLearned !== 1 ? "s" : ""} learned`}
+                </span>
+              )}
             </div>
             <button
               onClick={clearChat}

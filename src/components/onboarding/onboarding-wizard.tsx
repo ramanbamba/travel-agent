@@ -92,6 +92,8 @@ export function OnboardingWizard({
   const [preferences, setPreferences] = useState<PreferencesValues>({
     seat_preference: initialProfile?.seat_preference ?? "no_preference",
     meal_preference: initialProfile?.meal_preference ?? "no_preference",
+    home_airport: "",
+    preferred_cabin: undefined,
     special_assistance: [],
   });
 
@@ -211,6 +213,15 @@ export function OnboardingWizard({
 
       setPreferences(data);
       goForward(4);
+
+      // Save home_airport to preferences seed (fire-and-forget) — used by preference engine
+      if (data.home_airport) {
+        fetch("/api/preferences/seed", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ homeAirport: data.home_airport }),
+        }).catch(() => {});
+      }
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to save preferences";
       console.error("[Onboarding] Error saving preferences:", err);
@@ -232,6 +243,7 @@ export function OnboardingWizard({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           seatPreference: preferences.seat_preference,
+          homeAirport: preferences.home_airport || undefined,
           loyaltyAirlines: loyaltyPrograms.loyalty_programs.map((lp) => ({
             code: lp.airline_code,
             name: lp.airline_name,
@@ -274,6 +286,7 @@ export function OnboardingWizard({
           <StepTravelDocuments
             defaultValues={travelDocuments}
             onNext={handleTravelDocuments}
+            onSkip={() => goForward(2)}
             onBack={() => goBack(0)}
             isSaving={isSaving}
             direction={direction}

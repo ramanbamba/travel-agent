@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import { Zap, TrendingUp } from "lucide-react";
 import type { ChatMessage } from "@/types/chat";
 import { RichContentRenderer } from "./rich-content-renderer";
 
@@ -83,6 +84,23 @@ export function ChatBubble({
             )}
           >
             {message.content}
+          </div>
+        )}
+
+        {/* Intelligence indicator pill */}
+        {!isUser && message.metadata?.familiarityLevel && message.metadata.familiarityLevel !== "discovery" && (
+          <div className="flex items-center gap-1.5 px-1">
+            {message.metadata.familiarityLevel === "autopilot" ? (
+              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 dark:bg-emerald-950/30 px-2.5 py-0.5 text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
+                <Zap className="h-2.5 w-2.5" />
+                Autopilot · {message.metadata.familiarityRoute}
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 dark:bg-blue-950/30 px-2.5 py-0.5 text-[11px] font-medium text-blue-600 dark:text-blue-400">
+                <TrendingUp className="h-2.5 w-2.5" />
+                Learning · {message.metadata.familiarityRoute}
+              </span>
+            )}
           </div>
         )}
 

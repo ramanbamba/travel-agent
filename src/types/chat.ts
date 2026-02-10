@@ -12,11 +12,17 @@ export interface RichContent {
   data: FlightOption[] | BookingSummary | BookingConfirmation;
 }
 
+export interface ChatMessageMeta {
+  familiarityLevel?: "discovery" | "learning" | "autopilot";
+  familiarityRoute?: string;
+}
+
 export interface ChatMessage {
   id: string;
   role: MessageRole;
   content: string;
   richContent?: RichContent;
+  metadata?: ChatMessageMeta;
   createdAt: string; // ISO string for localStorage compatibility
 }
 

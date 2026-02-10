@@ -14,6 +14,7 @@ import { Shield } from "lucide-react";
 interface StepTravelDocumentsProps {
   defaultValues: Partial<TravelDocumentsValues>;
   onNext: (data: TravelDocumentsValues) => void;
+  onSkip?: () => void;
   onBack: () => void;
   isSaving: boolean;
   direction?: "forward" | "back";
@@ -22,6 +23,7 @@ interface StepTravelDocumentsProps {
 export function StepTravelDocuments({
   defaultValues,
   onNext,
+  onSkip,
   onBack,
   isSaving,
   direction = "forward",
@@ -123,13 +125,20 @@ export function StepTravelDocuments({
           </div>
         </div>
 
-        <div className="flex justify-between pt-4">
+        <div className="flex items-center justify-between pt-4">
           <GlassButton type="button" variant="ghost" onClick={onBack} size="lg">
             Back
           </GlassButton>
-          <GlassButton type="submit" disabled={isSaving} size="lg">
-            {isSaving ? "Saving..." : "Continue"}
-          </GlassButton>
+          <div className="flex items-center gap-2">
+            {onSkip && (
+              <GlassButton type="button" variant="ghost" onClick={onSkip} size="lg">
+                I&apos;ll add this later
+              </GlassButton>
+            )}
+            <GlassButton type="submit" disabled={isSaving} size="lg">
+              {isSaving ? "Saving..." : "Continue"}
+            </GlassButton>
+          </div>
         </div>
       </form>
     </StepWrapper>

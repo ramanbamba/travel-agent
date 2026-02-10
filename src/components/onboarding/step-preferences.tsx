@@ -11,23 +11,32 @@ import { StepWrapper } from "./step-wrapper";
 import { GlassButton } from "@/components/ui/glass";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { SeatSelector } from "./seat-selector";
+import { cn } from "@/lib/utils";
 
 const MEAL_OPTIONS = [
-  { value: "no_preference", label: "No preference" },
-  { value: "standard", label: "Standard" },
+  { value: "no_preference", label: "Any" },
   { value: "vegetarian", label: "Vegetarian" },
   { value: "vegan", label: "Vegan" },
   { value: "halal", label: "Halal" },
-  { value: "kosher", label: "Kosher" },
+  { value: "standard", label: "Standard" },
   { value: "gluten_free", label: "Gluten free" },
+] as const;
+
+const HOME_AIRPORTS = [
+  { code: "BLR", label: "Bengaluru" },
+  { code: "DEL", label: "Delhi" },
+  { code: "BOM", label: "Mumbai" },
+  { code: "HYD", label: "Hyderabad" },
+  { code: "MAA", label: "Chennai" },
+  { code: "CCU", label: "Kolkata" },
+] as const;
+
+const CABIN_OPTIONS = [
+  { value: "economy", label: "Economy" },
+  { value: "premium_economy", label: "Premium" },
+  { value: "business", label: "Business" },
+  { value: "first", label: "First" },
 ] as const;
 
 const ASSISTANCE_OPTIONS = [
@@ -65,12 +74,16 @@ export function StepPreferences({
     defaultValues: {
       seat_preference: defaultValues.seat_preference ?? "no_preference",
       meal_preference: defaultValues.meal_preference ?? "no_preference",
+      home_airport: defaultValues.home_airport ?? "",
+      preferred_cabin: defaultValues.preferred_cabin,
       special_assistance: defaultValues.special_assistance ?? [],
     },
   });
 
   const seatValue = watch("seat_preference");
   const mealValue = watch("meal_preference");
+  const homeAirport = watch("home_airport");
+  const cabinValue = watch("preferred_cabin");
   const assistanceValues = watch("special_assistance") ?? [];
 
   // Auto-advance after seat selection if meal is already selected
@@ -112,6 +125,29 @@ export function StepPreferences({
       direction={direction}
     >
       <form ref={formRef} onSubmit={handleSubmit(onNext)} className="space-y-6">
+        {/* Home airport */}
+        <div className="space-y-3">
+          <Label className="text-[var(--glass-text-secondary)]">Home airport</Label>
+          <div className="flex flex-wrap gap-2">
+            {HOME_AIRPORTS.map((apt) => (
+              <button
+                key={apt.code}
+                type="button"
+                onClick={() => setValue("home_airport", apt.code, { shouldValidate: true })}
+                className={cn(
+                  "rounded-full border px-3.5 py-2 text-sm font-medium transition-all duration-200 active:scale-95",
+                  homeAirport === apt.code
+                    ? "border-[var(--glass-accent-blue)] bg-[var(--glass-accent-blue-light)] text-[var(--glass-accent-blue)]"
+                    : "border-[var(--glass-border)] bg-[var(--glass-subtle)] text-[var(--glass-text-secondary)] hover:border-[var(--glass-accent-blue)]/50"
+                )}
+              >
+                <span className="font-semibold">{apt.code}</span>
+                <span className="ml-1 text-[11px] opacity-70">{apt.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
         {/* Seat preference */}
         <div className="space-y-3">
           <Label className="text-[var(--glass-text-secondary)]">Seat preference</Label>
@@ -128,30 +164,52 @@ export function StepPreferences({
           )}
         </div>
 
-        {/* Meal preference */}
-        <div className="space-y-2">
+        {/* Cabin class */}
+        <div className="space-y-3">
+          <Label className="text-[var(--glass-text-secondary)]">Preferred cabin</Label>
+          <div className="flex flex-wrap gap-2">
+            {CABIN_OPTIONS.map((opt) => (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() =>
+                  setValue("preferred_cabin", opt.value as PreferencesValues["preferred_cabin"], { shouldValidate: true })
+                }
+                className={cn(
+                  "rounded-full border px-4 py-2 text-sm font-medium transition-all duration-200 active:scale-95",
+                  cabinValue === opt.value
+                    ? "border-[var(--glass-accent-blue)] bg-[var(--glass-accent-blue-light)] text-[var(--glass-accent-blue)]"
+                    : "border-[var(--glass-border)] bg-[var(--glass-subtle)] text-[var(--glass-text-secondary)] hover:border-[var(--glass-accent-blue)]/50"
+                )}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Meal preference — pills */}
+        <div className="space-y-3">
           <Label className="text-[var(--glass-text-secondary)]">Meal preference</Label>
-          <Select
-            value={mealValue}
-            onValueChange={(val) =>
-              setValue(
-                "meal_preference",
-                val as PreferencesValues["meal_preference"],
-                { shouldValidate: true }
-              )
-            }
-          >
-            <SelectTrigger className="h-auto rounded-[var(--glass-radius-input)] border-[var(--glass-border)] bg-[var(--glass-subtle)] py-3 text-base text-[var(--glass-text-primary)]">
-              <SelectValue placeholder="Select meal preference" />
-            </SelectTrigger>
-            <SelectContent>
-              {MEAL_OPTIONS.map((opt) => (
-                <SelectItem key={opt.value} value={opt.value}>
-                  {opt.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="flex flex-wrap gap-2">
+            {MEAL_OPTIONS.map((opt) => (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() =>
+                  setValue("meal_preference", opt.value as PreferencesValues["meal_preference"], { shouldValidate: true })
+                }
+                className={cn(
+                  "rounded-full border px-4 py-2 text-sm font-medium transition-all duration-200 active:scale-95",
+                  mealValue === opt.value
+                    ? "border-[var(--glass-accent-blue)] bg-[var(--glass-accent-blue-light)] text-[var(--glass-accent-blue)]"
+                    : "border-[var(--glass-border)] bg-[var(--glass-subtle)] text-[var(--glass-text-secondary)] hover:border-[var(--glass-accent-blue)]/50"
+                )}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
           {errors.meal_preference && (
             <p className="text-xs text-[var(--glass-accent-red)]">
               {errors.meal_preference.message}

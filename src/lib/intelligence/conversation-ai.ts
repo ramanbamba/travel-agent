@@ -38,6 +38,10 @@ export interface AIResponse {
   };
   preferenceUpdate?: Record<string, string>;
   selectedFlightIndex?: number;
+  familiarityContext?: {
+    level: "discovery" | "learning" | "autopilot";
+    route: string;
+  };
 }
 
 interface ConversationSession {
@@ -134,6 +138,14 @@ export class ConversationAI {
 
     // 8. Call Claude API
     const aiResponse = await this.callClaude(systemPrompt, history, message);
+
+    // 8b. Attach familiarity context if available
+    if (routeData && routeData.familiarityLevel) {
+      aiResponse.familiarityContext = {
+        level: routeData.familiarityLevel as "discovery" | "learning" | "autopilot",
+        route: routeData.route,
+      };
+    }
 
     // 9. Update session
     const newState = this.deriveState(aiResponse.action, session.state);

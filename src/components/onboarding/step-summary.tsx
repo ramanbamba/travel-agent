@@ -213,7 +213,13 @@ export function StepSummary({
               Preferences
             </h3>
             <div className="divide-y divide-[var(--glass-border-subtle)]">
+              {preferences.home_airport && (
+                <SummaryRow label="Home airport" value={preferences.home_airport} />
+              )}
               <SummaryRow label="Seat" value={formatSeat(preferences.seat_preference)} />
+              {preferences.preferred_cabin && (
+                <SummaryRow label="Cabin" value={formatSeat(preferences.preferred_cabin)} />
+              )}
               <SummaryRow label="Meal" value={formatMeal(preferences.meal_preference)} />
               {preferences.special_assistance && preferences.special_assistance.length > 0 && (
                 <SummaryRow

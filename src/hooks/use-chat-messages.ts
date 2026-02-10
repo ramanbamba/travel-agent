@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useRef, useEffect } from "react";
-import type { ChatMessage } from "@/types/chat";
+import type { ChatMessage, ChatMessageMeta } from "@/types/chat";
 import type { FlightOption, BookingSummary } from "@/types/flights";
 
 const STORAGE_KEY = "skyswift-chat-messages";
@@ -21,13 +21,15 @@ function createId() {
 function createMessage(
   role: ChatMessage["role"],
   content: string,
-  richContent?: ChatMessage["richContent"]
+  richContent?: ChatMessage["richContent"],
+  metadata?: ChatMessageMeta
 ): ChatMessage {
   return {
     id: createId(),
     role,
     content,
     richContent,
+    metadata,
     createdAt: new Date().toISOString(),
   };
 }
@@ -280,7 +282,7 @@ export function useChatMessages() {
           return;
         }
 
-        const { reply, flights, action, greeting, selectedFlightIndex } =
+        const { reply, flights, action, greeting, selectedFlightIndex, familiarityContext } =
           json.data;
 
         // Show greeting before main reply if present
@@ -299,16 +301,21 @@ export function useChatMessages() {
           }
         }
 
+        // Build metadata from familiarity context
+        const meta: ChatMessageMeta | undefined = familiarityContext
+          ? { familiarityLevel: familiarityContext.level, familiarityRoute: familiarityContext.route }
+          : undefined;
+
         if (flights && flights.length > 0) {
           flightsRef.current = flights;
           addMessage(
             createMessage("assistant", reply, {
               type: "flight_results",
               data: flights,
-            })
+            }, meta)
           );
         } else {
-          addMessage(createMessage("assistant", reply));
+          addMessage(createMessage("assistant", reply, undefined, meta));
         }
       } catch {
         const errorMsg = "Network error. Check your connection and try again.";
