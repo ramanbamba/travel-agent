@@ -33,6 +33,22 @@ export interface FlightOption {
     markup?: number;
   };
   seatsRemaining?: number;
+  /** Phase 3: Preference score (0–100) — higher = better match */
+  preferenceScore?: number;
+  /** Phase 3: Confidence in the score (0.0–1.0) */
+  scoreConfidence?: number;
+  /** Phase 3: Human-readable reasons for the recommendation */
+  scoreReasons?: string[];
+  /** Phase 3: Price insight relative to user's history */
+  priceInsight?: string | null;
+  /** Phase 3: Flight DNA enrichment */
+  flightDNA?: {
+    ontime_pct?: number;
+    wifi?: boolean;
+    seat_pitch?: number;
+    power_outlets?: boolean;
+    food_rating?: number;
+  } | null;
 }
 
 export interface BookingSummary {

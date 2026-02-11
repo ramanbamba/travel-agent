@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { FlightOffer } from "@/lib/supply/types";
+import { PreferenceScorer } from "./preference-scoring";
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -177,8 +178,26 @@ export class PreferenceEngine {
     // 2. Update route_familiarity
     await this.updateRouteFamiliarity(userId, data);
 
-    // 3. Update user_travel_preferences
+    // 3. Update user_travel_preferences (Phase 2 — backward compat)
     await this.updateGlobalPreferences(userId);
+
+    // 4. Update Phase 3 user_preferences (JSON fields + confidence scores)
+    const scorer = new PreferenceScorer(this.supabase);
+    await scorer.learnFromBooking(userId, {
+      route: data.route,
+      airlineCode: data.airlineCode,
+      airlineName: data.airlineName,
+      flightNumber: data.flightNumber,
+      departureTime: data.departureTime,
+      arrivalTime: data.arrivalTime,
+      dayOfWeek: data.dayOfWeek,
+      pricePaid: data.pricePaid,
+      currency: data.currency,
+      cabinClass: data.cabinClass,
+      seatType: data.seatType,
+      bagsAdded: data.bagsAdded,
+      daysBeforeDeparture: data.daysBeforeDeparture,
+    });
 
     console.log(
       `[PreferenceEngine] Learned from booking: ${data.route}, ${data.airlineName}, ${data.currency === "INR" ? "₹" : "$"}${data.pricePaid}`

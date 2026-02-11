@@ -6,7 +6,7 @@ import { ProgressIndicator } from "./progress-indicator";
 import { StepPersonalInfo } from "./step-personal-info";
 import { StepTravelDocuments } from "./step-travel-documents";
 import { StepLoyaltyPrograms } from "./step-loyalty-programs";
-import { StepPreferences } from "./step-preferences";
+import { StepChatPreferences } from "./step-chat-preferences";
 import { StepSummary } from "./step-summary";
 import type {
   PersonalInfoValues,
@@ -15,6 +15,7 @@ import type {
   PreferencesValues,
 } from "@/lib/validations/onboarding";
 import type { UserProfile, LoyaltyProgram } from "@/types";
+import type { OnboardingQuestionKey } from "@/types/preferences";
 
 interface OnboardingWizardProps {
   initialProfile: UserProfile | null;
@@ -96,6 +97,9 @@ export function OnboardingWizard({
     preferred_cabin: undefined,
     special_assistance: [],
   });
+
+  // P3-05: Store chat onboarding responses for seeding Phase 3 preferences
+  const [chatResponses, setChatResponses] = useState<Record<string, string>>({});
 
   const goForward = useCallback((step: number) => {
     setDirection("forward");
@@ -231,13 +235,60 @@ export function OnboardingWizard({
     }
   };
 
+  // P3-04: Conversational chat preferences handler
+  const handleChatPreferences = async (
+    responses: Record<OnboardingQuestionKey, string>
+  ) => {
+    setIsSaving(true);
+    setSaveError(null);
+    try {
+      // Map chat responses to profile fields
+      const seatMap: Record<string, string> = {
+        window: "window",
+        aisle: "aisle",
+        no_preference: "no_preference",
+      };
+      const seatPref = seatMap[responses.seat_pref] ?? "no_preference";
+
+      // Save seat preference to profile
+      await saveProfile({ seat_preference: seatPref });
+
+      // Update local state so summary has data
+      setPreferences((prev) => ({
+        ...prev,
+        seat_preference: seatPref as PreferencesValues["seat_preference"],
+      }));
+
+      // Store chat responses for Phase 3 seeding in handleComplete
+      setChatResponses(responses);
+
+      // Save onboarding responses to DB (fire-and-forget)
+      fetch("/api/preferences/onboarding", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ responses }),
+      }).catch((err) =>
+        console.error("[Onboarding] Failed to save chat responses:", err)
+      );
+
+      goForward(4);
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "Failed to save preferences";
+      console.error("[Onboarding] Error saving chat preferences:", err);
+      setSaveError(message);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const handleComplete = async () => {
     setIsSaving(true);
     setSaveError(null);
     try {
       await saveProfile({ onboarding_completed: true });
 
-      // Seed preference engine (fire-and-forget)
+      // Seed preference engine: Phase 2 + Phase 3 (fire-and-forget)
       fetch("/api/preferences/seed", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -248,6 +299,10 @@ export function OnboardingWizard({
             code: lp.airline_code,
             name: lp.airline_name,
           })),
+          // P3-05: pass chat onboarding responses for Phase 3 preference vector
+          chatResponses: Object.keys(chatResponses).length > 0
+            ? chatResponses
+            : undefined,
         }),
       }).catch(() => {});
 
@@ -302,9 +357,8 @@ export function OnboardingWizard({
           />
         )}
         {currentStep === 3 && (
-          <StepPreferences
-            defaultValues={preferences}
-            onNext={handlePreferences}
+          <StepChatPreferences
+            onComplete={handleChatPreferences}
             onBack={() => goBack(2)}
             isSaving={isSaving}
             direction={direction}

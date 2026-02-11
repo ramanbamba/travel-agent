@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { ConversationAI } from "@/lib/intelligence/conversation-ai";
-import { searchFlightsCompat } from "@/lib/supply";
+import { searchFlights, toFlightOption } from "@/lib/supply";
+import { PreferenceScorer } from "@/lib/intelligence/preference-scoring";
 import type { ApiResponse, FlightOption } from "@/types";
 
 // ── In-memory flight cache (5 min TTL) ──────────────────────────────────────
@@ -147,22 +148,48 @@ export async function POST(request: Request) {
     let source = "cache";
 
     if (!flights) {
-      const result = await searchFlightsCompat({
+      // Fetch raw offers from supply layer
+      const result = await searchFlights({
         origin,
         destination,
         departureDate: date,
         adults: 1,
         cabinClass: cabinClass as "economy" | "premium_economy" | "business" | "first" | undefined,
       });
-      flights = result.flights;
       source = result.source;
+
+      // Score offers against user preferences + Flight DNA
+      const route = `${origin}-${destination}`;
+      const scorer = new PreferenceScorer(supabase);
+      const recommendation = await scorer.scoreOffers(user.id, route, result.offers);
+
+      // Convert to FlightOption with score data attached
+      flights = recommendation.offers.map((scored) => {
+        const opt = toFlightOption(scored.offer);
+        return {
+          ...opt,
+          preferenceScore: scored.score.score,
+          scoreConfidence: scored.score.confidence,
+          scoreReasons: scored.score.reasons,
+          priceInsight: scored.priceInsight,
+          flightDNA: scored.dna
+            ? {
+                ontime_pct: scored.dna.ontime_pct ?? undefined,
+                wifi: scored.dna.wifi,
+                seat_pitch: scored.dna.seat_pitch ?? undefined,
+                power_outlets: scored.dna.power_outlets,
+                food_rating: scored.dna.food_rating ?? undefined,
+              }
+            : null,
+        };
+      });
 
       if (flights.length > 0) {
         setCache(cacheKey, flights);
       }
     }
 
-    // Flights already sorted by price from supply layer
+    // Flights now sorted by preference score (highest first)
     if (flights.length === 0) {
       const nearby = suggestNearbyDates(date);
       const suggestion =
