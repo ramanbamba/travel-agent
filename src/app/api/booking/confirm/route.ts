@@ -405,7 +405,9 @@ export async function POST(request: Request) {
   // Record referral conversion if this user was referred
   recordReferralBooking(supabase, user.id).catch(() => {});
 
-  const emailPromise = user.email
+  let emailPromise: Promise<void> = Promise.resolve();
+  try {
+    emailPromise = user.email
     ? getResend().emails
         .send({
           from: FROM_EMAIL,
@@ -447,6 +449,9 @@ export async function POST(request: Request) {
           console.error("[email] Unexpected error:", err);
         })
     : Promise.resolve();
+  } catch (err) {
+    console.warn("[email] Skipping confirmation email:", err instanceof Error ? err.message : err);
+  }
 
   const auditPromise = logAudit(supabase, {
     userId: user.id,
