@@ -10,6 +10,10 @@ export function FlightResultsList({
   flights,
   onSelect,
 }: FlightResultsListProps) {
+  // First flight is recommended if it has a preference score
+  // (results come pre-sorted by score from the backend)
+  const hasScores = flights.length > 0 && flights[0].preferenceScore != null;
+
   return (
     <div className="flex w-full flex-col gap-2.5">
       {flights.map((flight, i) => (
@@ -18,7 +22,12 @@ export function FlightResultsList({
           className="animate-chat-message opacity-0 [animation-fill-mode:forwards]"
           style={{ animationDelay: `${i * 80}ms` }}
         >
-          <FlightCard flight={flight} onSelect={onSelect} />
+          <FlightCard
+            flight={flight}
+            onSelect={onSelect}
+            recommended={hasScores && i === 0}
+            rank={i + 1}
+          />
         </div>
       ))}
     </div>

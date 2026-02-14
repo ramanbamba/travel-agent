@@ -228,6 +228,53 @@ export async function createSupplyBooking(
 }
 
 /**
+ * Validate that an offer is still available and the price hasn't changed significantly.
+ * Returns the current price if valid, or throws if expired/unavailable.
+ * Used as a pre-booking safety check before charging the customer.
+ */
+export async function validateOfferFreshness(
+  offerId: string,
+  expectedPriceCents: number,
+  currency: string
+): Promise<{ valid: boolean; currentPriceCents: number; priceChanged: boolean }> {
+  const supplierName = resolveSupplierFromOfferId(offerId);
+
+  if (!BOOKABLE_SUPPLIERS.has(supplierName)) {
+    // Non-bookable suppliers can't be validated — assume OK
+    return { valid: true, currentPriceCents: expectedPriceCents, priceChanged: false };
+  }
+
+  const supplier = getSupplier(supplierName);
+  if (!supplier || !supplier.isAvailable()) {
+    throw new SupplyError(
+      `Supplier "${supplierName}" is not available`,
+      supplierName,
+      "SUPPLIER_UNAVAILABLE",
+      503
+    );
+  }
+
+  try {
+    const offer = await supplier.getOfferDetails(offerId);
+    const currentPriceCents = Math.round(offer.price.total * 100);
+    const priceChanged = currentPriceCents !== expectedPriceCents;
+
+    return {
+      valid: true,
+      currentPriceCents,
+      priceChanged,
+    };
+  } catch (err) {
+    if (err instanceof SupplyError && err.status === 410) {
+      throw err; // Offer expired — re-throw
+    }
+    // Other errors (network, etc.) — log but don't block
+    console.error(`[supply] Offer validation failed for ${supplierName}:`, err);
+    return { valid: true, currentPriceCents: expectedPriceCents, priceChanged: false };
+  }
+}
+
+/**
  * Cancel a booking with the named supplier.
  */
 export async function cancelSupplyBooking(

@@ -248,8 +248,11 @@ export function scoreOffer(
       if (dna.ontime_pct >= 90) {
         aPts += 3;
         reasons.push(`${dna.ontime_pct.toFixed(0)}% on-time`);
-      } else if (dna.ontime_pct >= 75) {
+      } else if (dna.ontime_pct >= 80) {
         aPts += 2;
+        reasons.push(`${dna.ontime_pct.toFixed(0)}% on-time`);
+      } else if (dna.ontime_pct >= 70) {
+        aPts += 1;
       } else {
         aPts += 0;
       }
@@ -258,15 +261,21 @@ export function scoreOffer(
 
     // Seat pitch
     if (dna.seat_pitch != null) {
-      if (dna.seat_pitch >= 32) aPts += 2;
-      else if (dna.seat_pitch >= 30) aPts += 1;
-      else aPts += 0;
+      if (dna.seat_pitch >= 32) {
+        aPts += 2;
+        reasons.push(`${dna.seat_pitch}" seat pitch`);
+      } else if (dna.seat_pitch >= 30) {
+        aPts += 1;
+      } else {
+        aPts += 0;
+      }
       factors++;
     }
 
     // Power outlets
     if (dna.power_outlets) {
       aPts += 1;
+      reasons.push("Power outlets");
     }
     factors++;
 
@@ -466,6 +475,24 @@ export class PreferenceScorer {
   }
 
   /**
+   * Build a short DNA snippet for commentary
+   * e.g. "87% on-time, Wi-Fi available, 32" seat pitch."
+   */
+  private static buildDNASnippetStatic(dna: FlightDNARow | null): string | null {
+    if (!dna) return null;
+    const parts: string[] = [];
+    if (dna.ontime_pct != null && dna.ontime_pct >= 75) {
+      parts.push(`${dna.ontime_pct.toFixed(0)}% on-time`);
+    }
+    if (dna.wifi) parts.push("Wi-Fi available");
+    if (dna.seat_pitch != null && dna.seat_pitch >= 31) {
+      parts.push(`${dna.seat_pitch}" seat pitch`);
+    }
+    if (dna.power_outlets) parts.push("power outlets");
+    return parts.length > 0 ? parts.join(", ") + "." : null;
+  }
+
+  /**
    * Score and rank a set of flight offers for a user.
    * Main entry point for P3-02.
    */
@@ -523,14 +550,16 @@ export class PreferenceScorer {
       topCount = 1;
       const top = scored[0];
       if (top) {
-        commentary = `Based on ${bookings} bookings, this is your perfect match.`;
+        const dnaSnippets = PreferenceScorer.buildDNASnippetStatic(top.dna);
+        commentary = `Based on ${bookings} bookings, this is your perfect match.${dnaSnippets ? ` ${dnaSnippets}` : ""}`;
       }
     } else if (bookings >= 3) {
       // Learning: show top 3
       topCount = 3;
       const top = scored[0];
-      if (top && top.score.reasons.length > 0) {
-        commentary = `Getting to know your preferences — here's my top pick.`;
+      if (top) {
+        const dnaSnippets = PreferenceScorer.buildDNASnippetStatic(top.dna);
+        commentary = `Getting to know your preferences — here's my top pick.${dnaSnippets ? ` ${dnaSnippets}` : ""}`;
       }
     } else {
       // Discovery: show top 5

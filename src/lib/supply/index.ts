@@ -7,6 +7,7 @@ export {
   resolveSupplierFromOfferId,
   createSupplyBooking,
   cancelSupplyBooking,
+  validateOfferFreshness,
 } from "./supply-manager";
 
 export { resolveSuppliers } from "./rules-engine";

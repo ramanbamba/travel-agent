@@ -52,6 +52,8 @@ export function parseAIJsonResponse(raw: string): AIProviderResponse {
         destination: parsed.search_params.destination,
         date: parsed.search_params.date,
         cabinClass: parsed.search_params.cabin_class,
+        returnDate: parsed.search_params.return_date,
+        timePreference: parsed.search_params.time_preference,
       };
     }
 

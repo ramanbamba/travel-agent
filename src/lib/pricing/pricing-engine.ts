@@ -53,11 +53,13 @@ function round2(n: number): number {
 
 /**
  * Calculate the priced result for a given supplier cost.
+ * Pass feeWaiver=true to zero out service fees (referral promotion).
  */
 export function calculatePrice(
   supplierTotal: number,
   currency: string,
-  rule: PricingRule = DEFAULT_PRICING_RULE
+  rule: PricingRule = DEFAULT_PRICING_RULE,
+  options?: { feeWaiver?: boolean }
 ): PricedResult {
   // Calculate markup
   let markup =
@@ -76,10 +78,15 @@ export function calculatePrice(
       ? supplierTotal * (rule.service_fee_value / 100)
       : rule.service_fee_value;
 
-  // Floor: if (markup + serviceFee) < min_total_fee, bump service fee
-  const totalFee = markup + serviceFee;
-  if (totalFee < rule.min_total_fee) {
-    serviceFee = rule.min_total_fee - markup;
+  // Fee waiver: zero out service fee for referred users (first 100 promotion)
+  if (options?.feeWaiver) {
+    serviceFee = 0;
+  } else {
+    // Floor: if (markup + serviceFee) < min_total_fee, bump service fee
+    const totalFee = markup + serviceFee;
+    if (totalFee < rule.min_total_fee) {
+      serviceFee = rule.min_total_fee - markup;
+    }
   }
 
   markup = round2(markup);

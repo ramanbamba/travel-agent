@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,11 +10,33 @@ import { Label } from "@/components/ui/label";
 
 export default function SignupPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const refCode = searchParams.get("ref")?.toUpperCase().trim() ?? null;
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [referrerName, setReferrerName] = useState<string | null>(null);
+
+  // Validate referral code on mount
+  useEffect(() => {
+    if (!refCode) return;
+    async function validate() {
+      try {
+        const res = await fetch(`/api/referrals/validate?code=${refCode}`);
+        if (res.ok) {
+          const json = await res.json();
+          if (json.data?.valid) {
+            setReferrerName(json.data.referrerName ?? null);
+          }
+        }
+      } catch {
+        // Non-critical
+      }
+    }
+    validate();
+  }, [refCode]);
 
   async function handleSignup(e: React.FormEvent) {
     e.preventDefault();
@@ -37,12 +59,28 @@ export default function SignupPage() {
     }
 
     // If email confirmation is disabled, a session is returned immediately
-    if (data.session) {
+    if (data.session && data.user) {
+      // Apply referral if present
+      if (refCode) {
+        try {
+          await fetch("/api/referrals/apply", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ referralCode: refCode }),
+          });
+        } catch {
+          // Non-critical
+        }
+      }
       router.push("/dashboard/onboarding");
       return;
     }
 
     // No session means email confirmation is required
+    // Store referral code in cookie for the auth callback to pick up
+    if (refCode) {
+      document.cookie = `referral_code=${refCode};path=/;max-age=${60 * 60 * 24 * 30};samesite=lax`;
+    }
     setSuccess(true);
     setLoading(false);
   }
@@ -90,6 +128,20 @@ export default function SignupPage() {
           Get started with Skyswift in seconds
         </p>
       </div>
+
+      {/* Referral badge */}
+      {refCode && (
+        <div className="mb-5 flex items-center justify-center gap-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 px-4 py-2.5">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgb(52 211 153)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 2L15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26z" />
+          </svg>
+          <span className="text-sm text-emerald-400">
+            {referrerName
+              ? `${referrerName} invited you — zero service fees on your first booking!`
+              : "You've been referred — zero service fees on your first booking!"}
+          </span>
+        </div>
+      )}
 
       <form onSubmit={handleSignup} className="space-y-4">
         <div className="space-y-2">

@@ -7,12 +7,67 @@ import type { FlightOption } from "@/types/flights";
 interface FlightCardProps {
   flight: FlightOption;
   onSelect?: (flightId: string) => void;
+  /** Show "Recommended" badge */
+  recommended?: boolean;
+  /** Ranking position (1-based) */
+  rank?: number;
 }
 
-export function FlightCard({ flight, onSelect }: FlightCardProps) {
+// ── DNA chip helpers ─────────────────────────────────────────────────────
+
+function OntimeChip({ pct }: { pct: number }) {
+  const color =
+    pct >= 85
+      ? "bg-green-50 text-green-700"
+      : pct >= 70
+        ? "bg-amber-50 text-amber-700"
+        : "bg-red-50 text-red-700";
+  return (
+    <span className={cn("inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-medium", color)}>
+      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
+      </svg>
+      {pct.toFixed(0)}%
+    </span>
+  );
+}
+
+function WifiChip({ available }: { available: boolean }) {
+  if (!available) return null;
+  return (
+    <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-1.5 py-0.5 text-[10px] font-medium text-blue-700">
+      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M5 12.55a11 11 0 0 1 14.08 0" /><path d="M1.42 9a16 16 0 0 1 21.16 0" /><path d="M8.53 16.11a6 6 0 0 1 6.95 0" /><line x1="12" y1="20" x2="12.01" y2="20" />
+      </svg>
+      Wi-Fi
+    </span>
+  );
+}
+
+function SeatPitchChip({ pitch }: { pitch: number }) {
+  return (
+    <span className="inline-flex items-center gap-1 rounded-full bg-[var(--glass-hover)] px-1.5 py-0.5 text-[10px] font-medium text-[var(--glass-text-secondary)]">
+      {pitch}&quot;
+    </span>
+  );
+}
+
+function PowerChip({ available }: { available: boolean }) {
+  if (!available) return null;
+  return (
+    <span className="inline-flex items-center gap-1 rounded-full bg-[var(--glass-hover)] px-1.5 py-0.5 text-[10px] font-medium text-[var(--glass-text-secondary)]">
+      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M5 18H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3.19M15 6h2a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-3.19" /><line x1="23" y1="13" x2="23" y2="11" /><polyline points="11 6 7 12 13 12 9 18" />
+      </svg>
+    </span>
+  );
+}
+
+export function FlightCard({ flight, onSelect, recommended, rank }: FlightCardProps) {
   const firstSegment = flight.segments[0];
   const lastSegment = flight.segments[flight.segments.length - 1];
   const cabinLabel = firstSegment.cabin.replace("_", " ");
+  const dna = flight.flightDNA;
 
   const connectionInfo =
     flight.segments.length > 1
@@ -43,9 +98,39 @@ export function FlightCard({ flight, onSelect }: FlightCardProps) {
         "p-4",
         "transition-all duration-300 ease-expo-out",
         "hover:shadow-[var(--glass-shadow-hover)] hover:-translate-y-0.5",
-        "active:translate-y-0 active:shadow-[var(--glass-shadow-sm)]"
+        "active:translate-y-0 active:shadow-[var(--glass-shadow-sm)]",
+        recommended && "ring-1 ring-[var(--glass-accent-blue)]/30"
       )}
     >
+      {/* Recommended badge */}
+      {recommended && (
+        <div className="mb-2 flex items-center gap-1.5">
+          <span
+            className={cn(
+              "rounded-full px-2.5 py-0.5",
+              "text-[10px] font-semibold uppercase tracking-wider",
+              "bg-[var(--glass-accent-blue)] text-white"
+            )}
+          >
+            Recommended
+          </span>
+          {flight.priceInsight && (
+            <span className="text-[10px] font-medium text-[var(--glass-text-secondary)]">
+              {flight.priceInsight}
+            </span>
+          )}
+        </div>
+      )}
+
+      {/* Price insight for non-recommended cards */}
+      {!recommended && flight.priceInsight && (
+        <div className="mb-2">
+          <span className="text-[10px] font-medium text-[var(--glass-text-secondary)]">
+            {flight.priceInsight}
+          </span>
+        </div>
+      )}
+
       {/* Top row: airline + cabin */}
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
@@ -159,6 +244,30 @@ export function FlightCard({ flight, onSelect }: FlightCardProps) {
         </div>
       </div>
 
+      {/* Flight DNA enrichment chips */}
+      {dna && (
+        <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
+          {dna.ontime_pct != null && <OntimeChip pct={dna.ontime_pct} />}
+          {dna.wifi != null && <WifiChip available={dna.wifi} />}
+          {dna.seat_pitch != null && <SeatPitchChip pitch={dna.seat_pitch} />}
+          {dna.power_outlets != null && <PowerChip available={dna.power_outlets} />}
+        </div>
+      )}
+
+      {/* Score reasons */}
+      {flight.scoreReasons && flight.scoreReasons.length > 0 && (
+        <div className="mt-2 flex flex-wrap gap-1">
+          {flight.scoreReasons.map((reason, i) => (
+            <span
+              key={i}
+              className="text-[10px] text-[var(--glass-text-tertiary)] italic"
+            >
+              {reason}{i < flight.scoreReasons!.length - 1 ? " · " : ""}
+            </span>
+          ))}
+        </div>
+      )}
+
       {/* Bottom row: price + seats + select */}
       <div className="mt-3 flex items-center justify-between">
         <div className="flex items-baseline gap-1">
@@ -189,7 +298,7 @@ export function FlightCard({ flight, onSelect }: FlightCardProps) {
               "active:scale-95"
             )}
           >
-            Select
+            {recommended ? "Book" : "Select"}
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="m9 18 6-6-6-6" />
             </svg>

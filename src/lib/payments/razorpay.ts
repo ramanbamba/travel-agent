@@ -1,16 +1,22 @@
 import Razorpay from "razorpay";
 import crypto from "crypto";
-import { getRazorpayKeyId, getRazorpayKeySecret } from "@/lib/config/app-mode";
+import { getRazorpayKeyId, getRazorpayKeySecret, getAppMode } from "@/lib/config/app-mode";
 
 let instance: Razorpay | null = null;
+let instanceMode: string | null = null;
 
-/** Lazy-init Razorpay SDK singleton */
+/**
+ * Lazy-init Razorpay SDK singleton.
+ * Re-creates client if app mode changes (sandbox ↔ live).
+ */
 function getRazorpay(): Razorpay {
-  if (!instance) {
+  const mode = getAppMode();
+  if (!instance || instanceMode !== mode) {
     instance = new Razorpay({
       key_id: getRazorpayKeyId(),
       key_secret: getRazorpayKeySecret(),
     });
+    instanceMode = mode;
   }
   return instance;
 }

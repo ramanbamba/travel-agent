@@ -5,11 +5,13 @@ import { logAudit } from "@/lib/audit";
 import {
   resolveSupplierFromOfferId,
   createSupplyBooking,
+  validateOfferFreshness,
   SupplyError,
 } from "@/lib/supply";
 import type { SupplyPassenger, SupplyPaymentInfo } from "@/lib/supply";
 import type { ApiResponse, BookingConfirmation, BookingSummary } from "@/types";
 import { PreferenceEngine } from "@/lib/intelligence/preference-engine";
+import { recordReferralBooking } from "@/lib/referrals";
 
 function generateConfirmationCode(): string {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -119,10 +121,41 @@ export async function POST(request: Request) {
   const supplierCostCents = amountCents - serviceFeeCents - markupCents;
   const ourRevenueCents = markupCents + serviceFeeCents;
 
-  // ── Step 3: Book with supplier ──────────────────────────────────────────────
+  // ── Step 3: Validate offer freshness ────────────────────────────────────────
   const offerId = booking.flight.id;
   const supplierName = resolveSupplierFromOfferId(offerId);
   const BOOKABLE_SUPPLIERS = new Set(["duffel", "mock"]);
+
+  try {
+    const freshness = await validateOfferFreshness(offerId, amountCents, booking.totalPrice.currency);
+    if (freshness.priceChanged) {
+      console.warn(
+        `[razorpay-verify] Price changed: expected ${amountCents}, got ${freshness.currentPriceCents}`
+      );
+      // Log but proceed — Duffel will re-price at booking time anyway
+    }
+  } catch (err) {
+    if (err instanceof SupplyError && err.status === 410) {
+      // Offer expired — refund immediately
+      try {
+        await refundPayment(razorpay_payment_id);
+      } catch (refundErr) {
+        console.error("[razorpay-verify] Refund after expired offer:", refundErr);
+      }
+      return NextResponse.json<ApiResponse>(
+        {
+          data: null,
+          error: "offer_expired",
+          message: "This offer has expired. Please search again. Your payment has been refunded.",
+        },
+        { status: 410 }
+      );
+    }
+    // Non-critical validation failure — proceed to booking
+    console.warn("[razorpay-verify] Offer validation failed, proceeding:", err);
+  }
+
+  // ── Step 4: Book with supplier ──────────────────────────────────────────────
   const isBookable = BOOKABLE_SUPPLIERS.has(supplierName);
 
   let confirmationCode: string;
@@ -327,6 +360,9 @@ export async function POST(request: Request) {
       razorpay_payment_id,
     },
   }).catch(() => {});
+
+  // Record referral conversion if this user was referred
+  recordReferralBooking(supabase, user.id).catch(() => {});
 
   // ── Learn from this booking (fire-and-forget) ─────────────────────────────
   const depDate = new Date(segment.departure.time);

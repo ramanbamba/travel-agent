@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { logAudit } from "@/lib/audit";
+import { isLiveMode } from "@/lib/config/app-mode";
 import {
   resolveSupplierFromOfferId,
   createSupplyBooking,
@@ -20,11 +21,22 @@ function generateConfirmationCode(): string {
 }
 
 /**
- * Demo booking route — bypasses Stripe payment entirely.
+ * Demo booking route — bypasses payment entirely.
  * Books directly with the supplier (Duffel/mock) and saves to DB.
- * Only for testing — do NOT use in production.
+ * BLOCKED in live mode — only available in sandbox.
  */
 export async function POST(request: Request) {
+  // Block demo bookings in live mode
+  if (isLiveMode()) {
+    return NextResponse.json<ApiResponse>(
+      {
+        data: null,
+        error: "Forbidden",
+        message: "Demo bookings are disabled in live mode. Use a real payment method.",
+      },
+      { status: 403 }
+    );
+  }
   const supabase = createClient();
   const {
     data: { user },

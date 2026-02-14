@@ -21,6 +21,8 @@ export {
   type SystemPromptParams,
   type RouteFamiliarityContext,
   type ConversationSessionContext,
+  type LastBookingContextForPrompt,
+  type FrequentRouteContext,
 } from "./prompts/system-prompts";
 
 // Manager

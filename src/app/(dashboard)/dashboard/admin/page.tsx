@@ -14,9 +14,17 @@ import {
   CheckCircle2,
   XCircle,
   Loader2,
+  Users,
+  Target,
+  MessageSquare,
+  Route,
+  Funnel,
+  Brain,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatPrice } from "@/lib/utils/format-india";
+
+// ── Types ────────────────────────────────────────────────────────────────────
 
 interface AdminStats {
   recentBookings: {
@@ -54,28 +62,52 @@ interface AdminStats {
     resolved: boolean;
     created_at: string;
   }[];
+  // P3-12 additions
+  topRoutes: {
+    route: string;
+    totalBooked: number;
+    level: string;
+    airline: string | null;
+    avgPrice: number | null;
+  }[];
+  preferenceAccuracy: number | null;
+  totalFeedback: number;
+  funnel: {
+    sessions: number;
+    searches: number;
+    selections: number;
+    bookings: number;
+  };
+  avgMessagesPerSession: number;
+  activeUsers: number;
+  failedIntents: Record<string, number>;
+  totalFailedIntents: number;
 }
+
+// ── Reusable Components ──────────────────────────────────────────────────────
+
+const glassCard = cn(
+  "rounded-[var(--glass-radius-card)]",
+  "bg-[var(--glass-subtle)]",
+  "backdrop-blur-[24px] [backdrop-filter:blur(24px)_saturate(1.8)] [-webkit-backdrop-filter:blur(24px)_saturate(1.8)]",
+  "border border-[var(--glass-border)]"
+);
 
 function StatCard({
   label,
   value,
   icon: Icon,
   accent = false,
+  sub,
 }: {
   label: string;
   value: string;
   icon: React.ElementType;
   accent?: boolean;
+  sub?: string;
 }) {
   return (
-    <div
-      className={cn(
-        "rounded-[var(--glass-radius-card)] p-4",
-        "bg-[var(--glass-subtle)]",
-        "backdrop-blur-[24px] [backdrop-filter:blur(24px)_saturate(1.8)] [-webkit-backdrop-filter:blur(24px)_saturate(1.8)]",
-        "border border-[var(--glass-border)]"
-      )}
-    >
+    <div className={cn(glassCard, "p-4")}>
       <div className="flex items-center gap-3">
         <div
           className={cn(
@@ -99,11 +131,102 @@ function StatCard({
             {value}
           </p>
           <p className="text-xs text-[var(--glass-text-tertiary)]">{label}</p>
+          {sub && (
+            <p className="text-[11px] text-[var(--glass-text-tertiary)]">
+              {sub}
+            </p>
+          )}
         </div>
       </div>
     </div>
   );
 }
+
+function SectionHeader({
+  icon: Icon,
+  title,
+  iconColor,
+}: {
+  icon: React.ElementType;
+  title: string;
+  iconColor?: string;
+}) {
+  return (
+    <div className="flex items-center gap-2 border-b border-[var(--glass-border)] px-4 py-3">
+      <Icon className={cn("h-4 w-4", iconColor ?? "text-[var(--glass-text-tertiary)]")} />
+      <h2 className="text-sm font-semibold text-[var(--glass-text-primary)]">
+        {title}
+      </h2>
+    </div>
+  );
+}
+
+// ── Funnel Bar ───────────────────────────────────────────────────────────────
+
+function FunnelStep({
+  label,
+  count,
+  maxCount,
+  color,
+}: {
+  label: string;
+  count: number;
+  maxCount: number;
+  color: string;
+}) {
+  const pct = maxCount > 0 ? (count / maxCount) * 100 : 0;
+  return (
+    <div className="space-y-1">
+      <div className="flex items-center justify-between">
+        <span className="text-xs text-[var(--glass-text-secondary)]">
+          {label}
+        </span>
+        <span className="text-xs font-medium text-[var(--glass-text-primary)]">
+          {count}
+        </span>
+      </div>
+      <div className="h-2 w-full rounded-full bg-[var(--glass-border)]">
+        <div
+          className={cn("h-2 rounded-full transition-all duration-500", color)}
+          style={{ width: `${Math.max(pct, 2)}%` }}
+        />
+      </div>
+    </div>
+  );
+}
+
+// ── Familiarity Badge ────────────────────────────────────────────────────────
+
+function FamiliarityBadge({ level }: { level: string }) {
+  const config: Record<string, { bg: string; text: string }> = {
+    discovery: {
+      bg: "bg-purple-100 dark:bg-purple-900/30",
+      text: "text-purple-600 dark:text-purple-400",
+    },
+    learning: {
+      bg: "bg-amber-100 dark:bg-amber-900/30",
+      text: "text-amber-600 dark:text-amber-400",
+    },
+    autopilot: {
+      bg: "bg-[var(--glass-accent-blue-light)]",
+      text: "text-[var(--glass-accent-blue)]",
+    },
+  };
+  const c = config[level] ?? config.discovery;
+  return (
+    <span
+      className={cn(
+        "rounded-full px-2 py-0.5 text-[10px] font-semibold capitalize",
+        c.bg,
+        c.text
+      )}
+    >
+      {level}
+    </span>
+  );
+}
+
+// ── Page ─────────────────────────────────────────────────────────────────────
 
 export default function AdminDashboardPage() {
   const router = useRouter();
@@ -149,26 +272,56 @@ export default function AdminDashboardPage() {
   }
 
   const c = stats.currency;
+  const funnelMax = Math.max(stats.funnel.sessions, 1);
 
   return (
     <div className="mx-auto max-w-5xl space-y-6 p-6">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-bold text-[var(--glass-text-primary)]">
           Admin Dashboard
         </h1>
-        <Link
-          href="/dashboard/admin/pricing"
-          className={cn(
-            "flex items-center gap-1.5 rounded-[var(--glass-radius-button)] px-3 py-1.5",
-            "text-xs font-medium text-[var(--glass-accent-blue)]",
-            "border border-[var(--glass-border)]",
-            "bg-[var(--glass-subtle)]",
-            "transition-all duration-200 hover:bg-[var(--glass-standard)]"
-          )}
-        >
-          <Settings className="h-3.5 w-3.5" />
-          Pricing Rules
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link
+            href="/dashboard/admin/demo-users"
+            className={cn(
+              "flex items-center gap-1.5 rounded-[var(--glass-radius-button)] px-3 py-1.5",
+              "text-xs font-medium text-[var(--glass-accent-blue)]",
+              "border border-[var(--glass-border)]",
+              "bg-[var(--glass-subtle)]",
+              "transition-all duration-200 hover:bg-[var(--glass-standard)]"
+            )}
+          >
+            <Users className="h-3.5 w-3.5" />
+            Demo Users
+          </Link>
+          <Link
+            href="/dashboard/admin/flight-dna"
+            className={cn(
+              "flex items-center gap-1.5 rounded-[var(--glass-radius-button)] px-3 py-1.5",
+              "text-xs font-medium text-[var(--glass-accent-blue)]",
+              "border border-[var(--glass-border)]",
+              "bg-[var(--glass-subtle)]",
+              "transition-all duration-200 hover:bg-[var(--glass-standard)]"
+            )}
+          >
+            <Plane className="h-3.5 w-3.5" />
+            Flight DNA
+          </Link>
+          <Link
+            href="/dashboard/admin/pricing"
+            className={cn(
+              "flex items-center gap-1.5 rounded-[var(--glass-radius-button)] px-3 py-1.5",
+              "text-xs font-medium text-[var(--glass-accent-blue)]",
+              "border border-[var(--glass-border)]",
+              "bg-[var(--glass-subtle)]",
+              "transition-all duration-200 hover:bg-[var(--glass-standard)]"
+            )}
+          >
+            <Settings className="h-3.5 w-3.5" />
+            Pricing Rules
+          </Link>
+        </div>
       </div>
 
       {/* Quick stats */}
@@ -216,16 +369,176 @@ export default function AdminDashboardPage() {
         />
       </div>
 
+      {/* ── P3-12: Intelligence Metrics ── */}
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+        <StatCard
+          label="Active Users"
+          value={String(stats.activeUsers)}
+          icon={Users}
+          accent
+        />
+        <StatCard
+          label="Preference Accuracy"
+          value={
+            stats.preferenceAccuracy !== null
+              ? `${stats.preferenceAccuracy}%`
+              : "—"
+          }
+          icon={Target}
+          accent
+          sub={`${stats.totalFeedback} feedback signals`}
+        />
+        <StatCard
+          label="Avg Messages / Session"
+          value={String(stats.avgMessagesPerSession)}
+          icon={MessageSquare}
+        />
+        <StatCard
+          label="Failed Intents"
+          value={String(stats.totalFailedIntents)}
+          icon={AlertTriangle}
+          sub={
+            Object.keys(stats.failedIntents).length > 0
+              ? Object.entries(stats.failedIntents)
+                  .sort((a, b) => b[1] - a[1])
+                  .slice(0, 2)
+                  .map(([reason, n]) => `${reason}: ${n}`)
+                  .join(", ")
+              : undefined
+          }
+        />
+      </div>
+
+      {/* ── P3-12: Conversion Funnel + Top Routes ── */}
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        {/* Conversion funnel */}
+        <div className={cn(glassCard, "overflow-hidden")}>
+          <SectionHeader icon={Funnel} title="Conversion Funnel" />
+          <div className="space-y-3 p-4">
+            <FunnelStep
+              label="Chat Sessions"
+              count={stats.funnel.sessions}
+              maxCount={funnelMax}
+              color="bg-[var(--glass-text-tertiary)]"
+            />
+            <FunnelStep
+              label="Searches"
+              count={stats.funnel.searches}
+              maxCount={funnelMax}
+              color="bg-amber-500"
+            />
+            <FunnelStep
+              label="Selections"
+              count={stats.funnel.selections}
+              maxCount={funnelMax}
+              color="bg-[var(--glass-accent-blue)]"
+            />
+            <FunnelStep
+              label="Confirmed Bookings"
+              count={stats.funnel.bookings}
+              maxCount={funnelMax}
+              color="bg-[var(--glass-accent-green)]"
+            />
+            {/* Conversion rates */}
+            <div className="mt-2 flex gap-3 border-t border-[var(--glass-border)] pt-3">
+              <div className="text-center flex-1">
+                <p className="text-lg font-bold text-[var(--glass-text-primary)]">
+                  {stats.funnel.sessions > 0
+                    ? `${Math.round((stats.funnel.searches / stats.funnel.sessions) * 100)}%`
+                    : "—"}
+                </p>
+                <p className="text-[10px] text-[var(--glass-text-tertiary)]">
+                  Session → Search
+                </p>
+              </div>
+              <div className="text-center flex-1">
+                <p className="text-lg font-bold text-[var(--glass-text-primary)]">
+                  {stats.funnel.searches > 0
+                    ? `${Math.round((stats.funnel.selections / stats.funnel.searches) * 100)}%`
+                    : "—"}
+                </p>
+                <p className="text-[10px] text-[var(--glass-text-tertiary)]">
+                  Search → Select
+                </p>
+              </div>
+              <div className="text-center flex-1">
+                <p className="text-lg font-bold text-[var(--glass-accent-blue)]">
+                  {stats.funnel.sessions > 0
+                    ? `${Math.round((stats.funnel.bookings / stats.funnel.sessions) * 100)}%`
+                    : "—"}
+                </p>
+                <p className="text-[10px] text-[var(--glass-text-tertiary)]">
+                  Overall CVR
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Top routes */}
+        <div className={cn(glassCard, "overflow-hidden")}>
+          <SectionHeader icon={Route} title="Top Routes" />
+          <div className="divide-y divide-[var(--glass-border)]">
+            {stats.topRoutes.map((route) => (
+              <div
+                key={route.route}
+                className="flex items-center gap-3 px-4 py-2.5"
+              >
+                <span className="w-24 text-sm font-medium text-[var(--glass-text-primary)]">
+                  {route.route}
+                </span>
+                <FamiliarityBadge level={route.level} />
+                <span className="text-xs text-[var(--glass-text-tertiary)]">
+                  {route.totalBooked}x
+                </span>
+                {route.airline && (
+                  <span className="text-xs text-[var(--glass-text-secondary)]">
+                    {route.airline}
+                  </span>
+                )}
+                <span className="ml-auto text-xs text-[var(--glass-text-tertiary)]">
+                  {route.avgPrice
+                    ? `~₹${Math.round(route.avgPrice).toLocaleString("en-IN")}`
+                    : ""}
+                </span>
+              </div>
+            ))}
+            {stats.topRoutes.length === 0 && (
+              <div className="px-4 py-6 text-center text-sm text-[var(--glass-text-tertiary)]">
+                No route data yet
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* ── P3-12: Failed Intents Breakdown ── */}
+      {stats.totalFailedIntents > 0 && (
+        <div className={cn(glassCard, "overflow-hidden")}>
+          <SectionHeader
+            icon={Brain}
+            title="Failed Intent Breakdown"
+            iconColor="text-red-500"
+          />
+          <div className="grid grid-cols-2 gap-3 p-4 md:grid-cols-4">
+            {Object.entries(stats.failedIntents)
+              .sort((a, b) => b[1] - a[1])
+              .map(([reason, count]) => (
+                <div key={reason} className="text-center">
+                  <p className="text-xl font-bold text-[var(--glass-text-primary)]">
+                    {count}
+                  </p>
+                  <p className="text-[11px] capitalize text-[var(--glass-text-tertiary)]">
+                    {reason.replace(/_/g, " ")}
+                  </p>
+                </div>
+              ))}
+          </div>
+        </div>
+      )}
+
       {/* Recent bookings */}
-      <div
-        className={cn(
-          "rounded-[var(--glass-radius-card)]",
-          "bg-[var(--glass-subtle)]",
-          "backdrop-blur-[24px] [backdrop-filter:blur(24px)_saturate(1.8)] [-webkit-backdrop-filter:blur(24px)_saturate(1.8)]",
-          "border border-[var(--glass-border)]",
-          "overflow-hidden"
-        )}
-      >
+      <div className={cn(glassCard, "overflow-hidden")}>
         <div className="border-b border-[var(--glass-border)] px-4 py-3">
           <h2 className="text-sm font-semibold text-[var(--glass-text-primary)]">
             Recent Bookings
@@ -311,21 +624,12 @@ export default function AdminDashboardPage() {
       </div>
 
       {/* Incidents */}
-      <div
-        className={cn(
-          "rounded-[var(--glass-radius-card)]",
-          "bg-[var(--glass-subtle)]",
-          "backdrop-blur-[24px] [backdrop-filter:blur(24px)_saturate(1.8)] [-webkit-backdrop-filter:blur(24px)_saturate(1.8)]",
-          "border border-[var(--glass-border)]",
-          "overflow-hidden"
-        )}
-      >
-        <div className="flex items-center gap-2 border-b border-[var(--glass-border)] px-4 py-3">
-          <AlertTriangle className="h-4 w-4 text-amber-500" />
-          <h2 className="text-sm font-semibold text-[var(--glass-text-primary)]">
-            Recent Incidents
-          </h2>
-        </div>
+      <div className={cn(glassCard, "overflow-hidden")}>
+        <SectionHeader
+          icon={AlertTriangle}
+          title="Recent Incidents"
+          iconColor="text-amber-500"
+        />
         <div className="divide-y divide-[var(--glass-border)]">
           {stats.incidents.map((inc) => (
             <div key={inc.id} className="flex items-center gap-3 px-4 py-3">

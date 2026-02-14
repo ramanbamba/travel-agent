@@ -7,11 +7,13 @@ import { logAudit } from "@/lib/audit";
 import {
   resolveSupplierFromOfferId,
   createSupplyBooking,
+  validateOfferFreshness,
   SupplyError,
 } from "@/lib/supply";
 import type { SupplyPassenger, SupplyPaymentInfo } from "@/lib/supply";
 import type { ApiResponse, BookingConfirmation, BookingSummary } from "@/types";
 import { PreferenceEngine } from "@/lib/intelligence/preference-engine";
+import { getOrCreateReferralCode, recordReferralBooking } from "@/lib/referrals";
 
 function generateConfirmationCode(): string {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -128,6 +130,29 @@ export async function POST(request: Request) {
   const supplierCostCents = amountCents - serviceFeeCents - markupCents;
   const ourRevenueCents = markupCents + serviceFeeCents;
 
+  // ── Pre-booking: validate offer freshness ───────────────────────────────────
+  const preOfferId = booking.flight.id;
+  try {
+    const freshness = await validateOfferFreshness(preOfferId, amountCents, booking.totalPrice.currency.toLowerCase());
+    if (freshness.priceChanged) {
+      console.warn(
+        `[booking] Price changed: expected ${amountCents}, got ${freshness.currentPriceCents}`
+      );
+    }
+  } catch (err) {
+    if (err instanceof SupplyError && err.status === 410) {
+      return NextResponse.json<ApiResponse>(
+        {
+          data: null,
+          error: "offer_expired",
+          message: "This offer has expired. Please search for flights again.",
+        },
+        { status: 410 }
+      );
+    }
+    console.warn("[booking] Offer validation failed, proceeding:", err);
+  }
+
   // Create and confirm PaymentIntent
   let paymentIntent;
   try {
@@ -210,11 +235,31 @@ export async function POST(request: Request) {
       // Supplier booking failed — auto-refund Stripe
       console.error("[booking] Supplier booking failed, refunding Stripe:", err);
 
+      let refundSucceeded = false;
       try {
         await stripe.refunds.create({ payment_intent: paymentIntent.id });
+        refundSucceeded = true;
       } catch (refundErr) {
         console.error("[booking] Stripe refund also failed:", refundErr);
+
+        // Log refund failure as critical incident
+        supabase.from("booking_incidents").insert({
+          user_id: user.id,
+          incident_type: "refund_failed",
+          amount: booking.totalPrice.amount,
+          currency: booking.totalPrice.currency,
+          error_message: `Supplier failed + Stripe refund failed: ${refundErr instanceof Error ? refundErr.message : String(refundErr)}`,
+        }).then(() => {});
       }
+
+      // Log payment-booking mismatch incident
+      supabase.from("booking_incidents").insert({
+        user_id: user.id,
+        incident_type: "payment_booking_mismatch",
+        amount: booking.totalPrice.amount,
+        currency: booking.totalPrice.currency,
+        error_message: `Stripe PI ${paymentIntent.id}: ${err instanceof Error ? err.message : String(err)}`,
+      }).then(() => {});
 
       // Audit the failure
       logAudit(supabase, {
@@ -225,18 +270,21 @@ export async function POST(request: Request) {
         metadata: {
           supplier: supplierName,
           offerId,
+          stripePaymentIntentId: paymentIntent.id,
+          refundSucceeded,
           error: err instanceof Error ? err.message : String(err),
         },
       }).catch(() => {});
 
       const isExpired = err instanceof SupplyError && err.status === 410;
+      const refundMsg = refundSucceeded ? " Your card has been refunded." : " A refund will be processed shortly.";
       return NextResponse.json<ApiResponse>(
         {
           data: null,
           error: isExpired ? "offer_expired" : "supplier_booking_failed",
           message: isExpired
-            ? "This offer has expired. Please search for flights again."
-            : "Booking failed with the airline. Your card has been refunded.",
+            ? `This offer has expired. Please search for flights again.${refundMsg}`
+            : `Booking failed with the airline.${refundMsg}`,
         },
         { status: isExpired ? 410 : 502 }
       );
@@ -344,6 +392,18 @@ export async function POST(request: Request) {
   }).format(booking.totalPrice.amount);
 
   const emailSegment = booking.flight.segments[0];
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://skyswift.app";
+
+  // Get referral code for email (fire-and-forget, don't block confirmation)
+  let userReferralCode: string | undefined;
+  try {
+    userReferralCode = await getOrCreateReferralCode(supabase, user.id);
+  } catch {
+    // Non-critical
+  }
+
+  // Record referral conversion if this user was referred
+  recordReferralBooking(supabase, user.id).catch(() => {});
 
   const emailPromise = user.email
     ? getResend().emails
@@ -366,6 +426,8 @@ export async function POST(request: Request) {
             totalPrice: formattedPrice,
             bookedAt,
             bookingId: bookingRow.id,
+            referralCode: userReferralCode,
+            appUrl,
           }),
         })
         .then((result) => {

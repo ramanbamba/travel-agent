@@ -5,7 +5,7 @@ import { useState, useEffect } from "react";
 import { useChatMessages } from "@/hooks/use-chat-messages";
 import { ChatMessages } from "./chat-messages";
 import { ChatInput } from "./chat-input";
-import { WelcomeScreen } from "./welcome-screen";
+import { WelcomeScreen, type QuickAction } from "./welcome-screen";
 import { ChatSessionsList } from "./chat-sessions-list";
 import { cn } from "@/lib/utils";
 
@@ -26,8 +26,12 @@ export function ChatContainer() {
 
   const [showSessions, setShowSessions] = useState(false);
   const [stats, setStats] = useState<{ totalBookings: number; routesLearned: number } | null>(null);
+  const [quickActions, setQuickActions] = useState<QuickAction[]>([]);
+  const [patternGreeting, setPatternGreeting] = useState("");
+  const [returningLoading, setReturningLoading] = useState(true);
   const hasMessages = messages.length > 0;
 
+  // Load stats + returning user data in parallel
   useEffect(() => {
     fetch("/api/chat/stats")
       .then((r) => (r.ok ? r.json() : null))
@@ -35,6 +39,17 @@ export function ChatContainer() {
         if (json?.data) setStats(json.data);
       })
       .catch(() => {});
+
+    fetch("/api/chat/returning-user")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((json) => {
+        if (json?.data?.isReturning) {
+          setQuickActions(json.data.quickActions ?? []);
+          setPatternGreeting(json.data.greeting ?? "");
+        }
+      })
+      .catch(() => {})
+      .finally(() => setReturningLoading(false));
   }, []);
 
   return (
@@ -145,7 +160,12 @@ export function ChatContainer() {
             onRazorpayConfirm={confirmBookingRazorpay}
           />
         ) : (
-          <WelcomeScreen onSuggestedPrompt={sendMessage} />
+          <WelcomeScreen
+            onSuggestedPrompt={sendMessage}
+            quickActions={quickActions}
+            patternGreeting={patternGreeting}
+            loading={returningLoading}
+          />
         )}
         <ChatInput onSend={sendMessage} disabled={isLoading} />
       </div>

@@ -30,6 +30,8 @@ interface BookingConfirmationEmailProps {
   totalPrice: string;
   bookedAt: string;
   bookingId: string;
+  referralCode?: string;
+  appUrl?: string;
 }
 
 function formatDateTime(iso: string): string {
@@ -58,7 +60,10 @@ export function BookingConfirmationEmail({
   totalPrice,
   bookedAt,
   bookingId,
+  referralCode,
+  appUrl = "https://skyswift.app",
 }: BookingConfirmationEmailProps) {
+  const referralUrl = referralCode ? `${appUrl}/r/${referralCode}` : null;
   const previewText = `Booking confirmed: ${flight.departureAirport} → ${flight.arrivalAirport} (${confirmationCode})`;
 
   return (
@@ -142,10 +147,25 @@ export function BookingConfirmationEmail({
             </Section>
           </Section>
 
+          {/* Referral section */}
+          {referralUrl && (
+            <Section style={referralSection}>
+              <Text style={referralHeading}>Share SkySwift with friends</Text>
+              <Text style={referralBody}>
+                First 100 users get zero service fees on their first booking.
+                Share your personal link:
+              </Text>
+              <Button style={referralButton} href={referralUrl}>
+                Share Your Link
+              </Button>
+              <Text style={referralLinkText}>{referralUrl}</Text>
+            </Section>
+          )}
+
           {/* Footer */}
           <Section style={footer}>
             <Text style={footerText}>
-              Travel Agent — Your autonomous flight booking assistant
+              SkySwift — Your autonomous flight booking assistant
             </Text>
             <Text style={footerText}>
               Booking ID: {bookingId}
@@ -343,4 +363,43 @@ const footerText: React.CSSProperties = {
 const footerLink: React.CSSProperties = {
   color: "#94a3b8",
   fontSize: "13px",
+};
+
+const referralSection: React.CSSProperties = {
+  backgroundColor: "#eff6ff",
+  padding: "24px 32px",
+  textAlign: "center" as const,
+  borderTop: "1px solid #e2e8f0",
+};
+
+const referralHeading: React.CSSProperties = {
+  color: "#0f172a",
+  fontSize: "18px",
+  fontWeight: "bold",
+  margin: "0 0 8px",
+};
+
+const referralBody: React.CSSProperties = {
+  color: "#475569",
+  fontSize: "14px",
+  lineHeight: "20px",
+  margin: "0 0 16px",
+};
+
+const referralButton: React.CSSProperties = {
+  backgroundColor: "#0A84FF",
+  borderRadius: "6px",
+  color: "#ffffff",
+  fontSize: "14px",
+  fontWeight: "600",
+  textDecoration: "none",
+  padding: "10px 24px",
+  display: "inline-block",
+};
+
+const referralLinkText: React.CSSProperties = {
+  color: "#94a3b8",
+  fontSize: "12px",
+  margin: "12px 0 0",
+  wordBreak: "break-all" as const,
 };

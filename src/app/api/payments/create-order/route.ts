@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createOrder } from "@/lib/payments/razorpay";
+import { getPublicRazorpayKeyId } from "@/lib/config/app-mode";
 import type { ApiResponse } from "@/types";
 
 export async function POST(request: Request) {
@@ -52,7 +53,7 @@ export async function POST(request: Request) {
         orderId: order.id,
         amount: order.amount,
         currency: order.currency,
-        keyId: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID ?? "",
+        keyId: getPublicRazorpayKeyId(),
       },
       error: null,
       message: "Order created",

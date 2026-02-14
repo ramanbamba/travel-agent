@@ -26,6 +26,10 @@ export interface AIProviderResponse {
     destination: string;
     date: string;
     cabinClass?: string;
+    /** Return date for round trips */
+    returnDate?: string;
+    /** Time filter: "morning", "afternoon", "evening", or specific hour */
+    timePreference?: string;
   };
   preferenceUpdate?: Record<string, string>;
   selectedFlightIndex?: number;
