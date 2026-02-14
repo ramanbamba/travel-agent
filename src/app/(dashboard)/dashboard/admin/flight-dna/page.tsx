@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   Plane,
@@ -60,7 +59,6 @@ function FoodRating({ rating }: { rating: number | null }) {
 }
 
 export default function FlightDnaAdmin() {
-  const router = useRouter();
   const [entries, setEntries] = useState<FlightDNARow[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedRoute, setSelectedRoute] = useState("BLR-DEL");
@@ -197,7 +195,7 @@ export default function FlightDnaAdmin() {
                   </span>
                 )}
                 {entry.seat_pitch && (
-                  <span>{entry.seat_pitch}" pitch</span>
+                  <span>{entry.seat_pitch}&quot; pitch</span>
                 )}
                 <span className="inline-flex items-center gap-1">
                   {entry.wifi ? (

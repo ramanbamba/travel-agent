@@ -101,6 +101,7 @@ export function StepChatPreferences({
   direction = "forward",
 }: StepChatPreferencesProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [currentQ, setCurrentQ] = useState(0);
   const [responses, setResponses] = useState<Record<string, string>>({});
   const [isTyping, setIsTyping] = useState(false);

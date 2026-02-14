@@ -17,6 +17,17 @@ import { DuffelSupplier } from "./suppliers/duffel/duffel-supplier";
 import { applyPricingToOffer } from "@/lib/pricing/pricing-engine";
 import type { FlightOption } from "@/types/flights";
 
+// ── Timeout helper ───────────────────────────────────────────────────────────
+
+function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error(`${label} timed out after ${ms}ms`)), ms)
+    ),
+  ]);
+}
+
 // ── Supplier registry ────────────────────────────────────────────────────────
 
 type SupplierFactory = () => FlightSupplier;
@@ -71,7 +82,11 @@ export async function searchFlights(
     try {
       if (!supplier.isAvailable()) continue;
 
-      const offers = await supplier.searchFlights(params);
+      const offers = await withTimeout(
+        supplier.searchFlights(params),
+        15000,
+        `${name} searchFlights`
+      );
       if (offers.length > 0) {
         return { offers, source: name };
       }
@@ -104,7 +119,11 @@ export async function searchFlightsParallel(
     if (!supplier || !supplier.isAvailable()) return [];
 
     try {
-      return await supplier.searchFlights(params);
+      return await withTimeout(
+        supplier.searchFlights(params),
+        15000,
+        `${name} searchFlights`
+      );
     } catch (err) {
       console.error(
         `[supply] ${name} parallel search failed:`,
@@ -224,7 +243,11 @@ export async function createSupplyBooking(
     );
   }
 
-  return supplier.createBooking(offerId, passengers, payment);
+  return withTimeout(
+    supplier.createBooking(offerId, passengers, payment),
+    30000,
+    `${supplierName} createBooking`
+  );
 }
 
 /**
@@ -235,6 +258,7 @@ export async function createSupplyBooking(
 export async function validateOfferFreshness(
   offerId: string,
   expectedPriceCents: number,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   currency: string
 ): Promise<{ valid: boolean; currentPriceCents: number; priceChanged: boolean }> {
   const supplierName = resolveSupplierFromOfferId(offerId);
@@ -255,7 +279,11 @@ export async function validateOfferFreshness(
   }
 
   try {
-    const offer = await supplier.getOfferDetails(offerId);
+    const offer = await withTimeout(
+      supplier.getOfferDetails(offerId),
+      10000,
+      `${supplierName} getOfferDetails`
+    );
     const currentPriceCents = Math.round(offer.price.total * 100);
     const priceChanged = currentPriceCents !== expectedPriceCents;
 

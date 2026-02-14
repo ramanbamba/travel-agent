@@ -77,6 +77,7 @@ export async function GET() {
     .eq("id", user.id)
     .single();
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const firstName = profile?.first_name ?? "there";
 
   // Load route familiarity (top 5 routes)
@@ -146,8 +147,10 @@ export async function GET() {
 
     if (topDOW >= 0 && routePatterns.length > 0) {
       const lastPattern = routePatterns[0];
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const [origin, dest] = route.route.split("-");
       const dayName = DAY_NAMES[topDOW];
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const nextDate = getNextDateForDay(topDOW);
       const price = route.avg_price_paid ? Math.round(parseFloat(route.avg_price_paid)) : null;
       const timeStr = lastPattern.departure_time ? formatTime12h(lastPattern.departure_time) : null;

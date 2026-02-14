@@ -107,6 +107,7 @@ export class DuffelSupplier implements FlightSupplier {
   async createBooking(
     offerId: string,
     passengers: SupplyPassenger[],
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     payment: SupplyPaymentInfo
   ): Promise<SupplyBooking> {
     try {

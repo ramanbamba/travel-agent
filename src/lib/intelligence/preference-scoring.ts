@@ -230,7 +230,6 @@ export function scoreOffer(
   let amenityScore = 5; // neutral default when no DNA
   if (dna) {
     let aPts = 0;
-    let factors = 0;
 
     // Wi-Fi match
     if (prefs.comfort.wifi_important && dna.wifi) {
@@ -241,7 +240,6 @@ export function scoreOffer(
     } else {
       aPts += 1; // neutral
     }
-    factors++;
 
     // On-time performance
     if (dna.ontime_pct != null) {
@@ -256,7 +254,6 @@ export function scoreOffer(
       } else {
         aPts += 0;
       }
-      factors++;
     }
 
     // Seat pitch
@@ -269,7 +266,6 @@ export function scoreOffer(
       } else {
         aPts += 0;
       }
-      factors++;
     }
 
     // Power outlets
@@ -277,13 +273,11 @@ export function scoreOffer(
       aPts += 1;
       reasons.push("Power outlets");
     }
-    factors++;
 
     // Food rating
     if (dna.food_rating != null && dna.food_rating >= 4.0) {
       aPts += 1;
     }
-    factors++;
 
     // Normalize: max possible is 10 (3+3+2+1+1)
     amenityScore = Math.min(10, aPts);

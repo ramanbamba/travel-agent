@@ -63,6 +63,7 @@ function PowerChip({ available }: { available: boolean }) {
   );
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function FlightCard({ flight, onSelect, recommended, rank }: FlightCardProps) {
   const firstSegment = flight.segments[0];
   const lastSegment = flight.segments[flight.segments.length - 1];

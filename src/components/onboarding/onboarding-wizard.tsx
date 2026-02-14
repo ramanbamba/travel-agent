@@ -206,6 +206,7 @@ export function OnboardingWizard({
     }
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handlePreferences = async (data: PreferencesValues) => {
     setIsSaving(true);
     setSaveError(null);

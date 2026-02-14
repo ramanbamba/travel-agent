@@ -1,8 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { PreferenceEngine } from "./preference-engine";
-import type { UserPreferences } from "./preference-engine";
 import {
-  getAIProvider,
+  getAIProviderChain,
   buildBookingSystemPrompt,
   type AIProviderResponse,
   type AIAction as AIActionType,
@@ -262,22 +261,28 @@ export class ConversationAI {
     const history = await this.getConversationHistory(chatSessionId, 10);
 
     // 8. Call AI provider (Gemini / Anthropic / Mock — configured via AI_PROVIDER env)
-    let aiResponse: AIResponse;
-    try {
-      const provider = getAIProvider();
-      const providerResponse = await provider.chat({
-        systemPrompt,
-        history,
-        message,
-      });
-      aiResponse = { ...providerResponse };
-    } catch (err) {
-      console.error("[ConversationAI] AI provider error:", err);
-      aiResponse = {
-        message: "I didn't quite catch that. Where are you flying to?",
-        action: "ask_clarification",
-      };
+    let aiResponse: AIResponse = {
+      message: "I didn't quite catch that. Where are you flying to?",
+      action: "ask_clarification",
+    };
+    const providers = getAIProviderChain();
+    for (const provider of providers) {
+      try {
+        const providerResponse = await provider.chat({
+          systemPrompt,
+          history,
+          message,
+        });
+        aiResponse = { ...providerResponse };
+        break;
+      } catch (err) {
+        console.warn(
+          `[ConversationAI] Provider "${provider.name}" failed, trying next:`,
+          err instanceof Error ? err.message : err
+        );
+      }
     }
+    // aiResponse keeps its default fallback value if no provider succeeded
 
     // 8b. Attach familiarity context if available
     if (routeData && routeData.familiarityLevel) {

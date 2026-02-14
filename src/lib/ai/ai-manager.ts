@@ -92,3 +92,28 @@ export function getAIProvider(): AIProvider {
     500
   );
 }
+
+/**
+ * Get ordered list of available providers for fallback execution.
+ * Used by callers that want to try the next provider on runtime errors (e.g. 429).
+ */
+export function getAIProviderChain(): AIProvider[] {
+  const explicit = process.env.AI_PROVIDER as string | undefined;
+
+  if (explicit) {
+    // Strict mode: only the named provider, no fallback
+    const provider = getProvider(explicit);
+    if (provider && provider.isAvailable()) return [provider];
+    return [];
+  }
+
+  // Return all available providers in chain order
+  const chain: AIProvider[] = [];
+  for (const name of DEFAULT_CHAIN) {
+    const provider = getProvider(name);
+    if (provider && provider.isAvailable()) {
+      chain.push(provider);
+    }
+  }
+  return chain;
+}

@@ -19,7 +19,7 @@ function getAnthropicClient(): Anthropic {
         401
       );
     }
-    client = new Anthropic({ apiKey });
+    client = new Anthropic({ apiKey, timeout: 15000 });
   }
   return client;
 }

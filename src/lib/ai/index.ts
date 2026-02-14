@@ -26,7 +26,7 @@ export {
 } from "./prompts/system-prompts";
 
 // Manager
-export { getAIProvider, registerAIProvider } from "./ai-manager";
+export { getAIProvider, getAIProviderChain, registerAIProvider } from "./ai-manager";
 
 // Providers (for direct use if needed)
 export { GeminiProvider } from "./providers/gemini";

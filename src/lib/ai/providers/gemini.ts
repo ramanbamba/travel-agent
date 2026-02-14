@@ -62,7 +62,12 @@ export class GeminiProvider implements AIProvider {
       const geminiHistory = this.convertHistory(history);
 
       const chat = genModel.startChat({ history: geminiHistory });
-      const result = await chat.sendMessage(message);
+      const result = await Promise.race([
+        chat.sendMessage(message),
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error("Gemini request timed out after 15000ms")), 15000)
+        ),
+      ]);
       const rawText = result.response.text();
 
       const elapsed = Date.now() - start;
