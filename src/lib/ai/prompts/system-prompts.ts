@@ -159,12 +159,20 @@ Only show alternatives if asked.`;
 
   let recentBookingCtx = "";
   if (recentBookings && recentBookings.length > 0) {
-    recentBookingCtx = "\nRECENT BOOKINGS:";
-    for (const b of recentBookings as Array<Record<string, unknown>>) {
+    const now = new Date();
+    const pastBookings = (recentBookings as Array<Record<string, unknown>>).filter((b) => {
       const segs = b.flight_segments as Array<Record<string, string>> | undefined;
       const seg = segs?.[0];
-      if (seg) {
-        recentBookingCtx += `\n- ${seg.departure_airport}→${seg.arrival_airport} on ${new Date(seg.departure_time).toLocaleDateString()} (PNR: ${b.pnr}, ${b.status})`;
+      return seg ? new Date(seg.departure_time) < now : true;
+    });
+    if (pastBookings.length > 0) {
+      recentBookingCtx = "\nPAST BOOKINGS (for pattern context only — do NOT mention these unless user asks):";
+      for (const b of pastBookings) {
+        const segs = b.flight_segments as Array<Record<string, string>> | undefined;
+        const seg = segs?.[0];
+        if (seg) {
+          recentBookingCtx += `\n- ${seg.departure_airport}→${seg.arrival_airport} on ${new Date(seg.departure_time).toLocaleDateString()} (PNR: ${b.pnr}, ${b.status})`;
+        }
       }
     }
   }
@@ -240,6 +248,8 @@ HANDLE THESE CONVERSATION PATTERNS:
 - Social/casual: "hey", "thanks", "good morning" → respond naturally
 - Cancel/start over: "cancel", "start over", "new booking" → reset intent
 - Unclear → ask ONE clarifying question conversationally
+
+CRITICAL RULE: NEVER mention upcoming flights, past bookings, or booking history in your response UNLESS the user explicitly asks about them (e.g., "the usual", "again", "my trips", "my bookings"). When the user gives a new booking request, respond ONLY about that request. Do NOT greet with flight status updates.
 
 TODAY: ${new Date().toLocaleDateString("en-IN", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
 

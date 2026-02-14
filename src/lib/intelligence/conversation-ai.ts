@@ -479,37 +479,6 @@ export class ConversationAI {
       greeting = `Good evening, ${name}.`;
     }
 
-    // Check for upcoming trips (next 48 hours)
-    const in48h = new Date(now.getTime() + 48 * 60 * 60 * 1000).toISOString();
-    const { data: upcoming } = await this.supabase
-      .from("bookings")
-      .select("pnr, flight_segments(departure_airport, arrival_airport, departure_time)")
-      .eq("user_id", userId)
-      .eq("status", "confirmed")
-      .limit(1);
-
-    if (upcoming && upcoming.length > 0) {
-      const b = upcoming[0] as Record<string, unknown>;
-      const segs = b.flight_segments as Array<Record<string, string>> | undefined;
-      const seg = segs?.[0];
-      if (seg?.departure_time) {
-        const depTime = new Date(seg.departure_time);
-        if (depTime > now && depTime.toISOString() < in48h) {
-          const isToday = depTime.toDateString() === now.toDateString();
-          const isTomorrow =
-            depTime.toDateString() ===
-            new Date(now.getTime() + 86400000).toDateString();
-          const when = isToday
-            ? "today"
-            : isTomorrow
-              ? "tomorrow"
-              : "in 2 days";
-          greeting += ` Your ${seg.departure_airport}-${seg.arrival_airport} flight is ${when}. All good, or need to make changes?`;
-          return greeting;
-        }
-      }
-    }
-
     // Check for recently completed trip
     const threeDaysAgo = new Date(
       now.getTime() - 3 * 24 * 60 * 60 * 1000
