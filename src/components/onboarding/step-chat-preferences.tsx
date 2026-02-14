@@ -27,9 +27,9 @@ const QUESTIONS: ChatQuestion[] = [
     question: "When you fly, what matters more?",
     subtitle: "This helps me prioritize the right flights for you",
     options: [
-      { label: "Earliest flight", value: "earliest", emoji: "\u23F0" },
-      { label: "Cheapest fare", value: "cheapest", emoji: "\uD83D\uDCB0" },
-      { label: "Best balance", value: "balanced", emoji: "\u2696\uFE0F" },
+      { label: "Earliest flight", value: "earliest", emoji: "⏰" },
+      { label: "Cheapest fare", value: "cheapest", emoji: "💰" },
+      { label: "Best balance", value: "balanced", emoji: "⚖️" },
     ],
   },
   {
@@ -37,10 +37,10 @@ const QUESTIONS: ChatQuestion[] = [
     question: "Do you have a go-to airline?",
     subtitle: "I'll learn which carriers you prefer over time",
     options: [
-      { label: "IndiGo", value: "6E", emoji: "\uD83D\uDFE6" },
-      { label: "Air India", value: "AI", emoji: "\uD83C\uDDEE\uD83C\uDDF3" },
-      { label: "Vistara / Tata", value: "UK", emoji: "\u2B50" },
-      { label: "Open to all", value: "any", emoji: "\uD83C\uDF0D" },
+      { label: "IndiGo", value: "6E", emoji: "🟦" },
+      { label: "Air India", value: "AI", emoji: "🇮🇳" },
+      { label: "Vistara / Tata", value: "UK", emoji: "⭐" },
+      { label: "Open to all", value: "any", emoji: "🌍" },
     ],
   },
   {
@@ -48,9 +48,9 @@ const QUESTIONS: ChatQuestion[] = [
     question: "How often do you fly?",
     subtitle: "Frequent flyers get smarter recommendations faster",
     options: [
-      { label: "Weekly", value: "weekly", emoji: "\uD83D\uDE80" },
-      { label: "2\u20134x/month", value: "monthly", emoji: "\u2708\uFE0F" },
-      { label: "Occasionally", value: "occasional", emoji: "\uD83C\uDF1F" },
+      { label: "Weekly", value: "weekly", emoji: "🚀" },
+      { label: "2–4x/month", value: "monthly", emoji: "✈️" },
+      { label: "Occasionally", value: "occasional", emoji: "🌟" },
     ],
   },
   {
@@ -58,9 +58,9 @@ const QUESTIONS: ChatQuestion[] = [
     question: "Window, aisle, or don't care?",
     subtitle: "I'll remember this for every booking",
     options: [
-      { label: "Window", value: "window", emoji: "\uD83C\uDF05" },
-      { label: "Aisle", value: "aisle", emoji: "\uD83D\uDEB6" },
-      { label: "Don't care", value: "no_preference", emoji: "\uD83E\uDD37" },
+      { label: "Window", value: "window", emoji: "🌅" },
+      { label: "Aisle", value: "aisle", emoji: "🚶" },
+      { label: "Don't care", value: "no_preference", emoji: "🤷" },
     ],
   },
   {
@@ -68,9 +68,9 @@ const QUESTIONS: ChatQuestion[] = [
     question: "Do you usually check a bag?",
     subtitle: "Helps me factor in baggage when comparing fares",
     options: [
-      { label: "Yes, always", value: "always", emoji: "\uD83E\uDDF3" },
-      { label: "Sometimes", value: "sometimes", emoji: "\uD83C\uDFD2" },
-      { label: "Cabin only", value: "cabin_only", emoji: "\uD83C\uDF92" },
+      { label: "Yes, always", value: "always", emoji: "🧳" },
+      { label: "Sometimes", value: "sometimes", emoji: "🏒" },
+      { label: "Cabin only", value: "cabin_only", emoji: "🎒" },
     ],
   },
 ];
@@ -214,7 +214,7 @@ export function StepChatPreferences({
             Quick travel profile
           </h2>
           <p className="mt-1 text-sm text-[var(--glass-text-secondary)]">
-            5 questions \u00B7 30 seconds \u00B7 better recommendations from day one
+            5 questions · 30 seconds · better recommendations from day one
           </p>
         </div>
 
@@ -274,7 +274,7 @@ export function StepChatPreferences({
                   disabled={isSaving}
                   className="min-w-[180px]"
                 >
-                  {isSaving ? "Setting up..." : "Let\u2019s go!"}
+                  {isSaving ? "Setting up..." : "Let's go!"}
                 </GlassButton>
               </div>
             )}
@@ -286,7 +286,7 @@ export function StepChatPreferences({
         {/* Back button */}
         <div className="mt-4 flex justify-start">
           <GlassButton variant="ghost" size="sm" onClick={onBack}>
-            \u2190 Back
+            ← Back
           </GlassButton>
         </div>
       </div>
