@@ -1,54 +1,49 @@
 import Link from "next/link";
-import { GlassButton, GlassPill, GlassCard } from "@/components/ui/glass";
-import { ChatDemoAnimation } from "@/components/landing";
+import { Button } from "@/components/ui/button";
+
+// ── Icons (inline SVG for tree-shaking) ──
+
+function PlaneIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z" />
+    </svg>
+  );
+}
+
+function CheckIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="20 6 9 17 4 12" />
+    </svg>
+  );
+}
+
+// ── Navbar ──
 
 function Navbar() {
   return (
-    <nav className="fixed top-0 z-50 w-full border-b border-[var(--glass-border-subtle)] bg-[var(--glass-elevated)] [backdrop-filter:blur(24px)_saturate(1.8)] [-webkit-backdrop-filter:blur(24px)_saturate(1.8)]">
+    <nav className="fixed top-0 z-50 w-full border-b border-gray-100 bg-white/80 backdrop-blur-lg dark:border-gray-800 dark:bg-gray-950/80">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
-        <Link href="/" className="flex items-center gap-2.5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-[10px] bg-[var(--glass-accent-blue)] shadow-[0_1px_3px_rgba(0,113,227,0.3)]">
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="white"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z" />
-            </svg>
+        <Link href="/" className="flex items-center gap-2">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600">
+            <PlaneIcon className="h-4 w-4 text-white" />
           </div>
-          <span className="text-lg font-semibold tracking-tight text-[var(--glass-text-primary)]">
-            Skyswift
+          <span className="text-lg font-semibold tracking-tight text-gray-900 dark:text-white">
+            SkySwift
           </span>
         </Link>
         <div className="hidden items-center gap-8 md:flex">
-          <Link
-            href="#how-it-works"
-            className="text-sm text-[var(--glass-text-secondary)] transition-colors hover:text-[var(--glass-text-primary)]"
-          >
-            How it works
-          </Link>
-          <Link
-            href="#social-proof"
-            className="text-sm text-[var(--glass-text-secondary)] transition-colors hover:text-[var(--glass-text-primary)]"
-          >
-            Trusted by
-          </Link>
+          <a href="#how-it-works" className="text-sm text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white">How It Works</a>
+          <a href="#for-companies" className="text-sm text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white">For Companies</a>
+          <a href="#pricing" className="text-sm text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white">Pricing</a>
         </div>
         <div className="flex items-center gap-3">
           <Link href="/login">
-            <GlassButton variant="ghost" size="sm">
-              Log in
-            </GlassButton>
+            <Button variant="ghost" size="sm">Log in</Button>
           </Link>
           <Link href="/signup">
-            <GlassButton variant="primary" size="sm">
-              Start Booking
-            </GlassButton>
+            <Button size="sm">Start Free Pilot</Button>
           </Link>
         </div>
       </div>
@@ -56,132 +51,187 @@ function Navbar() {
   );
 }
 
+// ── Hero ──
+
 function HeroSection() {
   return (
-    <section className="relative flex min-h-screen items-center justify-center overflow-hidden px-6 pt-16">
-      {/* Gradient mesh background */}
-      <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="animate-glow-pulse absolute -top-40 left-1/2 h-[600px] w-[600px] -translate-x-1/2 rounded-full bg-gradient-to-b from-[var(--glass-accent-blue)]/[0.08] to-transparent blur-3xl" />
-        <div className="animate-glow-pulse absolute -bottom-20 left-1/4 h-[400px] w-[400px] rounded-full bg-gradient-to-t from-[var(--glass-accent-blue)]/[0.05] to-transparent blur-3xl [animation-delay:500ms]" />
-        <div className="animate-glow-pulse absolute -bottom-20 right-1/4 h-[400px] w-[400px] rounded-full bg-gradient-to-t from-purple-500/[0.05] to-transparent blur-3xl [animation-delay:300ms]" />
-      </div>
+    <section className="relative overflow-hidden px-6 pt-32 pb-20 md:pt-40 md:pb-28">
+      <div className="mx-auto max-w-6xl">
+        <div className="grid items-center gap-12 lg:grid-cols-2">
+          {/* Left: Copy */}
+          <div>
+            <div className="mb-4 inline-flex items-center rounded-full border border-blue-100 bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700 dark:border-blue-900 dark:bg-blue-950/30 dark:text-blue-400">
+              AI-Powered Corporate Travel
+            </div>
+            <h1 className="text-4xl font-bold leading-tight tracking-tight text-gray-900 sm:text-5xl lg:text-6xl dark:text-white">
+              Your AI Travel Desk.{" "}
+              <span className="text-blue-600">30 Seconds.</span>{" "}
+              <span className="text-blue-600">WhatsApp.</span>
+            </h1>
+            <p className="mt-6 max-w-xl text-lg leading-relaxed text-gray-600 dark:text-gray-400">
+              SkySwift replaces your travel desk with an AI agent that books flights in 30 seconds, enforces policy automatically, and recovers 12-18% in GST credits. Starting free.
+            </p>
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+              <Link href="/signup">
+                <Button size="lg" className="w-full sm:w-auto">
+                  Start Free Pilot
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="ml-1">
+                    <path d="M5 12h14" /><path d="m12 5 7 7-7 7" />
+                  </svg>
+                </Button>
+              </Link>
+              <a href="#how-it-works">
+                <Button variant="outline" size="lg" className="w-full sm:w-auto">
+                  Watch Demo
+                </Button>
+              </a>
+            </div>
+            <p className="mt-4 text-xs text-gray-400">
+              No credit card required. 20 free bookings/month.
+            </p>
+          </div>
 
-      <div className="relative z-10 mx-auto max-w-5xl text-center">
-        <div className="animate-fade-in opacity-0">
-          <GlassPill variant="blue" size="md" className="mb-8">
-            AI-powered flight booking
-          </GlassPill>
+          {/* Right: WhatsApp mockup */}
+          <div className="relative mx-auto w-full max-w-sm">
+            <div className="rounded-3xl border border-gray-200 bg-white p-1 shadow-2xl dark:border-gray-700 dark:bg-gray-900">
+              {/* Phone frame header */}
+              <div className="rounded-t-[20px] bg-[#075e54] px-4 py-3">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-600">
+                    <PlaneIcon className="h-5 w-5 text-white" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-white">SkySwift AI</p>
+                    <p className="text-xs text-green-200">online</p>
+                  </div>
+                </div>
+              </div>
+              {/* Chat area */}
+              <div className="space-y-3 bg-[#ece5dd] px-3 py-4 dark:bg-gray-800" style={{ minHeight: 340 }}>
+                {/* User message */}
+                <div className="flex justify-end">
+                  <div className="max-w-[75%] rounded-lg rounded-tr-none bg-[#dcf8c6] px-3 py-2 text-sm text-gray-900 dark:bg-green-900 dark:text-green-100">
+                    Book BLR to DEL Monday morning
+                  </div>
+                </div>
+                {/* Bot response */}
+                <div className="flex justify-start">
+                  <div className="max-w-[85%] rounded-lg rounded-tl-none bg-white px-3 py-2 text-sm text-gray-800 shadow-sm dark:bg-gray-700 dark:text-gray-200">
+                    <p className="mb-2">Here are the best options within <strong>Acme Corp</strong> policy:</p>
+                    <div className="space-y-2 text-xs">
+                      <div className="rounded-md border border-green-200 bg-green-50 p-2 dark:border-green-800 dark:bg-green-950/30">
+                        <span className="font-medium text-green-700 dark:text-green-400">1. IndiGo 6E-234</span>
+                        <br />06:15 - 09:00 | Direct | ₹4,850
+                        <br /><span className="text-green-600 dark:text-green-500">RECOMMENDED</span>
+                      </div>
+                      <div className="rounded-md border border-gray-200 p-2 dark:border-gray-600">
+                        <span className="font-medium">2. Air India AI-505</span>
+                        <br />08:30 - 11:15 | Direct | ₹5,200
+                      </div>
+                    </div>
+                    <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">Reply 1 or 2 to book.</p>
+                  </div>
+                </div>
+                {/* User reply */}
+                <div className="flex justify-end">
+                  <div className="rounded-lg rounded-tr-none bg-[#dcf8c6] px-3 py-2 text-sm text-gray-900 dark:bg-green-900 dark:text-green-100">
+                    1
+                  </div>
+                </div>
+                {/* Confirmation */}
+                <div className="flex justify-start">
+                  <div className="rounded-lg rounded-tl-none bg-white px-3 py-2 text-sm text-gray-800 shadow-sm dark:bg-gray-700 dark:text-gray-200">
+                    Booked! PNR: <strong>ABC123</strong>
+                    <br /><span className="text-xs text-gray-500 dark:text-gray-400">GST Invoice captured. E-ticket sent.</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <h1 className="animate-fade-in-up text-balance text-5xl font-bold leading-[1.08] tracking-tight text-[var(--glass-text-primary)] opacity-0 delay-100 sm:text-6xl md:text-7xl lg:text-8xl">
-          Book flights in{" "}
-          <span className="animate-shimmer bg-gradient-to-r from-[var(--glass-accent-blue)] via-[var(--glass-accent-blue)]/60 to-[var(--glass-accent-blue)] bg-clip-text text-transparent">
-            30 seconds
-          </span>
-        </h1>
-
-        <p className="animate-fade-in-up mx-auto mt-6 max-w-2xl text-balance text-lg leading-relaxed text-[var(--glass-text-secondary)] opacity-0 delay-200 md:text-xl">
-          The average flight booking takes{" "}
-          <span className="font-medium text-[var(--glass-text-primary)]">47 clicks</span> and{" "}
-          <span className="font-medium text-[var(--glass-text-primary)]">18 minutes</span>. Skyswift replaces all of that
-          with a single conversation.
-        </p>
-
-        <div className="animate-fade-in-up mt-10 flex flex-col items-center justify-center gap-4 opacity-0 delay-300 sm:flex-row">
-          <Link href="/signup">
-            <GlassButton variant="primary" size="lg">
-              Get Started Free
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="ml-1"
-              >
-                <path d="M5 12h14" />
-                <path d="m12 5 7 7-7 7" />
-              </svg>
-            </GlassButton>
-          </Link>
-          <Link href="#how-it-works">
-            <GlassButton variant="ghost" size="lg">
-              See how it works
-            </GlassButton>
-          </Link>
-        </div>
-
-        {/* Chat demo */}
-        <div className="animate-fade-in-up mx-auto mt-16 max-w-lg opacity-0 delay-500">
-          <ChatDemoAnimation />
+        {/* Trust bar */}
+        <div className="mt-16 text-center">
+          <p className="text-xs font-medium uppercase tracking-wider text-gray-400">
+            Built by ex-Booking.com &amp; Amadeus team
+          </p>
         </div>
       </div>
     </section>
   );
 }
 
+// ── Problem Statement ──
+
+function ProblemSection() {
+  const painPoints = [
+    {
+      stat: "₹0",
+      label: "GST Recovered",
+      description: "Most companies lose 12-18% in unclaimed ITC on travel spend",
+    },
+    {
+      stat: "10+ min",
+      label: "Per Booking",
+      description: "Employees waste time on clunky online booking tools or calling agents",
+    },
+    {
+      stat: "Zero",
+      label: "Spend Visibility",
+      description: "CFOs can't see where travel money goes until the quarter ends",
+    },
+  ];
+
+  return (
+    <section className="border-t border-gray-100 bg-gray-50 px-6 py-20 dark:border-gray-800 dark:bg-gray-900/50">
+      <div className="mx-auto max-w-6xl text-center">
+        <h2 className="mx-auto max-w-3xl text-2xl font-bold text-gray-900 sm:text-3xl dark:text-white">
+          60% of Indian corporate travel flows through offline agents with no technology, no policy, and no visibility.
+        </h2>
+        <div className="mt-12 grid gap-6 sm:grid-cols-3">
+          {painPoints.map((p) => (
+            <div key={p.label} className="rounded-xl border border-gray-200 bg-white p-6 text-left dark:border-gray-700 dark:bg-gray-800">
+              <p className="text-3xl font-bold text-red-500">{p.stat}</p>
+              <p className="mt-1 text-sm font-medium text-gray-900 dark:text-white">{p.label}</p>
+              <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">{p.description}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ── How It Works ──
+
 function HowItWorksSection() {
   const steps = [
     {
-      number: "01",
-      title: "Tell us where",
-      description:
-        "Type your destination, dates, and preferences in plain English. No forms, no dropdowns, no calendar pickers.",
+      num: "01",
+      title: "Message your AI travel agent",
+      description: "Employees text the SkySwift WhatsApp bot in plain language. No app to install.",
       icon: (
-        <svg
-          width="24"
-          height="24"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
           <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
         </svg>
       ),
     },
     {
-      number: "02",
-      title: "We find the best flight",
-      description:
-        "Our AI searches across airlines, applies your loyalty status, and finds the best seat — all in seconds.",
+      num: "02",
+      title: "AI finds the best flights within policy",
+      description: "Our engine searches across airlines, applies your company policy, and ranks by employee preferences.",
       icon: (
-        <svg
-          width="24"
-          height="24"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <circle cx="11" cy="11" r="8" />
-          <path d="m21 21-4.3-4.3" />
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10" />
         </svg>
       ),
     },
     {
-      number: "03",
-      title: "Confirm and go",
-      description:
-        "Review your itinerary, say \"book it\", and you're done. Confirmation and e-ticket — delivered instantly.",
+      num: "03",
+      title: "Confirm with one tap",
+      description: "Employee taps to confirm. Booking is made, GST invoice captured, e-ticket sent instantly.",
       icon: (
-        <svg
-          width="24"
-          height="24"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
           <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
           <polyline points="22 4 12 14.01 9 11.01" />
         </svg>
@@ -190,42 +240,22 @@ function HowItWorksSection() {
   ];
 
   return (
-    <section id="how-it-works" className="relative px-6 py-32">
+    <section id="how-it-works" className="px-6 py-20">
       <div className="mx-auto max-w-6xl">
         <div className="text-center">
-          <GlassPill variant="blue" size="md" className="mb-4">
-            How it works
-          </GlassPill>
-          <h2 className="text-balance text-3xl font-bold tracking-tight text-[var(--glass-text-primary)] sm:text-4xl md:text-5xl">
-            Three steps. That&apos;s it.
-          </h2>
-          <p className="mx-auto mt-4 max-w-xl text-lg text-[var(--glass-text-secondary)]">
-            No more hunting through 12 tabs. Tell us where you want to go,
-            and we handle everything else.
-          </p>
+          <h2 className="text-3xl font-bold text-gray-900 sm:text-4xl dark:text-white">How It Works</h2>
+          <p className="mt-3 text-gray-500 dark:text-gray-400">Three steps. 30 seconds. Done.</p>
         </div>
-
-        <div className="mt-20 grid gap-8 md:grid-cols-3">
+        <div className="mt-16 grid gap-8 md:grid-cols-3">
           {steps.map((step) => (
-            <GlassCard
-              key={step.number}
-              tier="subtle"
-              padding="lg"
-              className="group"
-            >
-              <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-xl border border-[var(--glass-border)] bg-[var(--glass-subtle)] text-[var(--glass-text-secondary)] transition-colors group-hover:border-[var(--glass-accent-blue-light)] group-hover:bg-[var(--glass-accent-blue-light)] group-hover:text-[var(--glass-accent-blue)]">
+            <div key={step.num} className="text-center">
+              <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-950/30 dark:text-blue-400">
                 {step.icon}
               </div>
-              <div className="mb-2 font-mono text-xs text-[var(--glass-text-tertiary)]">
-                {step.number}
-              </div>
-              <h3 className="mb-3 text-xl font-semibold tracking-tight text-[var(--glass-text-primary)]">
-                {step.title}
-              </h3>
-              <p className="leading-relaxed text-[var(--glass-text-secondary)]">
-                {step.description}
-              </p>
-            </GlassCard>
+              <p className="mb-1 text-xs font-medium text-gray-400">{step.num}</p>
+              <h3 className="mb-2 text-lg font-semibold text-gray-900 dark:text-white">{step.title}</h3>
+              <p className="text-sm leading-relaxed text-gray-500 dark:text-gray-400">{step.description}</p>
+            </div>
           ))}
         </div>
       </div>
@@ -233,88 +263,157 @@ function HowItWorksSection() {
   );
 }
 
-function SocialProofSection() {
-  const stats = [
-    { value: "500+", label: "Flights booked" },
-    { value: "30s", label: "Avg booking time" },
-    { value: "4.9/5", label: "User rating" },
-    { value: "12+", label: "Airlines" },
+// ── Dual Value Section ──
+
+function DualValueSection() {
+  const managerFeatures = [
+    "Policy enforcement on autopilot",
+    "Real-time spend dashboard",
+    "GST compliance & ITC tracking",
+    "Employee management & approvals",
+    "Tally-compatible CSV export",
   ];
 
-  const testimonials = [
-    {
-      quote:
-        "I used to spend 20 minutes comparing flights across tabs. Now I just tell Skyswift where I'm going and it's done.",
-      name: "Sarah K.",
-      role: "Management Consultant",
-    },
-    {
-      quote:
-        "The loyalty program integration is seamless. My BA Gold status is applied automatically to every booking.",
-      name: "James M.",
-      role: "VP Sales, 15+ flights/year",
-    },
+  const employeeFeatures = [
+    "Book on WhatsApp — no app to install",
+    "30-second booking with AI",
+    "Preferences remembered from day one",
+    "Instant confirmations & e-tickets",
+    "One-tap approval requests",
   ];
 
   return (
-    <section id="social-proof" className="relative px-6 py-32">
-      <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="absolute left-1/2 top-1/2 h-[500px] w-[800px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-gradient-to-r from-[var(--glass-accent-blue)]/[0.04] via-transparent to-[var(--glass-accent-green)]/[0.03] blur-3xl" />
-      </div>
-
-      <div className="relative mx-auto max-w-6xl">
+    <section id="for-companies" className="border-t border-gray-100 bg-gray-50 px-6 py-20 dark:border-gray-800 dark:bg-gray-900/50">
+      <div className="mx-auto max-w-6xl">
         <div className="text-center">
-          <GlassPill variant="green" size="md" className="mb-4">
-            Trusted by travelers
-          </GlassPill>
-          <h2 className="text-balance text-3xl font-bold tracking-tight text-[var(--glass-text-primary)] sm:text-4xl md:text-5xl">
-            Loved by frequent flyers
-          </h2>
+          <h2 className="text-3xl font-bold text-gray-900 sm:text-4xl dark:text-white">Built for Two Audiences</h2>
+          <p className="mt-3 text-gray-500 dark:text-gray-400">Travel managers get control. Employees get speed.</p>
         </div>
-
-        {/* Stats bar */}
-        <div className="mt-12 grid grid-cols-2 gap-4 md:grid-cols-4">
-          {stats.map((stat) => (
-            <GlassCard
-              key={stat.label}
-              tier="subtle"
-              hover={false}
-              padding="md"
-              className="text-center"
-            >
-              <p className="text-2xl font-bold text-[var(--glass-accent-blue)] sm:text-3xl">
-                {stat.value}
-              </p>
-              <p className="mt-1 text-sm text-[var(--glass-text-secondary)]">
-                {stat.label}
-              </p>
-            </GlassCard>
-          ))}
+        <div className="mt-12 grid gap-8 md:grid-cols-2">
+          {/* For Managers */}
+          <div className="rounded-xl border border-gray-200 bg-white p-8 dark:border-gray-700 dark:bg-gray-800">
+            <div className="mb-4 inline-flex items-center rounded-full bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700 dark:bg-blue-950/30 dark:text-blue-400">
+              For Travel Managers &amp; Finance
+            </div>
+            <h3 className="mb-4 text-xl font-semibold text-gray-900 dark:text-white">
+              Complete visibility and control
+            </h3>
+            <ul className="space-y-3">
+              {managerFeatures.map((f) => (
+                <li key={f} className="flex items-start gap-2">
+                  <span className="mt-0.5 text-blue-600"><CheckIcon /></span>
+                  <span className="text-sm text-gray-600 dark:text-gray-300">{f}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+          {/* For Employees */}
+          <div className="rounded-xl border border-gray-200 bg-white p-8 dark:border-gray-700 dark:bg-gray-800">
+            <div className="mb-4 inline-flex items-center rounded-full bg-green-50 px-3 py-1 text-xs font-medium text-green-700 dark:bg-green-950/30 dark:text-green-400">
+              For Employees
+            </div>
+            <h3 className="mb-4 text-xl font-semibold text-gray-900 dark:text-white">
+              Zero friction, instant booking
+            </h3>
+            <ul className="space-y-3">
+              {employeeFeatures.map((f) => (
+                <li key={f} className="flex items-start gap-2">
+                  <span className="mt-0.5 text-green-600"><CheckIcon /></span>
+                  <span className="text-sm text-gray-600 dark:text-gray-300">{f}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
+      </div>
+    </section>
+  );
+}
 
-        {/* Testimonials */}
-        <div className="mt-12 grid gap-6 md:grid-cols-2">
-          {testimonials.map((t) => (
-            <GlassCard key={t.name} tier="standard" padding="lg">
-              <p className="text-base leading-relaxed text-[var(--glass-text-primary)]">
-                &ldquo;{t.quote}&rdquo;
-              </p>
-              <div className="mt-4 flex items-center gap-3">
-                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--glass-accent-blue-light)]">
-                  <span className="text-sm font-semibold text-[var(--glass-accent-blue)]">
-                    {t.name.charAt(0)}
-                  </span>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-[var(--glass-text-primary)]">
-                    {t.name}
-                  </p>
-                  <p className="text-xs text-[var(--glass-text-tertiary)]">
-                    {t.role}
-                  </p>
-                </div>
+// ── Features Grid ──
+
+function FeaturesSection() {
+  const features = [
+    {
+      title: "AI Booking Agent",
+      description: "Natural language booking via WhatsApp. Employees just say where they need to go.",
+      icon: (
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+        </svg>
+      ),
+    },
+    {
+      title: "Policy Engine",
+      description: "Automatic compliance checking. Cabin class rules, spend limits, and approval workflows.",
+      icon: (
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10" />
+        </svg>
+      ),
+    },
+    {
+      title: "GST Compliance",
+      description: "Auto-capture invoices with GSTIN. ITC tracking. Tally-compatible export.",
+      icon: (
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+          <polyline points="14 2 14 8 20 8" />
+          <line x1="16" y1="13" x2="8" y2="13" />
+          <line x1="16" y1="17" x2="8" y2="17" />
+        </svg>
+      ),
+    },
+    {
+      title: "Spend Analytics",
+      description: "Real-time dashboards. Spend by department, route, airline. Monthly trends.",
+      icon: (
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+          <line x1="18" y1="20" x2="18" y2="10" />
+          <line x1="12" y1="20" x2="12" y2="4" />
+          <line x1="6" y1="20" x2="6" y2="14" />
+        </svg>
+      ),
+    },
+    {
+      title: "Preference Learning",
+      description: "Gets smarter with every booking. Learns airlines, times, and seat preferences.",
+      icon: (
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
+          <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
+        </svg>
+      ),
+    },
+    {
+      title: "Approval Workflows",
+      description: "Manager approvals via WhatsApp. Auto-approve within policy. Escalate on timeout.",
+      icon: (
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+          <circle cx="9" cy="7" r="4" />
+          <polyline points="16 11 18 13 22 9" />
+        </svg>
+      ),
+    },
+  ];
+
+  return (
+    <section className="px-6 py-20">
+      <div className="mx-auto max-w-6xl">
+        <div className="text-center">
+          <h2 className="text-3xl font-bold text-gray-900 sm:text-4xl dark:text-white">Everything You Need</h2>
+          <p className="mt-3 text-gray-500 dark:text-gray-400">Purpose-built for Indian corporate travel.</p>
+        </div>
+        <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {features.map((f) => (
+            <div key={f.title} className="rounded-xl border border-gray-200 bg-white p-6 transition-shadow hover:shadow-md dark:border-gray-700 dark:bg-gray-800">
+              <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-950/30 dark:text-blue-400">
+                {f.icon}
               </div>
-            </GlassCard>
+              <h3 className="mb-2 font-semibold text-gray-900 dark:text-white">{f.title}</h3>
+              <p className="text-sm leading-relaxed text-gray-500 dark:text-gray-400">{f.description}</p>
+            </div>
           ))}
         </div>
       </div>
@@ -322,39 +421,218 @@ function SocialProofSection() {
   );
 }
 
-function CTASection() {
-  return (
-    <section className="relative px-6 py-32">
-      <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="animate-glow-pulse absolute left-1/2 top-0 h-[400px] w-[600px] -translate-x-1/2 rounded-full bg-gradient-to-b from-[var(--glass-accent-blue)]/[0.06] to-transparent blur-3xl" />
-      </div>
+// ── Pricing ──
 
-      <div className="relative mx-auto max-w-xl text-center">
-        <h2 className="text-balance text-3xl font-bold tracking-tight text-[var(--glass-text-primary)] sm:text-4xl">
-          Your next flight is 30 seconds away
+function PricingSection() {
+  const plans = [
+    {
+      name: "Free",
+      price: "₹0",
+      period: "forever",
+      description: "Perfect for trying SkySwift with your team.",
+      features: [
+        "20 bookings/month",
+        "WhatsApp booking bot",
+        "Basic travel policy",
+        "GST invoice capture",
+        "Up to 10 employees",
+      ],
+      cta: "Start Free",
+      highlighted: false,
+    },
+    {
+      name: "Growth",
+      price: "₹15,000",
+      period: "/month",
+      description: "For growing companies with active travel.",
+      features: [
+        "Unlimited bookings",
+        "Advanced policy engine",
+        "Spend analytics dashboard",
+        "Tally CSV export",
+        "Approval workflows",
+        "Unlimited employees",
+        "Priority support",
+      ],
+      cta: "Start Free Pilot",
+      highlighted: true,
+    },
+    {
+      name: "Enterprise",
+      price: "Custom",
+      period: "",
+      description: "For large organizations with complex needs.",
+      features: [
+        "Everything in Growth",
+        "Multi-entity support",
+        "SSO integration",
+        "API access",
+        "Dedicated account manager",
+        "Custom integrations",
+        "SLA guarantee",
+      ],
+      cta: "Contact Sales",
+      highlighted: false,
+    },
+  ];
+
+  return (
+    <section id="pricing" className="border-t border-gray-100 bg-gray-50 px-6 py-20 dark:border-gray-800 dark:bg-gray-900/50">
+      <div className="mx-auto max-w-6xl">
+        <div className="text-center">
+          <h2 className="text-3xl font-bold text-gray-900 sm:text-4xl dark:text-white">Simple, Transparent Pricing</h2>
+          <p className="mt-3 text-gray-500 dark:text-gray-400">Start free. Upgrade when you&apos;re ready.</p>
+        </div>
+        <div className="mt-12 grid gap-8 md:grid-cols-3">
+          {plans.map((plan) => (
+            <div
+              key={plan.name}
+              className={`rounded-xl border p-8 ${
+                plan.highlighted
+                  ? "border-blue-600 bg-white ring-1 ring-blue-600 dark:border-blue-500 dark:bg-gray-800 dark:ring-blue-500"
+                  : "border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800"
+              }`}
+            >
+              {plan.highlighted && (
+                <div className="mb-4 inline-flex rounded-full bg-blue-600 px-3 py-0.5 text-xs font-medium text-white">
+                  Most Popular
+                </div>
+              )}
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{plan.name}</h3>
+              <div className="mt-2 flex items-baseline gap-1">
+                <span className="text-3xl font-bold text-gray-900 dark:text-white">{plan.price}</span>
+                {plan.period && <span className="text-sm text-gray-500 dark:text-gray-400">{plan.period}</span>}
+              </div>
+              <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">{plan.description}</p>
+              <Link href="/signup" className="mt-6 block">
+                <Button
+                  variant={plan.highlighted ? "default" : "outline"}
+                  className="w-full"
+                >
+                  {plan.cta}
+                </Button>
+              </Link>
+              <ul className="mt-6 space-y-3">
+                {plan.features.map((f) => (
+                  <li key={f} className="flex items-start gap-2">
+                    <span className="mt-0.5 text-blue-600"><CheckIcon /></span>
+                    <span className="text-sm text-gray-600 dark:text-gray-300">{f}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ── Trust / Social Proof ──
+
+function TrustSection() {
+  const badges = [
+    { label: "Data encrypted at rest & in transit", icon: "🔒" },
+    { label: "India data residency", icon: "🇮🇳" },
+    { label: "300+ airlines via Duffel", icon: "✈️" },
+    { label: "SOC 2 compliant infrastructure", icon: "🛡️" },
+  ];
+
+  return (
+    <section className="px-6 py-20">
+      <div className="mx-auto max-w-4xl text-center">
+        <h2 className="text-2xl font-bold text-gray-900 sm:text-3xl dark:text-white">Trusted &amp; Secure</h2>
+        <p className="mt-3 text-gray-500 dark:text-gray-400">Enterprise-grade security. Built for Indian compliance.</p>
+        <div className="mt-10 grid grid-cols-2 gap-4 sm:grid-cols-4">
+          {badges.map((b) => (
+            <div key={b.label} className="rounded-lg border border-gray-200 bg-white px-4 py-5 dark:border-gray-700 dark:bg-gray-800">
+              <p className="text-2xl">{b.icon}</p>
+              <p className="mt-2 text-xs font-medium text-gray-600 dark:text-gray-300">{b.label}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ── FAQ ──
+
+function FAQSection() {
+  const faqs = [
+    {
+      q: "How does WhatsApp booking work?",
+      a: "Employees message the SkySwift WhatsApp bot in plain language (e.g., 'Book BLR to DEL Monday morning'). The AI searches flights, applies your company policy, and shows options. Employee taps to confirm. Done in 30 seconds.",
+    },
+    {
+      q: "What airlines do you support?",
+      a: "We support 300+ airlines globally via our partnership with Duffel, including all major Indian carriers — IndiGo, Air India, Vistara, SpiceJet, AirAsia India, and more.",
+    },
+    {
+      q: "How is GST compliance handled?",
+      a: "Your company GSTIN is captured at setup. For every booking, we auto-generate GST-compliant invoice entries with correct SAC codes, CGST/SGST/IGST split, and ITC eligibility. Export to Tally-compatible CSV anytime.",
+    },
+    {
+      q: "What happens if a booking is out of policy?",
+      a: "Depends on your policy mode. In 'soft' mode, employees see a warning but can proceed (with an audit trail). In 'hard' mode, out-of-policy options are blocked. Either way, you can route exceptions to manager approval.",
+    },
+    {
+      q: "How do I add employees?",
+      a: "Admins can invite employees from the dashboard with name and email. Employees receive a signup link. Once signed up, they can start booking via WhatsApp by verifying their phone number.",
+    },
+    {
+      q: "Is my data secure?",
+      a: "Yes. All data is encrypted at rest and in transit. We use Supabase (hosted on AWS) with Row Level Security ensuring strict tenant isolation. No employee can see another company's data.",
+    },
+    {
+      q: "What does the free plan include?",
+      a: "20 bookings per month, WhatsApp bot access, basic travel policy, GST invoice capture, and up to 10 employees. No credit card required. Upgrade anytime.",
+    },
+  ];
+
+  return (
+    <section className="border-t border-gray-100 bg-gray-50 px-6 py-20 dark:border-gray-800 dark:bg-gray-900/50">
+      <div className="mx-auto max-w-3xl">
+        <div className="text-center">
+          <h2 className="text-3xl font-bold text-gray-900 sm:text-4xl dark:text-white">Frequently Asked Questions</h2>
+        </div>
+        <div className="mt-12 space-y-4">
+          {faqs.map((faq) => (
+            <details key={faq.q} className="group rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
+              <summary className="cursor-pointer px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">
+                {faq.q}
+              </summary>
+              <div className="border-t border-gray-100 px-6 py-4 text-sm leading-relaxed text-gray-500 dark:border-gray-700 dark:text-gray-400">
+                {faq.a}
+              </div>
+            </details>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ── Footer CTA ──
+
+function FooterCTA() {
+  return (
+    <section className="px-6 py-20">
+      <div className="mx-auto max-w-2xl text-center">
+        <h2 className="text-3xl font-bold text-gray-900 sm:text-4xl dark:text-white">
+          Start your free pilot today
         </h2>
-        <p className="mt-4 text-lg leading-relaxed text-[var(--glass-text-secondary)]">
-          Stop wasting time on booking forms. Just tell us where you&apos;re going.
+        <p className="mt-3 text-lg text-gray-500 dark:text-gray-400">
+          20 bookings on us. No credit card required.
         </p>
         <div className="mt-8">
           <Link href="/signup">
-            <GlassButton variant="primary" size="lg">
+            <Button size="lg">
               Get Started Free
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="ml-1"
-              >
-                <path d="M5 12h14" />
-                <path d="m12 5 7 7-7 7" />
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="ml-1">
+                <path d="M5 12h14" /><path d="m12 5 7 7-7 7" />
               </svg>
-            </GlassButton>
+            </Button>
           </Link>
         </div>
       </div>
@@ -362,130 +640,74 @@ function CTASection() {
   );
 }
 
+// ── Footer ──
+
 function Footer() {
   return (
-    <footer className="border-t border-[var(--glass-border)] px-6 py-12">
+    <footer className="border-t border-gray-200 bg-white px-6 py-12 dark:border-gray-800 dark:bg-gray-950">
       <div className="mx-auto max-w-6xl">
         <div className="grid gap-8 sm:grid-cols-2 md:grid-cols-4">
           <div>
             <div className="flex items-center gap-2">
-              <div className="flex h-7 w-7 items-center justify-center rounded-[8px] bg-[var(--glass-accent-blue)] shadow-[0_1px_3px_rgba(0,113,227,0.3)]">
-                <svg
-                  width="14"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="white"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z" />
-                </svg>
+              <div className="flex h-7 w-7 items-center justify-center rounded-md bg-blue-600">
+                <PlaneIcon className="h-3.5 w-3.5 text-white" />
               </div>
-              <span className="font-semibold text-[var(--glass-text-primary)]">Skyswift</span>
+              <span className="font-semibold text-gray-900 dark:text-white">SkySwift</span>
             </div>
-            <p className="mt-3 text-sm leading-relaxed text-[var(--glass-text-secondary)]">
-              The autonomous travel agent for people who&apos;d rather be doing anything else.
+            <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">
+              AI travel management for Indian corporates. Book flights in 30 seconds via WhatsApp.
             </p>
           </div>
-
           <div>
-            <h4 className="mb-3 text-sm font-medium text-[var(--glass-text-primary)]">Product</h4>
+            <h4 className="mb-3 text-sm font-medium text-gray-900 dark:text-white">Product</h4>
             <ul className="space-y-2">
-              <li>
-                <Link href="#how-it-works" className="text-sm text-[var(--glass-text-secondary)] transition-colors hover:text-[var(--glass-text-primary)]">
-                  How it works
-                </Link>
-              </li>
-              <li>
-                <Link href="#" className="text-sm text-[var(--glass-text-secondary)] transition-colors hover:text-[var(--glass-text-primary)]">
-                  Pricing
-                </Link>
-              </li>
-              <li>
-                <Link href="#" className="text-sm text-[var(--glass-text-secondary)] transition-colors hover:text-[var(--glass-text-primary)]">
-                  Integrations
-                </Link>
-              </li>
+              <li><a href="#how-it-works" className="text-sm text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white">How it works</a></li>
+              <li><a href="#pricing" className="text-sm text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white">Pricing</a></li>
+              <li><a href="#for-companies" className="text-sm text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white">For Companies</a></li>
             </ul>
           </div>
-
           <div>
-            <h4 className="mb-3 text-sm font-medium text-[var(--glass-text-primary)]">Company</h4>
+            <h4 className="mb-3 text-sm font-medium text-gray-900 dark:text-white">Company</h4>
             <ul className="space-y-2">
-              <li>
-                <Link href="#" className="text-sm text-[var(--glass-text-secondary)] transition-colors hover:text-[var(--glass-text-primary)]">
-                  About
-                </Link>
-              </li>
-              <li>
-                <Link href="#" className="text-sm text-[var(--glass-text-secondary)] transition-colors hover:text-[var(--glass-text-primary)]">
-                  Blog
-                </Link>
-              </li>
-              <li>
-                <Link href="#" className="text-sm text-[var(--glass-text-secondary)] transition-colors hover:text-[var(--glass-text-primary)]">
-                  Careers
-                </Link>
-              </li>
+              <li><a href="#" className="text-sm text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white">About</a></li>
+              <li><a href="#" className="text-sm text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white">Blog</a></li>
+              <li><a href="#" className="text-sm text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white">Careers</a></li>
             </ul>
           </div>
-
           <div>
-            <h4 className="mb-3 text-sm font-medium text-[var(--glass-text-primary)]">Legal</h4>
+            <h4 className="mb-3 text-sm font-medium text-gray-900 dark:text-white">Legal</h4>
             <ul className="space-y-2">
-              <li>
-                <Link href="#" className="text-sm text-[var(--glass-text-secondary)] transition-colors hover:text-[var(--glass-text-primary)]">
-                  Privacy
-                </Link>
-              </li>
-              <li>
-                <Link href="#" className="text-sm text-[var(--glass-text-secondary)] transition-colors hover:text-[var(--glass-text-primary)]">
-                  Terms
-                </Link>
-              </li>
-              <li>
-                <Link href="#" className="text-sm text-[var(--glass-text-secondary)] transition-colors hover:text-[var(--glass-text-primary)]">
-                  Security
-                </Link>
-              </li>
+              <li><a href="#" className="text-sm text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white">Privacy</a></li>
+              <li><a href="#" className="text-sm text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white">Terms</a></li>
+              <li><a href="#" className="text-sm text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white">Security</a></li>
             </ul>
           </div>
         </div>
-
-        <div className="mt-8 border-t border-[var(--glass-border-subtle)] pt-8">
-          <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
-            <p className="text-xs text-[var(--glass-text-tertiary)]">
-              &copy; 2025 Skyswift. All rights reserved.
-            </p>
-            <div className="flex gap-4">
-              <Link href="#" className="text-[var(--glass-text-tertiary)] transition-colors hover:text-[var(--glass-text-secondary)]" aria-label="Twitter">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-                </svg>
-              </Link>
-              <Link href="#" className="text-[var(--glass-text-tertiary)] transition-colors hover:text-[var(--glass-text-secondary)]" aria-label="GitHub">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
-                </svg>
-              </Link>
-            </div>
-          </div>
+        <div className="mt-8 border-t border-gray-100 pt-8 dark:border-gray-800">
+          <p className="text-xs text-gray-400">
+            &copy; 2026 SkySwift. All rights reserved.
+          </p>
         </div>
       </div>
     </footer>
   );
 }
 
+// ── Page ──
+
 export default function Home() {
   return (
-    <main className="dark min-h-screen bg-[var(--glass-bg-page)]">
+    <main className="min-h-screen bg-white dark:bg-gray-950">
       <Navbar />
       <HeroSection />
+      <ProblemSection />
       <HowItWorksSection />
-      <SocialProofSection />
-      <CTASection />
+      <DualValueSection />
+      <FeaturesSection />
+      <PricingSection />
+      <TrustSection />
+      <FAQSection />
+      <FooterCTA />
       <Footer />
     </main>
   );

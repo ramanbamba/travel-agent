@@ -46,11 +46,17 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
+  const pathname = request.nextUrl.pathname;
+
   // Protect dashboard routes — redirect to login if not authenticated
-  if (
-    !user &&
-    request.nextUrl.pathname.startsWith("/dashboard")
-  ) {
+  if (!user && pathname.startsWith("/dashboard")) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/login";
+    return NextResponse.redirect(url);
+  }
+
+  // Protect /book routes — redirect to login if not authenticated
+  if (!user && pathname.startsWith("/book")) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);
@@ -59,27 +65,39 @@ export async function updateSession(request: NextRequest) {
   // Redirect authenticated users away from auth pages
   if (
     user &&
-    (request.nextUrl.pathname === "/login" ||
-      request.nextUrl.pathname === "/signup")
+    (pathname === "/login" || pathname === "/signup") &&
+    !request.nextUrl.searchParams.has("invite")
   ) {
     const url = request.nextUrl.clone();
     url.pathname = "/dashboard";
     return NextResponse.redirect(url);
   }
 
-  // Onboarding gate: redirect to onboarding if profile is incomplete
+  // For authenticated users on dashboard routes:
+  // Check org membership (skip for onboarding and API routes)
   if (
     user &&
-    request.nextUrl.pathname.startsWith("/dashboard") &&
-    request.nextUrl.pathname !== "/dashboard/onboarding"
+    pathname.startsWith("/dashboard") &&
+    pathname !== "/dashboard/onboarding"
   ) {
+    // First check for legacy user_profiles onboarding (Phase 1-3 compat)
     const { data: profile } = await supabase
       .from("user_profiles")
       .select("onboarding_completed")
       .eq("id", user.id)
       .single();
 
-    if (!profile || !profile.onboarding_completed) {
+    // Check if user has an org membership
+    const { data: membership } = await supabase
+      .from("org_members")
+      .select("id, role, org_id")
+      .eq("user_id", user.id)
+      .eq("status", "active")
+      .maybeSingle();
+
+    // If user has neither a completed profile nor an org membership,
+    // redirect to onboarding
+    if (!membership && (!profile || !profile.onboarding_completed)) {
       const url = request.nextUrl.clone();
       url.pathname = "/dashboard/onboarding";
       return NextResponse.redirect(url);
