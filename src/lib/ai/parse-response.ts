@@ -9,6 +9,13 @@ const VALID_ACTIONS: AIAction[] = [
   "update_preference",
   "general_response",
   "show_booking_status",
+  // Corporate actions (Phase 4)
+  "policy_answer",
+  "manage_booking",
+  "expense_query",
+  "approval_response",
+  "help",
+  "greeting",
 ];
 
 function normalizeAction(action: string | undefined): AIAction {
@@ -63,6 +70,33 @@ export function parseAIJsonResponse(raw: string): AIProviderResponse {
 
     if (parsed.selected_flight_index != null) {
       response.selectedFlightIndex = parsed.selected_flight_index;
+    }
+
+    // Corporate fields (Phase 4)
+    if (parsed.intent) {
+      response.intent = parsed.intent;
+    }
+
+    if (parsed.policy_check) {
+      response.policyCheck = {
+        compliant: parsed.policy_check.compliant ?? true,
+        violations: parsed.policy_check.violations ?? [],
+      };
+    }
+
+    if (parsed.booking_action) {
+      response.bookingAction = {
+        action: parsed.booking_action.action,
+        bookingRef: parsed.booking_action.booking_ref,
+      };
+    }
+
+    if (parsed.approval_action) {
+      response.approvalAction = {
+        action: parsed.approval_action.action,
+        bookingId: parsed.approval_action.booking_id,
+        reason: parsed.approval_action.reason,
+      };
     }
 
     return response;

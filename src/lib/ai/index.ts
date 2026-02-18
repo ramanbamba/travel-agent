@@ -25,6 +25,11 @@ export {
   type FrequentRouteContext,
 } from "./prompts/system-prompts";
 
+export { buildCorporateSystemPrompt } from "./prompts/corporate-system-prompt";
+
+// Intent Router
+export { IntentRouter, type IntentRouterDeps } from "./intent-router";
+
 // Manager
 export { getAIProvider, getAIProviderChain, registerAIProvider } from "./ai-manager";
 

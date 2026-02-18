@@ -10,11 +10,14 @@ import {
   sendInteractiveButtons,
   markAsRead,
 } from "./client";
+import { IntentRouter } from "@/lib/ai/intent-router";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
+
+const intentRouter = new IntentRouter({ supabase });
 
 // Rate limiting: simple in-memory store
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
@@ -228,88 +231,61 @@ async function handleRegistration(
   }
 }
 
-// ── Idle State — Parse Intent ──
+// ── AI-Powered Intent Handler ──
 
-async function handleIdleMessage(
+async function handleMessageWithAI(
   session: SessionData,
   message: ParsedIncomingMessage
 ): Promise<void> {
-  const text = message.text.trim().toLowerCase();
+  // Update conversation memory buffer (last 10 messages)
+  const lastMessages = (
+    (session.context as { last_messages?: string[] }).last_messages || []
+  ).slice(-9);
+  lastMessages.push(message.text);
 
-  // Simple greeting detection
-  if (["hi", "hello", "hey", "hola", "namaste"].includes(text)) {
-    // Load member name
-    const { data: member } = await supabase
-      .from("org_members")
-      .select("full_name")
-      .eq("id", session.member_id)
-      .single();
-
-    const name = member?.full_name?.split(" ")[0] || "there";
-    await sendTextMessage(
-      message.from,
-      `Hey ${name}! Where do you need to fly? Just tell me like:\n\n` +
-      `"Book BLR to DEL Monday morning"\n` +
-      `"Show flights to Mumbai tomorrow"\n` +
-      `"What's my booking status?"`
-    );
-    return;
-  }
-
-  // Help
-  if (["help", "?", "what can you do"].includes(text)) {
-    await sendTextMessage(
-      message.from,
-      "I can help you with:\n\n" +
-      "✈️ *Book flights* — \"Book BLR to DEL Monday\"\n" +
-      "🔍 *Search flights* — \"Show flights to Mumbai\"\n" +
-      "📋 *Check bookings* — \"My bookings\" or \"Booking status\"\n" +
-      "❌ *Cancel trips* — \"Cancel my Delhi flight\"\n" +
-      "⚙️ *Preferences* — \"I prefer aisle seat\"\n" +
-      "📊 *Travel summary* — \"How much have I spent?\"\n" +
-      "❓ *Policy questions* — \"Can I book business class?\"\n\n" +
-      "Just type what you need!"
-    );
-    return;
-  }
-
-  // For all other messages, we'll delegate to the AI intent parser (P4-05).
-  // For now, provide a helpful placeholder response.
-  // Store the message in context for when AI is wired up.
   await updateSession(session.id, {
-    context: {
-      last_messages: [
-        ...((session.context as { last_messages?: string[] }).last_messages || []).slice(-9),
-        message.text,
-      ],
-    },
+    context: { ...session.context, last_messages: lastMessages },
   });
 
-  // Placeholder: detect basic booking intent by keywords
-  const hasCity = /\b(del|blr|bom|hyd|ccu|maa|goi|cok|jai|pnq|delhi|bangalore|bengaluru|mumbai|hyderabad|kolkata|chennai|goa|kochi|jaipur|pune)\b/i.test(text);
-  const hasBookKeyword = /\b(book|fly|flight|ticket|travel)\b/i.test(text);
+  // Route through AI intent parser
+  const result = await intentRouter.processMessage(
+    {
+      id: session.id,
+      phone_number: session.phone_number,
+      org_id: session.org_id,
+      member_id: session.member_id,
+      state: session.state,
+      context: { ...session.context, last_messages: lastMessages },
+      verified: session.verified,
+    },
+    message.text
+  );
 
-  if (hasCity && hasBookKeyword) {
-    // Signal that we detected a booking intent — will be handled by P4-05/P4-06
-    await updateSession(session.id, { state: "searching" });
-    await sendTextMessage(
-      message.from,
-      "🔍 Searching for the best flights...\n\n(Flight search will be connected in the next update. Stay tuned!)"
-    );
-    // Reset back to idle for now
-    await updateSession(session.id, { state: "idle" });
-    return;
+  // Send all response messages
+  for (const msg of result.messages) {
+    await sendTextMessage(message.from, msg);
   }
 
-  // Default response
-  await sendTextMessage(
-    message.from,
-    "I'm not sure what you need. Try something like:\n\n" +
-    "\"Book BLR to DEL Monday morning\"\n" +
-    "\"Show flights to Mumbai tomorrow\"\n" +
-    "\"My bookings\"\n\n" +
-    "Or type *help* for all options."
-  );
+  // Update session state if changed
+  if (result.newState || result.newContext) {
+    const updates: Partial<Pick<SessionData, "state" | "context">> = {};
+    if (result.newState) updates.state = result.newState;
+    if (result.newContext) {
+      updates.context = { ...result.newContext, last_messages: lastMessages };
+    }
+    await updateSession(session.id, updates);
+  }
+
+  // Store bot response in conversation memory
+  if (result.messages.length > 0) {
+    const updatedMessages = [...lastMessages, result.messages[0]].slice(-10);
+    await updateSession(session.id, {
+      context: {
+        ...(result.newContext ?? session.context),
+        last_messages: updatedMessages,
+      },
+    });
+  }
 }
 
 // ── Selecting State — User picking from flight options ──
@@ -423,7 +399,9 @@ export async function handleIncomingMessage(
     } else {
       switch (session.state) {
         case "idle":
-          await handleIdleMessage(session, message);
+        case "searching":
+          // All messages go through AI intent parser for context-aware responses
+          await handleMessageWithAI(session, message);
           break;
         case "selecting":
           await handleSelectingMessage(session, message);
@@ -432,15 +410,13 @@ export async function handleIncomingMessage(
           await handleConfirmingMessage(session, message);
           break;
         case "awaiting_approval":
-          await sendTextMessage(
-            phone,
-            "Your booking is waiting for manager approval. I'll notify you as soon as there's an update.\n\nType *status* to check, or start a new search."
-          );
+          // Allow AI to handle approval-state messages (e.g., "status", new searches)
+          await handleMessageWithAI(session, message);
           break;
         default:
           // Reset to idle for unknown states
           await updateSession(session.id, { state: "idle", context: {} });
-          await handleIdleMessage(session, message);
+          await handleMessageWithAI(session, message);
           break;
       }
     }

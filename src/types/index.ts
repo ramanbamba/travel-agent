@@ -2,6 +2,7 @@ export * from "./flights";
 export * from "./chat";
 export * from "./preferences";
 export * from "./organization";
+export * from "./intent";
 
 export interface User {
   id: string;

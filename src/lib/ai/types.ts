@@ -10,7 +10,14 @@ export type AIAction =
   | "ask_clarification"
   | "update_preference"
   | "general_response"
-  | "show_booking_status";
+  | "show_booking_status"
+  // Corporate actions (Phase 4)
+  | "policy_answer"
+  | "manage_booking"
+  | "expense_query"
+  | "approval_response"
+  | "help"
+  | "greeting";
 
 export interface AIChatMessage {
   role: "user" | "assistant";
@@ -34,6 +41,11 @@ export interface AIProviderResponse {
   preferenceUpdate?: Record<string, string>;
   selectedFlightIndex?: number;
   raw?: string;
+  // Corporate fields (Phase 4)
+  intent?: Record<string, unknown>;
+  policyCheck?: { compliant: boolean; violations: string[] };
+  bookingAction?: { action: string; bookingRef?: string };
+  approvalAction?: { action: string; bookingId?: string; reason?: string };
 }
 
 export interface AIChatParams {
