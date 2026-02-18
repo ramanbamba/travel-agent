@@ -17,9 +17,40 @@ const geistMono = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "Skyswift — Book Flights in 30 Seconds",
+  title: {
+    default: "SkySwift — AI Travel Management for Indian Corporates",
+    template: "%s | SkySwift",
+  },
   description:
-    "The autonomous travel agent that eliminates 47 clicks. Book flights with a single conversation.",
+    "Corporate travel booking via WhatsApp in 30 seconds. Policy enforcement, GST compliance, and manager approvals — all automated.",
+  keywords: [
+    "corporate travel management",
+    "India",
+    "WhatsApp booking",
+    "travel policy",
+    "GST compliance",
+    "business travel",
+    "flight booking",
+  ],
+  authors: [{ name: "SkySwift" }],
+  openGraph: {
+    type: "website",
+    title: "SkySwift — AI Travel Management for Indian Corporates",
+    description:
+      "47 clicks → 1 WhatsApp message. AI-powered corporate travel booking with policy enforcement and GST compliance.",
+    siteName: "SkySwift",
+    locale: "en_IN",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "SkySwift — AI Travel Management for Indian Corporates",
+    description:
+      "Corporate travel booking via WhatsApp in 30 seconds. Policy enforcement, GST compliance, manager approvals.",
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 export const viewport: Viewport = {

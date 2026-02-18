@@ -6,7 +6,8 @@ import {
   Loader2,
 } from "lucide-react";
 import { PageHeader, EmptyState } from "@/components/corporate-dashboard";
-import { AnalyticsCharts } from "./analytics-charts";
+import dynamic from "next/dynamic";
+const AnalyticsCharts = dynamic(() => import("./analytics-charts").then(m => m.AnalyticsCharts), { ssr: false });
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnalyticsData = any;

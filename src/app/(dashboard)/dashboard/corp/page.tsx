@@ -12,7 +12,8 @@ import {
   Inbox,
 } from "lucide-react";
 import { StatCard, PageHeader, StatusBadge, EmptyState } from "@/components/corporate-dashboard";
-import { OverviewCharts } from "./overview-charts";
+import dynamic from "next/dynamic";
+const OverviewCharts = dynamic(() => import("./overview-charts").then(m => m.OverviewCharts), { ssr: false });
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type StatsData = any;
