@@ -71,6 +71,12 @@
   }
 }
 
+@layer components {
+  .input-field {
+    @apply h-9 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700 focus:border-blue-300 focus:outline-none focus:ring-1 focus:ring-blue-300;
+  }
+}
+
 @layer utilities {
   .text-balance {
     text-wrap: balance;
