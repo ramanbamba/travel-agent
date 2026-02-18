@@ -15,6 +15,14 @@ import type {
 } from "@/types/intent";
 import { buildCorporateSystemPrompt } from "./prompts/corporate-system-prompt";
 import { getAIProviderChain } from "./ai-manager";
+import { searchFlights } from "@/lib/supply";
+import type { CabinClass } from "@/lib/supply/types";
+import {
+  formatFlightResults,
+  formatFlightDetail,
+  type CorporateFlightResult,
+  type PolicyCompliance,
+} from "@/lib/whatsapp/formatters";
 
 // ── Types ──
 
@@ -183,27 +191,170 @@ export class IntentRouter {
       return { messages: [aiResponse.message] };
     }
 
-    // Store search intent in context for multi-turn
-    const searchContext = {
-      ...((session.context as Record<string, unknown>) ?? {}),
-      search_params: params,
-      intent_update: aiResponse.intentUpdate,
-    };
+    // Load policy for compliance checking
+    let policyRules: SupabaseAny = null;
+    let policyMode = "soft";
+    let seniority = "individual_contributor";
 
-    // For now, return the AI message + signal searching state.
-    // P4-06 will wire up actual Duffel flight search here.
-    const policyWarning = aiResponse.policyCheck?.violations?.length
-      ? `\n\n⚠️ *Policy note:* ${aiResponse.policyCheck.violations.join(", ")}`
-      : "";
+    if (session.org_id) {
+      const [policyResult, memberResult] = await Promise.all([
+        this.query("travel_policies")
+          .select("flight_rules, policy_mode")
+          .eq("org_id", session.org_id)
+          .eq("is_active", true)
+          .limit(1)
+          .single() as Promise<{ data: SupabaseAny | null }>,
+        this.query("org_members")
+          .select("seniority_level")
+          .eq("id", session.member_id)
+          .single() as Promise<{ data: SupabaseAny | null }>,
+      ]);
+      policyRules = policyResult.data?.flight_rules;
+      policyMode = policyResult.data?.policy_mode ?? "soft";
+      seniority = memberResult.data?.seniority_level ?? "individual_contributor";
+    }
 
+    // Search flights via supply layer
+    try {
+      const searchResult = await searchFlights({
+        origin: params.origin,
+        destination: params.destination,
+        departureDate: params.date,
+        returnDate: params.returnDate,
+        cabinClass: (params.cabinClass as CabinClass) || "economy",
+        currency: "INR",
+        maxResults: 10,
+      });
+
+      // Apply policy compliance to each result
+      const results: CorporateFlightResult[] = searchResult.offers.map((offer) => {
+        const compliance = this.checkPolicyCompliance(offer, policyRules, seniority, policyMode);
+        return { offer, compliance };
+      });
+
+      // Filter blocked in hard mode, sort by compliance then price
+      const filtered = policyMode === "hard"
+        ? results.filter((r) => r.compliance.status !== "blocked")
+        : results;
+
+      filtered.sort((a, b) => {
+        const statusOrder: Record<string, number> = { compliant: 0, warning: 1, blocked: 2 };
+        const diff = (statusOrder[a.compliance.status] ?? 2) - (statusOrder[b.compliance.status] ?? 2);
+        if (diff !== 0) return diff;
+        return a.offer.price.total - b.offer.price.total;
+      });
+
+      const topResults = filtered.slice(0, 5);
+
+      if (topResults.length === 0) {
+        return {
+          messages: [
+            aiResponse.message +
+            "\n\nNo flights found" +
+            (policyMode === "hard" ? " within policy limits" : "") +
+            ". Try a different date or route.",
+          ],
+          newState: "idle",
+        };
+      }
+
+      // Format and store results in context for selection
+      const formattedMsg = formatFlightResults(
+        topResults,
+        params.origin,
+        params.destination,
+        params.date
+      );
+
+      const searchContext = {
+        ...((session.context as Record<string, unknown>) ?? {}),
+        search_params: params,
+        flight_options: topResults.map((r) => ({
+          offer_id: r.offer.id,
+          supplier: r.offer.supplierName,
+          price: r.offer.price.total,
+          currency: r.offer.price.currency,
+          airline_code: r.offer.segments[0]?.airlineCode,
+          airline_name: r.offer.segments[0]?.airline,
+          compliance: r.compliance,
+          detail: formatFlightDetail(r.offer),
+        })),
+      };
+
+      return {
+        messages: [formattedMsg],
+        newState: "selecting",
+        newContext: searchContext,
+      };
+    } catch (err) {
+      console.error("[IntentRouter] Flight search failed:", err);
+      return {
+        messages: [
+          aiResponse.message +
+          "\n\n⚠️ Flight search is temporarily unavailable. Please try again in a moment.",
+        ],
+      };
+    }
+  }
+
+  // ── Policy Compliance Check ──
+
+  private checkPolicyCompliance(
+    offer: SupabaseAny,
+    flightRules: SupabaseAny,
+    seniority: string,
+    policyMode: string
+  ): PolicyCompliance {
+    if (!flightRules) return { status: "compliant", violations: [] };
+
+    const violations: string[] = [];
+
+    // Price check
+    const maxDomestic = flightRules.max_flight_price?.domestic;
+    if (maxDomestic && offer.price.total > maxDomestic) {
+      violations.push(
+        `₹${Math.round(offer.price.total).toLocaleString("en-IN")} exceeds ₹${maxDomestic.toLocaleString("en-IN")} limit`
+      );
+    }
+
+    // Blocked airlines
+    const airlineCode = offer.segments?.[0]?.airlineCode;
+    if (flightRules.blocked_airlines?.includes(airlineCode)) {
+      violations.push(`${airlineCode} is blocked by policy`);
+    }
+
+    // Advance booking
+    if (flightRules.advance_booking_days?.minimum > 0) {
+      const depTime = offer.segments?.[0]?.departure?.time;
+      if (depTime) {
+        const daysAhead = Math.floor(
+          (new Date(depTime).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
+        );
+        if (daysAhead < flightRules.advance_booking_days.minimum) {
+          violations.push(`${daysAhead}d advance — min ${flightRules.advance_booking_days.minimum}d required`);
+        }
+      }
+    }
+
+    // Cabin class
+    const defaultCabin = flightRules.domestic_cabin_class?.default ?? "economy";
+    const offerCabin = offer.segments?.[0]?.cabin ?? "economy";
+    const hierarchy = ["economy", "premium_economy", "business", "first"];
+    if (hierarchy.indexOf(offerCabin) > hierarchy.indexOf(defaultCabin)) {
+      // Check seniority overrides
+      const overrides = flightRules.domestic_cabin_class?.overrides ?? [];
+      const allowed = overrides.find((o: SupabaseAny) => o.seniority?.includes(seniority));
+      if (!allowed || !allowed.allowed?.includes(offerCabin)) {
+        violations.push(`${offerCabin} class not allowed — max: ${defaultCabin}`);
+      }
+    }
+
+    if (violations.length === 0) {
+      return { status: "compliant", violations: [] };
+    }
     return {
-      messages: [
-        aiResponse.message + policyWarning +
-        "\n\n🔍 Searching for flights..." +
-        "\n_(Flight results will be connected in P4-06)_",
-      ],
-      newState: "searching",
-      newContext: searchContext,
+      status: policyMode === "hard" ? "blocked" : "warning",
+      violations,
     };
   }
 

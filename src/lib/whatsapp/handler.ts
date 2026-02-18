@@ -290,31 +290,52 @@ async function handleMessageWithAI(
 
 // ── Selecting State — User picking from flight options ──
 
+interface FlightOptionContext {
+  offer_id: string;
+  supplier: string;
+  price: number;
+  currency: string;
+  airline_code: string;
+  airline_name: string;
+  compliance: { status: string; violations: string[] };
+  detail: string;
+}
+
 async function handleSelectingMessage(
   session: SessionData,
   message: ParsedIncomingMessage
 ): Promise<void> {
   const text = message.text.trim();
 
-  // Expect a number (1, 2, 3) or button reply
-  if (/^[1-5]$/.test(text)) {
+  // Expect a number (1, 2, 3, etc.) or button reply
+  if (/^[1-9]$/.test(text)) {
     const selectedIndex = parseInt(text) - 1;
-    const options = (session.context as { flight_options?: unknown[] }).flight_options;
+    const options = (session.context as { flight_options?: FlightOptionContext[] }).flight_options;
 
     if (!options || selectedIndex >= options.length) {
       await sendTextMessage(message.from, "Invalid option. Please reply with a number from the list.");
       return;
     }
 
-    // Move to confirming state
+    const selected = options[selectedIndex];
+
+    // Move to confirming state with selected flight details
     await updateSession(session.id, {
       state: "confirming",
-      context: { ...session.context, selected_option: selectedIndex },
+      context: { ...session.context, selected_option: selectedIndex, selected_flight: selected },
     });
+
+    // Show flight detail + confirm buttons
+    let confirmMsg = `*Selected flight:*\n\n${selected.detail}`;
+    if (selected.compliance.status === "warning") {
+      confirmMsg += `\n\n⚠️ ${selected.compliance.violations.join(", ")}`;
+      confirmMsg += "\n_This is outside policy. Your manager will be notified._";
+    }
+    confirmMsg += "\n\nBook this flight?";
 
     await sendInteractiveButtons(
       message.from,
-      "Confirm booking?\n\n(Booking details will be shown here when flight search is connected.)",
+      confirmMsg,
       [
         { type: "reply", reply: { id: "confirm_yes", title: "Yes, Book" } },
         { type: "reply", reply: { id: "confirm_no", title: "Cancel" } },
@@ -330,7 +351,8 @@ async function handleSelectingMessage(
     return;
   }
 
-  await sendTextMessage(message.from, "Please reply with a number (1-5) to select a flight, or type *cancel* to start over.");
+  // Non-numeric text during selecting — route through AI (might be "the cheaper one", "afternoon flights", etc.)
+  await handleMessageWithAI(session, message);
 }
 
 // ── Confirming State — User confirming booking ──
@@ -342,12 +364,62 @@ async function handleConfirmingMessage(
   const text = message.text.trim().toLowerCase();
 
   if (["yes", "confirm", "book", "confirm_yes"].includes(text) || text === "yes, book") {
-    // Will be handled by P4-06 corporate booking flow
+    const ctx = session.context as {
+      selected_flight?: FlightOptionContext;
+      search_params?: { origin: string; destination: string; date: string; cabinClass?: string };
+    };
+    const selected = ctx.selected_flight;
+    const searchParams = ctx.search_params;
+
+    if (!selected || !session.org_id || !session.member_id) {
+      await updateSession(session.id, { state: "idle", context: {} });
+      await sendTextMessage(message.from, "Something went wrong. Let's start over — where do you need to fly?");
+      return;
+    }
+
+    await sendTextMessage(message.from, "⏳ Processing your booking...");
+
+    try {
+      // Call corporate booking API
+      const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.VERCEL_URL
+        ? `https://${process.env.VERCEL_URL}`
+        : "http://localhost:3000";
+
+      const bookRes = await fetch(`${baseUrl}/api/flights/corporate-book`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          offer_id: selected.offer_id,
+          member_id: session.member_id,
+          org_id: session.org_id,
+          booking_channel: "whatsapp",
+          flight_details: {
+            origin: searchParams?.origin ?? "",
+            destination: searchParams?.destination ?? "",
+            departure_date: searchParams?.date ?? "",
+            cabin_class: searchParams?.cabinClass ?? "economy",
+            airline_code: selected.airline_code,
+            airline_name: selected.airline_name,
+            total_amount: selected.price,
+            currency: selected.currency || "INR",
+          },
+          policy_compliant: selected.compliance.status === "compliant",
+          policy_violations: selected.compliance.violations,
+        }),
+      });
+
+      const bookResult = await bookRes.json();
+
+      if (bookResult.error) {
+        await sendTextMessage(message.from, `❌ Booking failed: ${bookResult.error}\n\nWant to try again?`);
+      }
+      // Success messages are sent by the corporate-book API directly via WhatsApp
+    } catch (err) {
+      console.error("[WhatsApp Handler] Booking error:", err);
+      await sendTextMessage(message.from, "❌ Something went wrong with the booking. Please try again.");
+    }
+
     await updateSession(session.id, { state: "idle", context: {} });
-    await sendTextMessage(
-      message.from,
-      "✅ Booking confirmed!\n\n(Full booking flow will be connected in the next update.)\n\nNeed anything else?"
-    );
     return;
   }
 
