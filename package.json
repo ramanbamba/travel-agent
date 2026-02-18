@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "seed:demo": "npx tsx scripts/seed-demo.ts"
+    "seed:demo": "npx tsx scripts/seed-demo.ts",
+    "seed:demo-corp": "npx tsx scripts/seed-demo-corp.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.74.0",
