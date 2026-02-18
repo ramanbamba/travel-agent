@@ -1,21 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import { requireCorpAuth } from "@/lib/corp/auth";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type DbRow = any;
-const db = supabase as DbRow;
 
-export async function GET(req: NextRequest) {
+export async function GET() {
   try {
-    const orgId = req.nextUrl.searchParams.get("org_id");
-    if (!orgId) {
-      return NextResponse.json({ data: null, error: "org_id required" }, { status: 400 });
-    }
+    const auth = await requireCorpAuth({ roles: ["admin", "travel_manager", "approver"] });
+    if (auth.error) return auth.error;
+
+    const { member, db } = auth;
+    const orgId = member.org_id;
 
     const { data: members, error } = await db
       .from("org_members")
@@ -52,10 +47,16 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
-    const { org_id, full_name, email, phone, department, role, seniority_level } = body;
+    const auth = await requireCorpAuth({ roles: ["admin", "travel_manager"] });
+    if (auth.error) return auth.error;
 
-    if (!org_id || !full_name || !email) {
+    const { member, db } = auth;
+    const orgId = member.org_id;
+
+    const body = await req.json();
+    const { full_name, email, phone, department, role, seniority_level } = body;
+
+    if (!full_name || !email) {
       return NextResponse.json({ data: null, error: "Missing required fields" }, { status: 400 });
     }
 
@@ -63,7 +64,7 @@ export async function POST(req: NextRequest) {
     const { data: existing } = await db
       .from("org_members")
       .select("id")
-      .eq("org_id", org_id)
+      .eq("org_id", orgId)
       .eq("email", email)
       .limit(1)
       .single();
@@ -72,10 +73,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ data: null, error: "Employee with this email already exists" }, { status: 409 });
     }
 
-    const { data: member, error } = await db
+    const { data: newMember, error } = await db
       .from("org_members")
       .insert({
-        org_id,
+        org_id: orgId,
         full_name,
         email,
         phone: phone || null,
@@ -89,7 +90,7 @@ export async function POST(req: NextRequest) {
 
     if (error) throw error;
 
-    return NextResponse.json({ data: member, error: null });
+    return NextResponse.json({ data: newMember, error: null });
   } catch (error) {
     console.error("[Corp Members POST] Error:", error);
     return NextResponse.json({ data: null, error: "Failed to add member" }, { status: 500 });
@@ -98,11 +99,28 @@ export async function POST(req: NextRequest) {
 
 export async function PATCH(req: NextRequest) {
   try {
+    const auth = await requireCorpAuth({ roles: ["admin", "travel_manager"] });
+    if (auth.error) return auth.error;
+
+    const { member, db } = auth;
+    const orgId = member.org_id;
+
     const body = await req.json();
     const { id, ...updates } = body;
 
     if (!id) {
       return NextResponse.json({ data: null, error: "Member ID required" }, { status: 400 });
+    }
+
+    // Verify the member belongs to the same org
+    const { data: target } = await db
+      .from("org_members")
+      .select("id, org_id")
+      .eq("id", id)
+      .single();
+
+    if (!target || target.org_id !== orgId) {
+      return NextResponse.json({ data: null, error: "Member not found" }, { status: 404 });
     }
 
     // Only allow safe fields

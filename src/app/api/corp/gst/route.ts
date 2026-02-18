@@ -1,26 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { requireCorpAuth } from "@/lib/corp/auth";
 import { exportTallyCsv, exportZohoCsv } from "@/lib/gst/export";
 import type { GstInvoiceRow } from "@/lib/gst/export";
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
-
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type DbRow = any;
-const db = supabase as DbRow;
 
 export async function GET(req: NextRequest) {
   try {
-    const p = req.nextUrl.searchParams;
-    const orgId = p.get("org_id");
-    const format = p.get("format"); // "tally" | "zoho" | null (JSON)
+    const auth = await requireCorpAuth({ roles: ["admin", "travel_manager", "approver"] });
+    if (auth.error) return auth.error;
 
-    if (!orgId) {
-      return NextResponse.json({ data: null, error: "org_id required" }, { status: 400 });
-    }
+    const { member, db } = auth;
+    const orgId = member.org_id;
+
+    const p = req.nextUrl.searchParams;
+    const format = p.get("format"); // "tally" | "zoho" | null (JSON)
 
     let query = db
       .from("gst_invoices")
@@ -30,12 +25,15 @@ export async function GET(req: NextRequest) {
 
     const quarter = p.get("quarter"); // e.g. "2026-Q1"
     if (quarter) {
-      const [year, q] = quarter.split("-Q");
-      const qNum = Number(q);
-      const startMonth = (qNum - 1) * 3;
-      const start = new Date(Number(year), startMonth, 1).toISOString();
-      const end = new Date(Number(year), startMonth + 3, 0, 23, 59, 59).toISOString();
-      query = query.gte("created_at", start).lte("created_at", end);
+      const parts = quarter.split("-Q");
+      const year = Number(parts[0]);
+      const qNum = Number(parts[1]);
+      if (!isNaN(year) && qNum >= 1 && qNum <= 4) {
+        const startMonth = (qNum - 1) * 3;
+        const start = new Date(year, startMonth, 1).toISOString();
+        const end = new Date(year, startMonth + 3, 0, 23, 59, 59).toISOString();
+        query = query.gte("created_at", start).lte("created_at", end);
+      }
     }
 
     const { data: invoices, error } = await query;
@@ -43,7 +41,6 @@ export async function GET(req: NextRequest) {
 
     // If CSV export requested
     if (format === "tally" || format === "zoho") {
-      // Enrich with booking PNR/route
       const bookingIds = (invoices ?? []).map((inv: DbRow) => inv.booking_id);
       const { data: bookings } = await db
         .from("corp_bookings")
@@ -82,7 +79,7 @@ export async function GET(req: NextRequest) {
         kpi: {
           totalGst: Math.round(totalGst),
           itcEligible: Math.round(itcEligible),
-          itcClaimed: 0, // Placeholder — would come from reconciliation
+          itcClaimed: 0,
           itcUnclaimed: Math.round(itcEligible),
           invoiceCount: all.length,
         },

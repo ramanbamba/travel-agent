@@ -37,7 +37,7 @@ export default function BookingsPage() {
   const loadBookings = useCallback(async () => {
     setLoading(true);
     try {
-      const params = new URLSearchParams({ org_id: "current", page: String(page), page_size: String(pageSize) });
+      const params = new URLSearchParams({ page: String(page), page_size: String(pageSize) });
       if (statusFilter) params.set("status", statusFilter);
       if (complianceFilter) params.set("policy_compliant", complianceFilter);
       if (dateFrom) params.set("date_from", dateFrom);

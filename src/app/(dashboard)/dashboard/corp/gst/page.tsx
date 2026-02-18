@@ -32,7 +32,7 @@ export default function GstPage() {
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const params = new URLSearchParams({ org_id: "current" });
+      const params = new URLSearchParams();
       if (quarter) params.set("quarter", quarter);
       const res = await fetch(`/api/corp/gst?${params}`);
       if (!res.ok) throw new Error("Failed");
@@ -50,7 +50,7 @@ export default function GstPage() {
   }, [loadData]);
 
   function handleExport(format: "tally" | "zoho") {
-    const params = new URLSearchParams({ org_id: "current", format });
+    const params = new URLSearchParams({ format });
     if (quarter) params.set("quarter", quarter);
     window.open(`/api/corp/gst?${params}`, "_blank");
   }

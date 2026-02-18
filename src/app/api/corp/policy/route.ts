@@ -1,31 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { requireCorpAuth } from "@/lib/corp/auth";
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type DbRow = any;
-const db = supabase as DbRow;
-
-export async function GET(req: NextRequest) {
+export async function GET() {
   try {
-    const orgId = req.nextUrl.searchParams.get("org_id");
-    if (!orgId) {
-      return NextResponse.json({ data: null, error: "org_id required" }, { status: 400 });
-    }
+    const auth = await requireCorpAuth({ roles: ["admin", "travel_manager", "approver"] });
+    if (auth.error) return auth.error;
+
+    const { member, db } = auth;
 
     const { data: policy, error } = await db
       .from("travel_policies")
       .select("*")
-      .eq("org_id", orgId)
+      .eq("org_id", member.org_id)
       .eq("is_active", true)
       .limit(1)
       .single();
 
-    if (error && error.code !== "PGRST116") throw error; // PGRST116 = no rows
+    if (error && error.code !== "PGRST116") throw error;
 
     return NextResponse.json({ data: policy ?? null, error: null });
   } catch (error) {
@@ -36,24 +27,26 @@ export async function GET(req: NextRequest) {
 
 export async function PUT(req: NextRequest) {
   try {
-    const body = await req.json();
-    const { org_id, flight_rules, spend_limits, approval_rules, booking_rules, policy_mode } = body;
+    const auth = await requireCorpAuth({ roles: ["admin", "travel_manager"] });
+    if (auth.error) return auth.error;
 
-    if (!org_id) {
-      return NextResponse.json({ data: null, error: "org_id required" }, { status: 400 });
-    }
+    const { member, db } = auth;
+    const orgId = member.org_id;
+
+    const body = await req.json();
+    const { flight_rules, spend_limits, approval_rules, booking_rules, policy_mode } = body;
 
     // Check if policy exists
     const { data: existing } = await db
       .from("travel_policies")
       .select("id")
-      .eq("org_id", org_id)
+      .eq("org_id", orgId)
       .eq("is_active", true)
       .limit(1)
       .single();
 
     const policyData = {
-      org_id,
+      org_id: orgId,
       flight_rules: flight_rules ?? {},
       spend_limits: spend_limits ?? {},
       approval_rules: approval_rules ?? {},

@@ -1,22 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import { requireCorpAuth } from "@/lib/corp/auth";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type DbRow = any;
-const db = supabase as DbRow;
 
 export async function GET(req: NextRequest) {
   try {
+    const auth = await requireCorpAuth({ roles: ["admin", "travel_manager", "approver"] });
+    if (auth.error) return auth.error;
+
+    const { member, db } = auth;
+    const orgId = member.org_id;
+
     const p = req.nextUrl.searchParams;
-    const orgId = p.get("org_id");
-    if (!orgId) {
-      return NextResponse.json({ data: null, error: "org_id required" }, { status: 400 });
-    }
 
     let query = db
       .from("corp_bookings")

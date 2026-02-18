@@ -38,7 +38,7 @@ export default function EmployeesPage() {
 
   const loadMembers = useCallback(async () => {
     try {
-      const res = await fetch("/api/corp/members?org_id=current");
+      const res = await fetch("/api/corp/members");
       if (!res.ok) throw new Error("Failed to load");
       const json = await res.json();
       setMembers(json.data ?? []);
@@ -271,7 +271,7 @@ function InviteModal({
       const res = await fetch("/api/corp/members", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...form, org_id: "current" }),
+        body: JSON.stringify(form),
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error);
@@ -309,7 +309,6 @@ function InviteModal({
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            org_id: "current",
             full_name: row.name,
             email: row.email,
             phone: row.phone || null,

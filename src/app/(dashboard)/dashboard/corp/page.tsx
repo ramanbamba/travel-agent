@@ -41,9 +41,7 @@ export default function CorpOverviewPage() {
   useEffect(() => {
     async function load() {
       try {
-        // org_id will be injected via layout context in production
-        // For now, try to get it from the page's search params or use a cookie
-        const res = await fetch("/api/corp/stats?org_id=current");
+        const res = await fetch("/api/corp/stats");
         if (!res.ok) throw new Error("Failed to load");
         const json = await res.json();
         setStats(json.data);

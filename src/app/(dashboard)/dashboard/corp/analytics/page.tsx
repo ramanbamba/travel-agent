@@ -24,7 +24,7 @@ export default function AnalyticsPage() {
   useEffect(() => {
     async function load() {
       try {
-        const res = await fetch("/api/corp/analytics?org_id=current");
+        const res = await fetch("/api/corp/analytics");
         if (!res.ok) throw new Error("Failed");
         const json = await res.json();
         setData(json.data);

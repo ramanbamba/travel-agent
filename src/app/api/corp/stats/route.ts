@@ -1,24 +1,16 @@
-import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import { NextResponse } from "next/server";
+import { requireCorpAuth } from "@/lib/corp/auth";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type DbRow = any;
-const db = supabase as DbRow;
 
-export async function GET(req: NextRequest) {
+export async function GET() {
   try {
-    const orgId = req.nextUrl.searchParams.get("org_id");
-    if (!orgId) {
-      return NextResponse.json(
-        { data: null, error: "org_id required" },
-        { status: 400 }
-      );
-    }
+    const auth = await requireCorpAuth({ roles: ["admin", "travel_manager", "approver"] });
+    if (auth.error) return auth.error;
+
+    const { member, db } = auth;
+    const orgId = member.org_id;
 
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();

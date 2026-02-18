@@ -110,7 +110,7 @@ export default function PolicyPage() {
 
   const loadPolicy = useCallback(async () => {
     try {
-      const res = await fetch("/api/corp/policy?org_id=current");
+      const res = await fetch("/api/corp/policy");
       if (!res.ok) throw new Error("Failed");
       const json = await res.json();
       const p: PolicyData = json.data;
@@ -139,7 +139,6 @@ export default function PolicyPage() {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          org_id: "current",
           flight_rules: flightRules,
           spend_limits: spendLimits,
           approval_rules: approvalRules,
