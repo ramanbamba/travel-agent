@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { MessageSquare, Plane, User, Settings } from "lucide-react";
+import { MessageSquare, Plane, User, Settings, Building2 } from "lucide-react";
 import { UserMenu } from "@/components/user-menu";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { MobileTabBar } from "./mobile-tab-bar";
@@ -15,6 +15,7 @@ const navItems = [
   { label: "My Bookings", href: "/dashboard/bookings", icon: Plane },
   { label: "Profile", href: "/dashboard/profile", icon: User },
   { label: "Settings", href: "/dashboard/settings", icon: Settings },
+  { label: "Corp Dashboard", href: "/dashboard/corp", icon: Building2 },
 ];
 
 interface AppShellProps {

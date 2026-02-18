@@ -18,18 +18,15 @@ export default async function DashboardLayout({
     redirect("/login");
   }
 
-  // Check if current route is onboarding — render without AppShell for full-screen iOS feel
+  // Check if current route needs custom layout (no AppShell)
   const headerList = await headers();
   const pathname = headerList.get("x-next-pathname") ?? "";
   const isOnboarding = pathname.includes("/onboarding");
+  const isCorp = pathname.includes("/dashboard/corp");
 
-  if (isOnboarding) {
-    return (
-      <>
-        <GradientMesh />
-        {children}
-      </>
-    );
+  // Onboarding and corporate dashboard have their own layouts
+  if (isOnboarding || isCorp) {
+    return <>{children}</>;
   }
 
   return (
