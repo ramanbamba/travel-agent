@@ -37,13 +37,16 @@ export async function POST(req: NextRequest) {
     const today = new Date().toISOString().split("T")[0];
 
     const systemPrompt = `You are a corporate travel assistant for SkySwift (an Indian corporate travel platform). Parse the user's message and extract flight search parameters.
-Return JSON: { "action": "search" | "greeting" | "help" | "other", "origin": "IATA", "destination": "IATA", "date": "YYYY-MM-DD", "cabin_class": "economy|premium_economy|business|first", "message": "response text" }
-If the user is greeting or asking for help, set action accordingly and provide a helpful message.
-For search, extract origin/destination IATA codes (Indian airports: BLR=Bangalore, DEL=Delhi, BOM=Mumbai, HYD=Hyderabad, MAA=Chennai, CCU=Kolkata, GOI=Goa, PNQ=Pune, AMD=Ahmedabad, JAI=Jaipur) and date.
-If date is relative (e.g., "next Monday"), calculate from today (${today}).
-If information is missing, ask for it politely.
-For greetings, welcome them and mention you can search and book flights within their company's travel policy.
-Default cabin_class to "economy" if not specified.`;
+Return ONLY valid JSON, no other text. Use this exact format:
+{ "action": "search", "origin": "IATA", "destination": "IATA", "date": "YYYY-MM-DD", "cabin_class": "economy", "message": "response text" }
+
+Rules:
+- action must be one of: "search", "greeting", "help", "other"
+- For search, extract origin/destination IATA codes. Indian airports: BLR=Bangalore, DEL=Delhi, BOM=Mumbai, HYD=Hyderabad, MAA=Chennai, CCU=Kolkata, GOI=Goa, PNQ=Pune, AMD=Ahmedabad, JAI=Jaipur
+- If date is relative (e.g., "next Monday", "tomorrow"), calculate from today (${today}). Today is a ${new Date().toLocaleDateString("en-US", { weekday: "long" })}.
+- Default cabin_class to "economy" if not specified.
+- If information is missing, set action to "other" and ask in the message field.
+- For greetings, set action to "greeting" and welcome them.`;
 
     const aiResponse = await ai.chat({
       systemPrompt,
@@ -51,13 +54,29 @@ Default cabin_class to "economy" if not specified.`;
       message,
     });
 
+    // ai.chat() returns AIProviderResponse with parsed fields.
+    // Use the raw text to extract JSON since parseAIJsonResponse consumes it
+    // into a different structure (action/searchParams) than what this demo expects.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let parsed: any;
     try {
-      const jsonMatch = aiResponse.message.match(/\{[\s\S]*\}/);
-      parsed = jsonMatch ? JSON.parse(jsonMatch[0]) : { action: "other", message: aiResponse.message };
+      const rawText = aiResponse.raw || aiResponse.message;
+      const jsonMatch = rawText.match(/\{[\s\S]*\}/);
+      parsed = jsonMatch ? JSON.parse(jsonMatch[0]) : null;
     } catch {
-      parsed = { action: "other", message: aiResponse.message };
+      parsed = null;
+    }
+
+    // Fallback: use the structured response from parseAIJsonResponse
+    if (!parsed) {
+      parsed = {
+        action: aiResponse.action === "search" ? "search" : "other",
+        origin: aiResponse.searchParams?.origin,
+        destination: aiResponse.searchParams?.destination,
+        date: aiResponse.searchParams?.date,
+        cabin_class: aiResponse.searchParams?.cabinClass || "economy",
+        message: aiResponse.message,
+      };
     }
 
     if (parsed.action === "search" && parsed.origin && parsed.destination && parsed.date) {
@@ -89,13 +108,14 @@ Default cabin_class to "economy" if not specified.`;
     // Non-search response
     return NextResponse.json({
       data: {
-        message: parsed.message ?? "I can help you search and book flights within your company's travel policy. Tell me where you need to go!",
+        message: parsed.message ?? aiResponse.message ?? "I can help you search and book flights within your company's travel policy. Tell me where you need to go!",
         session_context: { ...session_context, state: "idle" },
       },
       error: null,
     });
   } catch (error) {
-    console.error("[Demo Chat] Error:", error);
+    const errMsg = error instanceof Error ? error.message : String(error);
+    console.error("[Demo Chat] Error:", errMsg, error);
     return NextResponse.json({
       data: { message: "Sorry, something went wrong. Please try again." },
       error: null,
