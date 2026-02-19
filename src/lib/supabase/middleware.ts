@@ -71,7 +71,7 @@ export async function updateSession(request: NextRequest) {
     (pathname === "/login" || pathname === "/signup") &&
     !request.nextUrl.searchParams.has("invite")
   ) {
-    // Check org membership — corp users go to /dashboard/corp
+    // Check org membership — route by role
     const { data: membership } = await supabase
       .from("org_members")
       .select("id, role, org_id")
@@ -80,7 +80,12 @@ export async function updateSession(request: NextRequest) {
       .maybeSingle();
 
     const url = request.nextUrl.clone();
-    url.pathname = membership ? "/dashboard/corp" : "/dashboard";
+    if (membership) {
+      const adminRoles = ["admin", "travel_manager", "approver"];
+      url.pathname = adminRoles.includes(membership.role) ? "/dashboard/corp" : "/book";
+    } else {
+      url.pathname = "/dashboard";
+    }
     return NextResponse.redirect(url);
   }
 
@@ -100,10 +105,11 @@ export async function updateSession(request: NextRequest) {
       .eq("status", "active")
       .maybeSingle();
 
-    // Org members on /dashboard should go to /dashboard/corp
+    // Org members on /dashboard should go to their appropriate view
     if (membership && pathname === "/dashboard") {
       const url = request.nextUrl.clone();
-      url.pathname = "/dashboard/corp";
+      const adminRoles = ["admin", "travel_manager", "approver"];
+      url.pathname = adminRoles.includes(membership.role) ? "/dashboard/corp" : "/book";
       return NextResponse.redirect(url);
     }
 
