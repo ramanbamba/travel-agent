@@ -129,12 +129,13 @@ async function seedOrg(): Promise<string> {
     .from("organizations")
     .insert({
       name: DEMO_ORG.name,
+      slug: "acmetech",
       gstin: DEMO_ORG.gstin,
       domain: DEMO_ORG.domain,
-      billing_address: DEMO_ORG.billing_address,
+      billing_address: { address: DEMO_ORG.billing_address },
       industry: DEMO_ORG.industry,
       plan: "business",
-      status: "active",
+      onboarding_completed: true,
     })
     .select("id")
     .single();
@@ -317,7 +318,15 @@ async function seedBookings(
         booking_channel: channel,
         policy_compliant: compliant,
         policy_violations: violations,
-        trip_purpose: randomItem(["client_meeting", "conference", "site_visit", "training", "team_offsite"]),
+        purpose: randomItem(["client_meeting", "conference", "site_visit", "training", "team_offsite"]),
+        flight_details: {
+          airline: AIRLINE_NAMES[airlineCode],
+          airline_code: airlineCode,
+          origin: route.origin,
+          destination: route.destination,
+          departure: departureDate,
+          cabin: cabin,
+        },
         created_at: bookingDate,
       })
       .select("id")
@@ -340,19 +349,17 @@ async function seedBookings(
         booking_id: booking.id,
         invoice_number: `INV-${dateStr(-daysBack).replace(/-/g, "")}-${randomInt(100, 999)}`,
         invoice_date: bookingDate,
-        supplier_name: AIRLINE_NAMES[airlineCode],
-        supplier_gstin: `29AAB${airlineCode}${randomInt(1000, 9999)}G1Z${randomInt(0, 9)}`,
+        vendor_name: AIRLINE_NAMES[airlineCode],
+        vendor_gstin: `29AAB${airlineCode}${randomInt(1000, 9999)}G1Z${randomInt(0, 9)}`,
         base_amount: baseAmount,
-        cgst: isInterstate ? 0 : Math.round(gstAmount / 2),
-        sgst: isInterstate ? 0 : Math.round(gstAmount / 2),
-        igst: isInterstate ? gstAmount : 0,
+        cgst_amount: isInterstate ? 0 : Math.round(gstAmount / 2),
+        sgst_amount: isInterstate ? 0 : Math.round(gstAmount / 2),
+        igst_amount: isInterstate ? gstAmount : 0,
         total_gst: gstAmount,
         total_amount: price,
-        currency: "INR",
         itc_eligible: true,
         itc_claimed: Math.random() > 0.3,
-        hsn_code: "996411",
-        place_of_supply: isInterstate ? route.destination : route.origin,
+        sac_code: "996411",
       });
 
       if (!gstError) gstCount++;
@@ -362,13 +369,13 @@ async function seedBookings(
     if (status === "pending_approval" && booking) {
       const approver = members.find((m) => m.seniority === "vp" || m.seniority === "director");
       if (approver) {
-        await supabase.from("booking_approvals").insert({
+        await supabase.from("approval_requests").insert({
           booking_id: booking.id,
           org_id: orgId,
-          requested_by: member.memberId,
+          requester_id: member.memberId,
           approver_id: approver.memberId,
           status: "pending",
-          requested_at: bookingDate,
+          created_at: bookingDate,
         });
       }
     }
@@ -402,14 +409,15 @@ async function main() {
   for (const member of members.slice(0, 3)) {
     await supabase.from("traveler_preferences").upsert(
       {
+        org_id: orgId,
         member_id: member.memberId,
         preferred_airlines: randomItem([["6E"], ["6E", "AI"], ["UK", "AI"]]),
-        departure_window: randomItem(["morning", "early_morning", "afternoon"]),
+        preferred_departure_window: randomItem(["morning", "early_morning", "afternoon"]),
         seat_preference: randomItem(["aisle", "window", "no_preference"]),
         meal_preference: randomItem(["vegetarian", "no_preference"]),
         bag_preference: randomItem(["cabin_only", "checked_15kg"]),
       },
-      { onConflict: "member_id" }
+      { onConflict: "org_id,member_id" }
     );
   }
   console.log("  3 traveler preferences seeded");
