@@ -4,9 +4,28 @@ import { searchFlights } from "@/lib/supply";
 import { evaluatePolicy } from "@/lib/policy/evaluate";
 import type { CabinClass } from "@/lib/supply/types";
 import { getAIProvider } from "@/lib/ai";
+import { isDemoMode } from "@/lib/demo";
+import { generateDemoFlights } from "@/lib/demo/mock-flights";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type DbRow = any;
+
+type HistoryEntry = { role: "user" | "assistant"; content: string };
+
+const MAX_HISTORY = 10;
+
+function appendHistory(
+  existing: HistoryEntry[],
+  userMsg: string,
+  assistantMsg: string
+): HistoryEntry[] {
+  const updated = [
+    ...(existing || []),
+    { role: "user" as const, content: userMsg },
+    { role: "assistant" as const, content: assistantMsg },
+  ];
+  return updated.slice(-MAX_HISTORY);
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -21,7 +40,8 @@ export async function POST(req: NextRequest) {
 
     const db = supabase as DbRow;
     const body = await req.json();
-    const { message, selected_offer } = body;
+    const { message, selected_offer, session_context } = body;
+    const history: HistoryEntry[] = session_context?.history ?? [];
 
     // Load member + policy
     const { data: member } = await db
@@ -49,104 +69,143 @@ export async function POST(req: NextRequest) {
 
     // If user is confirming a selected offer
     if (selected_offer && message.toLowerCase().includes("confirm")) {
-      return handleBooking(member, selected_offer);
+      const result = await handleBooking(member, selected_offer);
+      return result;
     }
 
     // Use AI to parse intent
     const ai = getAIProvider();
-    const systemPrompt = `You are a corporate travel assistant. Parse the user's message and extract flight search parameters.
-Return JSON: { "action": "search" | "greeting" | "help" | "other", "origin": "IATA", "destination": "IATA", "date": "YYYY-MM-DD", "cabin_class": "economy|premium_economy|business|first", "message": "response text" }
-If the user is greeting or asking for help, set action accordingly and provide a helpful message.
-For search, extract origin/destination IATA codes and date. If date is relative (e.g., "next Monday"), calculate from today (${new Date().toISOString().split("T")[0]}).
-If information is missing, ask for it in the message field.`;
+    const today = new Date().toISOString().split("T")[0];
+    const dayName = new Date().toLocaleDateString("en-US", { weekday: "long" });
+
+    const systemPrompt = `You are a corporate travel assistant for SkySwift. You help employees search and book flights within their company's travel policy.
+
+IMPORTANT: You have full conversation history. Use context from previous messages to fill in missing details. Do NOT re-ask for information the user already provided.
+
+Return ONLY valid JSON with this structure:
+{"action":"search","search_params":{"origin":"BLR","destination":"DEL","date":"2026-02-23","cabin_class":"economy"},"message":"Searching for flights..."}
+
+Rules:
+- action: "search" (has origin+destination+date), "greeting", "help", or "general_response"
+- search_params: only include when action is "search" and you have all 3: origin, destination, date
+- Indian airports: BLR=Bangalore, DEL=Delhi, BOM=Mumbai, HYD=Hyderabad, MAA=Chennai, CCU=Kolkata, GOI=Goa, PNQ=Pune, AMD=Ahmedabad, JAI=Jaipur
+- Today is ${dayName}, ${today}. Calculate relative dates from this.
+- Default cabin_class to "economy" if not specified.
+- CRITICAL: Combine info from the FULL conversation. If user said "flights to Mumbai" earlier and now says "from Bangalore, Thursday", you have all 3 fields — return action "search".
+- Only ask a question if origin, destination, or date truly cannot be determined from the entire conversation.
+- message: short, conversational (1-2 sentences).
+- For greetings: welcome them, mention you help book flights within company travel policy.`;
 
     const aiResponse = await ai.chat({
       systemPrompt,
-      history: [],
+      history,
       message,
     });
 
-    let parsed: DbRow;
-    try {
-      const jsonMatch = aiResponse.message.match(/\{[\s\S]*\}/);
-      parsed = jsonMatch ? JSON.parse(jsonMatch[0]) : { action: "other", message: aiResponse.message };
-    } catch {
-      parsed = { action: "other", message: aiResponse.message };
-    }
+    // Use structured fields from parseAIJsonResponse
+    const action = aiResponse.action;
+    const sp = aiResponse.searchParams;
 
-    if (parsed.action === "search" && parsed.origin && parsed.destination && parsed.date) {
-      // Search flights
-      const searchResult = await searchFlights({
-        origin: parsed.origin,
-        destination: parsed.destination,
-        departureDate: parsed.date,
-        cabinClass: (parsed.cabin_class as CabinClass) || "economy",
-        currency: "INR",
-        maxResults: 5,
-      });
+    if (
+      (action === "search" || sp) &&
+      sp?.origin && sp?.destination && sp?.date
+    ) {
+      const cabinClass = (sp.cabinClass as CabinClass) || "economy";
+      let flights;
 
-      const policyRules = {
-        flight_rules: policy?.flight_rules,
-        spend_limits: policy?.spend_limits,
-        approval_rules: policy?.approval_rules,
-        booking_rules: policy?.booking_rules,
-        policy_mode: policy?.policy_mode,
-      };
+      if (isDemoMode()) {
+        // Demo mode: use Indian mock flights (same as WhatsApp demo)
+        flights = generateDemoFlights(sp.origin, sp.destination, sp.date, cabinClass, 5);
+      } else {
+        // Production: use real supply layer
+        const searchResult = await searchFlights({
+          origin: sp.origin,
+          destination: sp.destination,
+          departureDate: sp.date,
+          cabinClass,
+          currency: "INR",
+          maxResults: 5,
+        });
 
-      const flights = searchResult.offers.slice(0, 5).map((offer) => {
-        const evaluation = evaluatePolicy(
-          {
-            price: offer.price,
-            cabin: offer.segments[0]?.cabin ?? "economy",
-            stops: offer.stops,
-            airlineCode: offer.segments[0]?.airlineCode,
-            departureTime: offer.segments[0]?.departure.time,
-            refundable: offer.conditions?.refundable,
-            origin: offer.segments[0]?.departure.airportCode,
-            destination: offer.segments[offer.segments.length - 1]?.arrival.airportCode,
-          },
-          {
-            seniority_level: member.seniority_level ?? "individual_contributor",
-            role: member.role,
-          },
-          policyRules
-        );
-
-        return {
-          offer_id: offer.id,
-          airline: offer.segments[0]?.airline ?? offer.segments[0]?.airlineCode ?? "Unknown",
-          airlineCode: offer.segments[0]?.airlineCode ?? "",
-          departure: offer.segments[0]?.departure.time
-            ? new Date(offer.segments[0].departure.time).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })
-            : "",
-          arrival: offer.segments[offer.segments.length - 1]?.arrival.time
-            ? new Date(offer.segments[offer.segments.length - 1].arrival.time).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })
-            : "",
-          origin: offer.segments[0]?.departure.airportCode ?? parsed.origin,
-          destination: offer.segments[offer.segments.length - 1]?.arrival.airportCode ?? parsed.destination,
-          price: offer.price.total,
-          currency: offer.price.currency,
-          stops: offer.stops,
-          cabin: offer.segments[0]?.cabin ?? "economy",
-          compliant: evaluation.compliant,
-          violations: evaluation.violations,
+        const policyRules = {
+          flight_rules: policy?.flight_rules,
+          spend_limits: policy?.spend_limits,
+          approval_rules: policy?.approval_rules,
+          booking_rules: policy?.booking_rules,
+          policy_mode: policy?.policy_mode,
         };
-      });
+
+        flights = searchResult.offers.slice(0, 5).map((offer) => {
+          const evaluation = evaluatePolicy(
+            {
+              price: offer.price,
+              cabin: offer.segments[0]?.cabin ?? "economy",
+              stops: offer.stops,
+              airlineCode: offer.segments[0]?.airlineCode,
+              departureTime: offer.segments[0]?.departure.time,
+              refundable: offer.conditions?.refundable,
+              origin: offer.segments[0]?.departure.airportCode,
+              destination: offer.segments[offer.segments.length - 1]?.arrival.airportCode,
+            },
+            {
+              seniority_level: member.seniority_level ?? "individual_contributor",
+              role: member.role,
+            },
+            policyRules
+          );
+
+          return {
+            offer_id: offer.id,
+            airline: offer.segments[0]?.airline ?? offer.segments[0]?.airlineCode ?? "Unknown",
+            airlineCode: offer.segments[0]?.airlineCode ?? "",
+            departure: offer.segments[0]?.departure.time
+              ? new Date(offer.segments[0].departure.time).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })
+              : "",
+            arrival: offer.segments[offer.segments.length - 1]?.arrival.time
+              ? new Date(offer.segments[offer.segments.length - 1].arrival.time).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })
+              : "",
+            origin: offer.segments[0]?.departure.airportCode ?? sp.origin,
+            destination: offer.segments[offer.segments.length - 1]?.arrival.airportCode ?? sp.destination,
+            price: offer.price.total,
+            currency: offer.price.currency,
+            stops: offer.stops,
+            cabin: offer.segments[0]?.cabin ?? "economy",
+            compliant: evaluation.compliant,
+            violations: evaluation.violations,
+          };
+        });
+      }
 
       const compliantCount = flights.filter((f) => f.compliant).length;
       const responseMsg = flights.length > 0
-        ? `Found ${flights.length} flights from ${parsed.origin} to ${parsed.destination} on ${parsed.date}. ${compliantCount}/${flights.length} are within policy. Tap a flight to select it.`
-        : `No flights found for ${parsed.origin} to ${parsed.destination} on ${parsed.date}. Try different dates?`;
+        ? `Found ${flights.length} flights from ${sp.origin} to ${sp.destination} on ${sp.date}. ${compliantCount}/${flights.length} are within policy. Tap a flight to select it.`
+        : `No flights found for ${sp.origin} to ${sp.destination} on ${sp.date}. Try different dates?`;
 
       return NextResponse.json({
-        data: { message: responseMsg, flights },
+        data: {
+          message: responseMsg,
+          flights,
+          session_context: {
+            ...session_context,
+            state: "selecting",
+            history: appendHistory(history, message, responseMsg),
+          },
+        },
         error: null,
       });
     }
 
     // Non-search response
+    const replyMsg = aiResponse.message || "I can help you search and book flights. Tell me where you need to go!";
     return NextResponse.json({
-      data: { message: parsed.message ?? "I can help you search and book flights. Tell me where you need to go!" },
+      data: {
+        message: replyMsg,
+        session_context: {
+          ...session_context,
+          state: "idle",
+          history: appendHistory(history, message, replyMsg),
+        },
+      },
       error: null,
     });
   } catch (error) {

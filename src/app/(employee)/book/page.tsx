@@ -41,11 +41,15 @@ function createId() {
   return Math.random().toString(36).slice(2, 10);
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type SessionCtx = any;
+
 export default function EmployeeBookPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const [selectedOffer, setSelectedOffer] = useState<FlightResult | null>(null);
+  const [sessionCtx, setSessionCtx] = useState<SessionCtx>({});
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -88,6 +92,7 @@ export default function EmployeeBookPage() {
         body: JSON.stringify({
           message: text,
           selected_offer: selectedOffer ?? undefined,
+          session_context: sessionCtx,
         }),
       });
 
@@ -105,6 +110,9 @@ export default function EmployeeBookPage() {
 
       setMessages((prev) => [...prev, assistantMsg]);
 
+      if (data?.session_context) {
+        setSessionCtx(data.session_context);
+      }
       if (data?.booking) {
         setSelectedOffer(null);
       }
@@ -121,7 +129,7 @@ export default function EmployeeBookPage() {
     } finally {
       setSending(false);
     }
-  }, [input, sending, selectedOffer]);
+  }, [input, sending, selectedOffer, sessionCtx]);
 
   function handleSelectFlight(flight: FlightResult) {
     setSelectedOffer(flight);
