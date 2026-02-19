@@ -17,7 +17,12 @@ export type AIAction =
   | "expense_query"
   | "approval_response"
   | "help"
-  | "greeting";
+  | "greeting"
+  // Conversational chat actions
+  | "filter"
+  | "select"
+  | "confirm"
+  | "preference";
 
 export interface AIChatMessage {
   role: "user" | "assistant";

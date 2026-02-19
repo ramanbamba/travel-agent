@@ -16,6 +16,11 @@ const VALID_ACTIONS: AIAction[] = [
   "approval_response",
   "help",
   "greeting",
+  // Conversational chat actions
+  "filter",
+  "select",
+  "confirm",
+  "preference",
 ];
 
 function normalizeAction(action: string | undefined): AIAction {

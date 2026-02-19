@@ -7,7 +7,7 @@ export default function AuthLayout({
 }) {
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50 px-6 py-12 dark:bg-gray-900">
-      <div className="w-full max-w-lg">
+      <div className="flex w-full max-w-lg flex-col items-center">
         {/* Logo */}
         <Link
           href="/"

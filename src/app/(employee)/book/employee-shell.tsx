@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Plane, History, Heart, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { createClient } from "@/lib/supabase/client";
 
 const navItems = [
   { label: "Book", href: "/book", icon: Plane },
@@ -25,6 +26,14 @@ export function EmployeeShell({
   children,
 }: EmployeeShellProps) {
   const pathname = usePathname();
+  const router = useRouter();
+
+  async function handleLogout() {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.push("/login");
+    router.refresh();
+  }
 
   return (
     <div className="flex h-[100dvh] flex-col bg-gray-50">
@@ -79,13 +88,13 @@ export function EmployeeShell({
             </div>
             <span className="text-sm font-medium text-[#0F1B2D]">{userName}</span>
           </div>
-          <Link
-            href="/dashboard"
+          <button
+            onClick={handleLogout}
             className="flex items-center gap-1 rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
-            title="Back to dashboard"
+            title="Log out"
           >
             <LogOut className="h-4 w-4" />
-          </Link>
+          </button>
         </div>
       </header>
 

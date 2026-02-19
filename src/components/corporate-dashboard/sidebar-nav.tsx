@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
   Plane,
@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
+import { createClient } from "@/lib/supabase/client";
 
 const navItems = [
   { label: "Overview", href: "/dashboard/corp", icon: LayoutDashboard },
@@ -36,7 +37,15 @@ interface SidebarNavProps {
 
 export function SidebarNav({ orgName, userName, userRole }: SidebarNavProps) {
   const pathname = usePathname();
+  const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  async function handleLogout() {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.push("/login");
+    router.refresh();
+  }
 
   return (
     <>
@@ -132,13 +141,13 @@ export function SidebarNav({ orgName, userName, userRole }: SidebarNavProps) {
 
         {/* Bottom */}
         <div className="border-t border-gray-200 px-3 py-3">
-          <Link
-            href="/dashboard"
-            className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-gray-500 hover:bg-gray-50 hover:text-gray-700 transition-colors"
+          <button
+            onClick={handleLogout}
+            className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-gray-500 hover:bg-gray-50 hover:text-gray-700 transition-colors"
           >
             <LogOut className="h-4 w-4" />
-            Back to Booking
-          </Link>
+            Log out
+          </button>
         </div>
       </aside>
     </>
