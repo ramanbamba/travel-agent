@@ -3,6 +3,24 @@ import { getAIProvider } from "@/lib/ai";
 import { generateDemoFlights, generateDemoBooking } from "@/lib/demo/mock-flights";
 import type { DemoFlight } from "@/lib/demo/mock-flights";
 
+// Keep history compact — last N exchanges
+const MAX_HISTORY = 10;
+
+type HistoryEntry = { role: "user" | "assistant"; content: string };
+
+function appendHistory(
+  existing: HistoryEntry[],
+  userMsg: string,
+  assistantMsg: string
+): HistoryEntry[] {
+  const updated = [
+    ...(existing || []),
+    { role: "user" as const, content: userMsg },
+    { role: "assistant" as const, content: assistantMsg },
+  ];
+  return updated.slice(-MAX_HISTORY);
+}
+
 /**
  * Demo chat endpoint — no auth required.
  * Routes through the same AI intent parser but returns mock Indian flight data.
@@ -12,6 +30,7 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const { message, selected_offer, session_context } = body;
+    const history: HistoryEntry[] = session_context?.history ?? [];
 
     if (!message) {
       return NextResponse.json({ data: null, error: "Message required" }, { status: 400 });
@@ -20,13 +39,18 @@ export async function POST(req: NextRequest) {
     // If confirming a selected offer
     if (selected_offer && message.toLowerCase().includes("confirm")) {
       const booking = generateDemoBooking(selected_offer as DemoFlight);
+      const replyMsg = booking.status === "pending_approval"
+        ? "Your booking has been sent for manager approval. You'll be notified once approved."
+        : "Booking confirmed! Your e-ticket will be emailed shortly.";
       return NextResponse.json({
         data: {
-          message: booking.status === "pending_approval"
-            ? "Your booking has been sent for manager approval. You'll be notified once approved."
-            : "Booking confirmed! Your e-ticket will be emailed shortly.",
+          message: replyMsg,
           booking,
-          session_context: { ...session_context, state: "booked" },
+          session_context: {
+            ...session_context,
+            state: "booked",
+            history: appendHistory(history, message, replyMsg),
+          },
         },
         error: null,
       });
@@ -35,61 +59,52 @@ export async function POST(req: NextRequest) {
     // Use AI to parse intent
     const ai = getAIProvider();
     const today = new Date().toISOString().split("T")[0];
+    const dayName = new Date().toLocaleDateString("en-US", { weekday: "long" });
 
-    const systemPrompt = `You are a corporate travel assistant for SkySwift (an Indian corporate travel platform). Parse the user's message and extract flight search parameters.
-Return ONLY valid JSON, no other text. Use this exact format:
-{ "action": "search", "origin": "IATA", "destination": "IATA", "date": "YYYY-MM-DD", "cabin_class": "economy", "message": "response text" }
+    // Use the same JSON structure that parseAIJsonResponse expects
+    const systemPrompt = `You are a corporate travel assistant for SkySwift (an Indian corporate travel platform). You help employees search and book flights.
+
+IMPORTANT: You have full conversation history. Use context from previous messages to fill in missing details. Do NOT re-ask for information the user already provided.
+
+Return ONLY valid JSON with this structure:
+{"action":"search","search_params":{"origin":"BLR","destination":"DEL","date":"2026-02-23","cabin_class":"economy"},"message":"Searching for flights..."}
 
 Rules:
-- action must be one of: "search", "greeting", "help", "other"
-- For search, extract origin/destination IATA codes. Indian airports: BLR=Bangalore, DEL=Delhi, BOM=Mumbai, HYD=Hyderabad, MAA=Chennai, CCU=Kolkata, GOI=Goa, PNQ=Pune, AMD=Ahmedabad, JAI=Jaipur
-- If date is relative (e.g., "next Monday", "tomorrow"), calculate from today (${today}). Today is a ${new Date().toLocaleDateString("en-US", { weekday: "long" })}.
+- action: "search" (has origin+destination+date), "greeting", "help", or "general_response"
+- search_params: only include when action is "search" and you have all 3: origin, destination, date
+- Indian airports: BLR=Bangalore, DEL=Delhi, BOM=Mumbai, HYD=Hyderabad, MAA=Chennai, CCU=Kolkata, GOI=Goa, PNQ=Pune, AMD=Ahmedabad, JAI=Jaipur
+- Today is ${dayName}, ${today}. Calculate relative dates from this.
 - Default cabin_class to "economy" if not specified.
-- If information is missing, set action to "other" and ask in the message field.
-- For greetings, set action to "greeting" and welcome them.`;
+- CRITICAL: Combine info from the FULL conversation. If user said "flights to Chennai" earlier and now says "from Bangalore, Monday", you have all 3 fields — return action "search".
+- Only ask a question if origin, destination, or date truly cannot be determined from the entire conversation.
+- message: short, conversational (1-2 sentences). For search, say something like "Searching BLR to MAA flights..."
+- For greetings: welcome them, mention you help book flights within company travel policy.`;
 
     const aiResponse = await ai.chat({
       systemPrompt,
-      history: session_context?.history ?? [],
+      history,
       message,
     });
 
-    // ai.chat() returns AIProviderResponse with parsed fields.
-    // Use the raw text to extract JSON since parseAIJsonResponse consumes it
-    // into a different structure (action/searchParams) than what this demo expects.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let parsed: any;
-    try {
-      const rawText = aiResponse.raw || aiResponse.message;
-      const jsonMatch = rawText.match(/\{[\s\S]*\}/);
-      parsed = jsonMatch ? JSON.parse(jsonMatch[0]) : null;
-    } catch {
-      parsed = null;
-    }
+    // aiResponse is already parsed by parseAIJsonResponse into structured fields.
+    // Use searchParams directly — no need to re-parse raw JSON.
+    const action = aiResponse.action;
+    const sp = aiResponse.searchParams;
 
-    // Fallback: use the structured response from parseAIJsonResponse
-    if (!parsed) {
-      parsed = {
-        action: aiResponse.action === "search" ? "search" : "other",
-        origin: aiResponse.searchParams?.origin,
-        destination: aiResponse.searchParams?.destination,
-        date: aiResponse.searchParams?.date,
-        cabin_class: aiResponse.searchParams?.cabinClass || "economy",
-        message: aiResponse.message,
-      };
-    }
-
-    if (parsed.action === "search" && parsed.origin && parsed.destination && parsed.date) {
+    if (
+      (action === "search" || sp) &&
+      sp?.origin && sp?.destination && sp?.date
+    ) {
       const flights = generateDemoFlights(
-        parsed.origin,
-        parsed.destination,
-        parsed.date,
-        parsed.cabin_class || "economy",
+        sp.origin,
+        sp.destination,
+        sp.date,
+        sp.cabinClass || "economy",
         5
       );
 
       const compliantCount = flights.filter((f) => f.compliant).length;
-      const responseMsg = `Found ${flights.length} flights from ${parsed.origin} to ${parsed.destination} on ${parsed.date}. ${compliantCount}/${flights.length} are within your company's travel policy. Tap a flight to select it.`;
+      const responseMsg = `Found ${flights.length} flights from ${sp.origin} to ${sp.destination} on ${sp.date}. ${compliantCount}/${flights.length} are within your company's travel policy. Tap a flight to select it.`;
 
       return NextResponse.json({
         data: {
@@ -98,7 +113,8 @@ Rules:
           session_context: {
             ...session_context,
             state: "selecting",
-            search: { origin: parsed.origin, destination: parsed.destination, date: parsed.date },
+            search: { origin: sp.origin, destination: sp.destination, date: sp.date },
+            history: appendHistory(history, message, responseMsg),
           },
         },
         error: null,
@@ -106,10 +122,15 @@ Rules:
     }
 
     // Non-search response
+    const replyMsg = aiResponse.message || "I can help you search and book flights within your company's travel policy. Tell me where you need to go!";
     return NextResponse.json({
       data: {
-        message: parsed.message ?? aiResponse.message ?? "I can help you search and book flights within your company's travel policy. Tell me where you need to go!",
-        session_context: { ...session_context, state: "idle" },
+        message: replyMsg,
+        session_context: {
+          ...session_context,
+          state: "idle",
+          history: appendHistory(history, message, replyMsg),
+        },
       },
       error: null,
     });
