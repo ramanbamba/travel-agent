@@ -65,11 +65,6 @@ export class AnthropicProvider implements AIProvider {
       const textBlock = response.content.find((b) => b.type === "text");
       const rawText = textBlock?.type === "text" ? textBlock.text : "";
 
-      const elapsed = Date.now() - start;
-      console.log(
-        `[AI:anthropic] ${model} responded in ${elapsed}ms (${rawText.length} chars)`
-      );
-
       return parseAIJsonResponse(rawText);
     } catch (err) {
       const elapsed = Date.now() - start;

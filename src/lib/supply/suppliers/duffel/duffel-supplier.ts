@@ -82,8 +82,7 @@ export class DuffelSupplier implements FlightSupplier {
       if (err instanceof SupplyError) throw err;
 
       const message = err instanceof Error ? err.message : "Duffel search failed";
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const status = (err as any)?.meta?.status ?? 500;
+      const status = (err as { meta?: { status?: number } })?.meta?.status ?? 500;
 
       throw new SupplyError(message, "duffel", "SEARCH_FAILED", status);
     }

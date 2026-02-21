@@ -199,9 +199,6 @@ export class PreferenceEngine {
       daysBeforeDeparture: data.daysBeforeDeparture,
     });
 
-    console.log(
-      `[PreferenceEngine] Learned from booking: ${data.route}, ${data.airlineName}, ${data.currency === "INR" ? "₹" : "$"}${data.pricePaid}`
-    );
   }
 
   private async updateRouteFamiliarity(
@@ -698,9 +695,6 @@ export class PreferenceEngine {
       { onConflict: "user_id" }
     );
 
-    console.log(
-      `[PreferenceEngine] Seeded preferences for user ${userId}: home=${data.homeAirport}, seat=${data.seatPreference}, airlines=${preferredAirlines.length}`
-    );
   }
 
   // ── Stats for UI ──────────────────────────────────────────────────────

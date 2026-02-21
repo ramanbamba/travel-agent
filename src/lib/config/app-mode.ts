@@ -101,7 +101,3 @@ export function getLiveModeStatus(): {
   };
 }
 
-// Log mode on module load (server-side only)
-if (typeof window === "undefined") {
-  console.log(`[SkySwift] Running in ${getAppMode()} mode`);
-}

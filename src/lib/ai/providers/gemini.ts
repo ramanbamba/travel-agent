@@ -70,11 +70,6 @@ export class GeminiProvider implements AIProvider {
       ]);
       const rawText = result.response.text();
 
-      const elapsed = Date.now() - start;
-      console.log(
-        `[AI:gemini] ${model} responded in ${elapsed}ms (${rawText.length} chars)`
-      );
-
       return parseAIJsonResponse(rawText);
     } catch (err) {
       const elapsed = Date.now() - start;

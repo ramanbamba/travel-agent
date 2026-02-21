@@ -741,14 +741,6 @@ export class PreferenceScorer {
       throw error;
     }
 
-    console.log(
-      `[PreferenceScorer] Seeded Phase 3 preferences for ${userId}: ` +
-      `price_sens=${priceSens.sensitivity_score}, ` +
-      `airline=${airline.preferred[0]?.code ?? "none"}, ` +
-      `seat=${comfort.seat_type}, ` +
-      `context=${context.primary_mode}, ` +
-      `confidence=${(confidence.overall * 100).toFixed(0)}%`
-    );
   }
 
   // ════════════════════════════════════════════════════════════════════════════
@@ -1017,11 +1009,6 @@ export class PreferenceScorer {
       })
       .then(() => {});
 
-    console.log(
-      `[PreferenceScorer] Updated preferences for ${userId}: ` +
-      `bookings=${newTotalBookings}, confidence=${(confidence.overall * 100).toFixed(0)}%, ` +
-      `top_airline=${airline.preferred[0]?.code ?? "none"}`
-    );
   }
 }
 
