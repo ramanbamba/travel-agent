@@ -23,6 +23,16 @@ import {
   type CorporateFlightResult,
   type PolicyCompliance,
 } from "@/lib/whatsapp/formatters";
+import { checkPastDate } from "@/lib/ai/edge-cases";
+
+// ── Helpers ──
+
+/** Parse ISO 8601 duration like "PT2H30M" to minutes */
+function parseDuration(iso: string): number {
+  const match = iso.match(/PT(?:(\d+)H)?(?:(\d+)M)?/);
+  if (!match) return 0;
+  return (parseInt(match[1] || "0") * 60) + parseInt(match[2] || "0");
+}
 
 // ── Types ──
 
@@ -40,8 +50,7 @@ interface WhatsAppSessionData {
 }
 
 export interface IntentRouterDeps {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  supabase?: any;
+  supabase?: SupabaseAny;
 }
 
 interface IntentResult {
@@ -83,11 +92,12 @@ export class IntentRouter {
       };
     }
 
-    // 1. Load corporate context
+    // 1. Load corporate context (includes session state for AI awareness)
     const context = await this.loadCorporateContext(
       session.org_id,
       session.member_id,
-      session.context
+      session.context,
+      session.state
     );
 
     // 2. Build system prompt
@@ -128,9 +138,9 @@ export class IntentRouter {
       }
     }
 
-    // Fallback
+    // Fallback — friendly error, never generic
     return {
-      message: "I'm having trouble processing that right now. Please try again in a moment.",
+      message: "Having trouble processing that right now. This usually fixes itself quickly — try again in a moment, or type \"help\" to see what I can do.",
       action: "general_response",
     };
   }
@@ -191,6 +201,12 @@ export class IntentRouter {
       return { messages: [aiResponse.message] };
     }
 
+    // Check for past date
+    const pastDateMsg = checkPastDate(params.date);
+    if (pastDateMsg) {
+      return { messages: [pastDateMsg] };
+    }
+
     // Load policy for compliance checking
     let policyRules: SupabaseAny = null;
     let policyMode = "soft";
@@ -247,12 +263,12 @@ export class IntentRouter {
       const topResults = filtered.slice(0, 5);
 
       if (topResults.length === 0) {
+        const hint = policyMode === "hard"
+          ? "No flights found within your policy limits for this route."
+          : "No flights found for this route and date.";
         return {
           messages: [
-            aiResponse.message +
-            "\n\nNo flights found" +
-            (policyMode === "hard" ? " within policy limits" : "") +
-            ". Try a different date or route.",
+            `${hint}\n\nWant me to try a different date or nearby airports?`,
           ],
           newState: "idle",
         };
@@ -276,6 +292,11 @@ export class IntentRouter {
           currency: r.offer.price.currency,
           airline_code: r.offer.segments[0]?.airlineCode,
           airline_name: r.offer.segments[0]?.airline,
+          departure_time: r.offer.segments[0]?.departure?.time,
+          duration_minutes: r.offer.segments[0]?.duration
+            ? Math.round(parseDuration(r.offer.segments[0].duration))
+            : undefined,
+          stops: r.offer.stops,
           compliance: r.compliance,
           detail: formatFlightDetail(r.offer),
         })),
@@ -290,8 +311,7 @@ export class IntentRouter {
       console.error("[IntentRouter] Flight search failed:", err);
       return {
         messages: [
-          aiResponse.message +
-          "\n\n⚠️ Flight search is temporarily unavailable. Please try again in a moment.",
+          "Having trouble searching flights right now. This usually fixes itself quickly — want me to try again?",
         ],
       };
     }
@@ -619,7 +639,8 @@ export class IntentRouter {
   async loadCorporateContext(
     orgId: string,
     memberId: string,
-    sessionContext: Record<string, unknown>
+    sessionContext: Record<string, unknown>,
+    sessionState?: string
   ): Promise<CorporateAIContext> {
     // Load member + org + policy + prefs + bookings + approvals in parallel
     const [memberResult, orgResult, policyResult, prefsResult, recentResult, approvalsResult] =
@@ -718,11 +739,63 @@ export class IntentRouter {
     }));
 
     // Build conversation history from session context
-    const lastMessages = (sessionContext.last_messages as string[]) ?? [];
-    const conversationHistory: ConversationMessage[] = lastMessages.map((msg, i) => ({
-      role: (i % 2 === 0 ? "user" : "assistant") as "user" | "assistant",
-      content: msg,
-    }));
+    // Support both new format ({role, content, ts} objects) and legacy (flat strings)
+    const rawMessages = sessionContext.messages as Array<{ role?: string; content?: string }> | string[] | undefined;
+    let conversationHistory: ConversationMessage[];
+
+    if (Array.isArray(rawMessages) && rawMessages.length > 0) {
+      if (typeof rawMessages[0] === "object" && rawMessages[0] !== null && "role" in rawMessages[0]) {
+        // New format: {role, content, ts} objects
+        conversationHistory = (rawMessages as Array<{ role: string; content: string }>).map(m => ({
+          role: (m.role === "user" ? "user" : "assistant") as "user" | "assistant",
+          content: m.content,
+        }));
+      } else {
+        // Legacy format: flat strings — guess roles by position
+        conversationHistory = (rawMessages as string[]).map((msg, i) => ({
+          role: (i % 2 === 0 ? "user" : "assistant") as "user" | "assistant",
+          content: typeof msg === "string" ? msg : String(msg),
+        }));
+      }
+    } else {
+      conversationHistory = [];
+    }
+
+    // Build session state context for AI awareness
+    let sessionStateCtx: CorporateAIContext["session_state"];
+    if (sessionState && sessionState !== "idle") {
+      const flightOpts = sessionContext.flight_options as Array<{
+        airline_name?: string; price?: number; departure_time?: string;
+      }> | undefined;
+      const searchParams = sessionContext.search_params as {
+        origin?: string; destination?: string; date?: string;
+      } | undefined;
+      const selectedFlight = sessionContext.selected_flight as {
+        airline_name?: string; price?: number; departure_time?: string;
+      } | undefined;
+
+      sessionStateCtx = {
+        state: sessionState,
+        ...(searchParams?.origin && flightOpts ? {
+          active_search: {
+            origin: searchParams.origin,
+            destination: searchParams.destination ?? "",
+            date: searchParams.date ?? "",
+            num_options: flightOpts.length,
+            options_summary: flightOpts
+              .map((o, i) => `${i + 1}. ${o.airline_name ?? "?"} ₹${o.price ?? "?"} ${o.departure_time ?? ""}`)
+              .join(", "),
+          },
+        } : {}),
+        ...(selectedFlight ? {
+          selected_flight: {
+            airline: selectedFlight.airline_name ?? "",
+            price: selectedFlight.price ?? 0,
+            departure: selectedFlight.departure_time ?? "",
+          },
+        } : {}),
+      };
+    }
 
     return {
       member_name: member?.full_name ?? "there",
@@ -736,6 +809,7 @@ export class IntentRouter {
       preferences: preferencesSummary,
       pending_approvals: approvalsResult.count ?? 0,
       conversation_history: conversationHistory,
+      session_state: sessionStateCtx,
     };
   }
 }

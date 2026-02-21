@@ -33,7 +33,6 @@ async function sendToWhatsApp(
   payload: Record<string, unknown>
 ): Promise<WhatsAppAPIResponse | null> {
   if (isMockMode()) {
-    console.log("[WhatsApp Mock] Sending:", JSON.stringify(payload, null, 2));
     return {
       messaging_product: "whatsapp",
       messages: [{ id: `mock_${Date.now()}` }],

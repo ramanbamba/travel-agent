@@ -7,6 +7,13 @@ import { getAIProvider } from "@/lib/ai";
 import { isDemoMode } from "@/lib/demo";
 import { generateDemoFlights } from "@/lib/demo/mock-flights";
 import type { DemoFlight } from "@/lib/demo/mock-flights";
+import {
+  parseSelection,
+  isConfirmation,
+  isCancellation,
+} from "@/lib/ai/selection-parser";
+import { buildWebChatSystemPrompt } from "@/lib/ai/prompts/corporate-system-prompt";
+import { fixCommonTypos } from "@/lib/ai/edge-cases";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type DbRow = any;
@@ -99,67 +106,93 @@ export async function POST(req: NextRequest) {
       return result;
     }
 
+    // ── Deterministic handling for selecting/confirming states ──
+    // Handle common patterns WITHOUT calling AI
+
+    const sessionState = session_context?.state ?? "idle";
+
+    // In selecting state: try deterministic selection first
+    if (sessionState === "selecting" && currentFlights.length > 0) {
+      // Try cancellation
+      if (isCancellation(message)) {
+        return reply("No problem! What else can I help with?", {
+          ...session_context, state: "idle", flights: [], search: null,
+        }, history, message);
+      }
+
+      // Try deterministic selection
+      const selIdx = parseSelection(message, currentFlights.map(f => ({
+        airline_name: f.airline,
+        airline_code: f.airlineCode,
+        price: f.price,
+        departure_time: f.departure,
+        stops: f.stops,
+      })));
+
+      if (selIdx !== null && selIdx < currentFlights.length) {
+        const flight = currentFlights[selIdx];
+        const policyNote = !flight.compliant
+          ? `\n\n⚠️ This flight is out of policy:\n${flight.violations.map((v: string) => `• ${v}`).join("\n")}\nIt will require manager approval.`
+          : "\n\n✅ This flight is within your company's travel policy.";
+
+        const selectMsg = `Selected: ${flight.airline} ${flight.flightNumber}\n\n${flight.origin} → ${flight.destination}\n🕐 ${flight.departure} - ${flight.arrival} (${flight.duration})\n${flight.stops === 0 ? "Direct" : flight.stops + " stop"} · ${flight.cabin}\n💰 ₹${flight.price.toLocaleString("en-IN")}${policyNote}\n\nWant to add any preferences (meal, seat)? Or say "confirm" to book.`;
+
+        return reply(selectMsg, {
+          ...session_context, state: "confirming", selected_flight: flight,
+        }, history, message);
+      }
+
+      // If modification request, fall through to AI
+      // If not a selection or modification, also fall through but keep state context
+    }
+
+    // In confirming state: handle confirmation/cancellation
+    if (sessionState === "confirming") {
+      if (isConfirmation(message)) {
+        const selectedFlight = session_context?.selected_flight;
+        if (selectedFlight) {
+          if (isDemoMode()) {
+            const { generateDemoBooking } = await import("@/lib/demo/mock-flights");
+            const booking = generateDemoBooking(selectedFlight as DemoFlight);
+            const replyMsg = booking.status === "pending_approval"
+              ? `📋 Booking submitted! Since this is out of policy, it's been sent to your manager for approval.\n\nRef: ${booking.booking_id}`
+              : `✅ Booking confirmed!\n\n✈️ ${selectedFlight.airline} ${selectedFlight.flightNumber}\n${selectedFlight.origin} → ${selectedFlight.destination}\n🕐 ${selectedFlight.departure}\nPNR: ${booking.pnr}\n\nHave a great trip! ✈️`;
+            return reply(replyMsg, {
+              ...session_context, state: "idle", flights: [], search: null, selected_flight: null,
+            }, history, message, { booking });
+          } else {
+            const result = await handleBooking(member, selectedFlight);
+            return result;
+          }
+        }
+      }
+
+      if (isCancellation(message)) {
+        return reply("No problem! Here are your options again — pick a flight:", {
+          ...session_context, state: "selecting", selected_flight: null,
+        }, history, message, { flights: currentFlights });
+      }
+
+      // Modification request in confirming → fall through to AI for re-search
+    }
+
+    // Fix common typos before AI processing
+    const cleanedMessage = fixCommonTypos(message);
+
     const ai = getAIProvider();
-    const today = new Date().toISOString().split("T")[0];
-    const dayName = new Date().toLocaleDateString("en-US", { weekday: "long" });
 
-    // Build context-aware system prompt
-    const flightsContext = currentFlights.length > 0
-      ? `\n\nCURRENT FLIGHT RESULTS (user is viewing these):\n${currentFlights.map((f, i) =>
-          `${i + 1}. ${f.airline} ${f.flightNumber} | ${f.origin}→${f.destination} | ${f.departure}-${f.arrival} | ₹${f.price} | ${f.stops === 0 ? "Direct" : f.stops + " stop"} | ${f.cabin} | ${f.compliant ? "In Policy" : "Out of Policy: " + f.violations.join(", ")}`
-        ).join("\n")}\nSearch was: ${currentSearch?.origin}→${currentSearch?.destination} on ${currentSearch?.date}`
-      : "";
-
-    const systemPrompt = `You are SkySwift AI — a smart, friendly corporate travel assistant. You help employees search and book flights within their company's travel policy. Be conversational and natural.
-
-Today is ${dayName}, ${today}.
-Employee: ${member.full_name || "Team member"}
-
-You have FULL conversation history. NEVER re-ask for info already provided.
-${flightsContext}
-
-Return ONLY valid JSON. Pick the right action based on context:
-
-1. SEARCH — user wants to find flights (you have origin + destination + date):
-{"action":"search","search_params":{"origin":"BLR","destination":"DEL","date":"2026-02-25","cabin_class":"economy"},"message":"Let me find flights for you..."}
-
-2. FILTER — user wants to narrow down EXISTING flight results (time range, airline, price, direct only, etc.):
-{"action":"filter","filter":{"time_range":{"from":"18:00","to":"20:00"},"airlines":["6E","AI"],"max_price":6000,"direct_only":true,"cabin_class":"business"},"message":"Here are the evening flights..."}
-Only include filter fields the user mentioned. Omit fields they didn't specify.
-
-3. SELECT — user picks a flight by number, airline name, cheapest, etc.:
-{"action":"select","select":{"index":2},"message":"Great choice! IndiGo 6E1234..."}
-index is 1-based matching the flight list shown.
-
-4. CONFIRM — user wants to proceed with booking the selected flight:
-{"action":"confirm","message":"Confirming your booking..."}
-
-5. PREFERENCE — user mentions meal, seat, or baggage preferences:
-{"action":"preference","preference":{"meal":"vegetarian","seat":"window","baggage":"15kg"},"message":"Noted! I'll add vegetarian meal and window seat."}
-Only include fields mentioned.
-
-6. NEW_SEARCH — user wants a completely new search (different route/date):
-{"action":"search","search_params":{...},"message":"Sure, searching new route..."}
-
-7. GREETING/HELP/CHAT — general conversation:
-{"action":"general_response","message":"Your friendly response here"}
-
-RULES:
-- Indian airports: BLR=Bangalore/Bengaluru, DEL=Delhi, BOM=Mumbai, HYD=Hyderabad, MAA=Chennai, CCU=Kolkata, GOI=Goa, PNQ=Pune, AMD=Ahmedabad, JAI=Jaipur, COK=Kochi, TRV=Trivandrum, GAU=Guwahati, IXB=Bagdogra, SXR=Srinagar, IXC=Chandigarh
-- Cabin classes: economy, premium_economy, business, first
-- Combine info across the FULL conversation for search params.
-- "25th" or "25th Feb" = 2026-02-25. "next Monday" = calculate from today.
-- When flights are showing and user says "show me evening flights" or "only IndiGo" → use FILTER action.
-- When user says "option 2", "I'll take the IndiGo one", "book the cheapest" → use SELECT action.
-- When user says "confirm", "yes book it", "go ahead" → use CONFIRM action.
-- When user mentions "veg meal", "window seat", "extra baggage" → use PREFERENCE action.
-- Be concise, warm, professional. Use ₹ for prices. 1-2 sentences max.
-- For greetings: welcome them by name and mention you help book flights within company policy.`;
+    // Build context-aware system prompt using shared module
+    const systemPrompt = buildWebChatSystemPrompt({
+      employeeName: member.full_name || "Team member",
+      currentFlights: currentFlights.length > 0 ? currentFlights : undefined,
+      currentSearch: currentSearch ?? undefined,
+      sessionState: sessionState,
+    });
 
     const aiResponse = await ai.chat({
       systemPrompt,
       history,
-      message,
+      message: cleanedMessage,
     });
 
     // Parse AI response — try raw first, then structured fields
@@ -256,8 +289,7 @@ RULES:
         });
       }
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const compliantCount = flights.filter((f: any) => f.compliant).length;
+      const compliantCount = flights.filter((f: { compliant?: boolean }) => f.compliant).length;
       const responseMsg = parsed.message || `Found ${flights.length} flights from ${sp.origin} to ${sp.destination}. ${compliantCount} are within policy. You can filter by time, airline, or price — or tap a flight to select it.`;
 
       return reply(responseMsg, {
@@ -391,7 +423,7 @@ RULES:
     const errMsg = error instanceof Error ? error.message : String(error);
     console.error("[Employee Chat] Error:", errMsg, error);
     return NextResponse.json({
-      data: { message: "Sorry, something went wrong. Please try again." },
+      data: { message: "Something's not working on my end right now. Try again in a moment." },
       error: null,
     });
   }

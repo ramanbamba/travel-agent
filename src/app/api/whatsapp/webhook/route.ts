@@ -13,7 +13,6 @@ export async function GET(req: NextRequest) {
   const verifyToken = process.env.WHATSAPP_VERIFY_TOKEN;
 
   if (mode === "subscribe" && token === verifyToken) {
-    console.log("[WhatsApp] Webhook verified");
     return new NextResponse(challenge, { status: 200 });
   }
 
@@ -49,7 +48,6 @@ export async function POST(req: NextRequest) {
           const parsed = parseIncomingMessage(msg, contactName);
 
           if (parsed.type === "unknown") {
-            console.log("[WhatsApp] Skipping unsupported message type:", msg.type);
             continue;
           }
 

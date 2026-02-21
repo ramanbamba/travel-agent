@@ -1,6 +1,7 @@
 // ============================================================================
 // WhatsApp Message Handler
-// Routes incoming messages based on session state.
+// Routes incoming messages based on session state with proper conversation
+// memory and deterministic selection parsing.
 // ============================================================================
 
 import { createClient } from "@supabase/supabase-js";
@@ -11,6 +12,13 @@ import {
   markAsRead,
 } from "./client";
 import { IntentRouter } from "@/lib/ai/intent-router";
+import {
+  parseSelection,
+  isConfirmation,
+  isCancellation,
+  isModificationRequest,
+} from "@/lib/ai/selection-parser";
+import { fixCommonTypos, isGibberish } from "@/lib/ai/edge-cases";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -19,10 +27,23 @@ const supabase = createClient(
 
 const intentRouter = new IntentRouter({ supabase });
 
+// ── Constants ──
+
+const MAX_MESSAGES = 20; // 10 turns (user + assistant)
+const SESSION_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
+const RATE_LIMIT = 20;
+const RATE_WINDOW = 60_000;
+
+// ── Conversation Message ──
+
+interface ContextMessage {
+  role: "user" | "assistant";
+  content: string;
+  ts: string;
+}
+
 // Rate limiting: simple in-memory store
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
-const RATE_LIMIT = 20; // messages per minute
-const RATE_WINDOW = 60_000;
 
 function checkRateLimit(phone: string): boolean {
   const now = Date.now();
@@ -44,13 +65,66 @@ interface SessionData {
   org_id: string | null;
   member_id: string | null;
   state: string;
-  context: Record<string, unknown>;
+  context: SessionContext;
   verified: boolean;
   last_message_at: string;
 }
 
+interface FlightOptionContext {
+  offer_id: string;
+  supplier: string;
+  price: number;
+  currency: string;
+  airline_code: string;
+  airline_name: string;
+  departure_time?: string;
+  duration_minutes?: number;
+  stops?: number;
+  compliance: { status: string; violations: string[] };
+  detail: string;
+}
+
+interface SessionContext {
+  // Rolling conversation history
+  messages?: ContextMessage[];
+  // Current state machine data
+  search_params?: {
+    origin: string;
+    destination: string;
+    date: string;
+    cabinClass?: string;
+    time_preference?: string;
+  };
+  flight_options?: FlightOptionContext[];
+  selected_option?: number;
+  selected_flight?: FlightOptionContext;
+  // Registration flow
+  registration_step?: string;
+  email?: string;
+  member_id?: string;
+  org_id?: string;
+  member_name?: string;
+  verification_code?: string;
+  // Preserved across timeout
+  [key: string]: unknown;
+}
+
+function getMessages(ctx: SessionContext): ContextMessage[] {
+  return ctx.messages ?? [];
+}
+
+function appendMessage(
+  ctx: SessionContext,
+  role: "user" | "assistant",
+  content: string
+): SessionContext {
+  const messages = [...getMessages(ctx), { role, content, ts: new Date().toISOString() }];
+  // Cap at MAX_MESSAGES
+  const trimmed = messages.length > MAX_MESSAGES ? messages.slice(-MAX_MESSAGES) : messages;
+  return { ...ctx, messages: trimmed };
+}
+
 async function getOrCreateSession(phone: string): Promise<SessionData> {
-  // Try to find existing session
   const { data: existing } = await supabase
     .from("whatsapp_sessions")
     .select("*")
@@ -58,27 +132,29 @@ async function getOrCreateSession(phone: string): Promise<SessionData> {
     .single();
 
   if (existing) {
-    // Check session expiry (30 min inactivity → reset to idle)
     const lastMsg = new Date(existing.last_message_at).getTime();
-    const thirtyMin = 30 * 60 * 1000;
-    if (Date.now() - lastMsg > thirtyMin && existing.state !== "idle") {
+    const ctx = (existing.context ?? {}) as SessionContext;
+
+    // Session timeout: reset state but KEEP messages + preferences
+    if (Date.now() - lastMsg > SESSION_TIMEOUT_MS && existing.state !== "idle") {
+      const resetCtx: SessionContext = {
+        messages: ctx.messages, // keep conversation memory
+      };
       await supabase
         .from("whatsapp_sessions")
-        .update({ state: "idle", context: {}, last_message_at: new Date().toISOString() })
+        .update({ state: "idle", context: resetCtx, last_message_at: new Date().toISOString() })
         .eq("id", existing.id);
-      return { ...existing, state: "idle", context: {} };
+      return { ...existing, state: "idle", context: resetCtx } as SessionData;
     }
 
-    // Update last_message_at
     await supabase
       .from("whatsapp_sessions")
       .update({ last_message_at: new Date().toISOString() })
       .eq("id", existing.id);
 
-    return existing as SessionData;
+    return { ...existing, context: ctx } as SessionData;
   }
 
-  // Create new session
   const { data: newSession, error } = await supabase
     .from("whatsapp_sessions")
     .insert({ phone_number: phone })
@@ -89,7 +165,7 @@ async function getOrCreateSession(phone: string): Promise<SessionData> {
     throw new Error(`Failed to create session: ${error?.message}`);
   }
 
-  return newSession as SessionData;
+  return { ...newSession, context: {} } as SessionData;
 }
 
 async function updateSession(
@@ -107,7 +183,6 @@ async function logMessage(
   messageType: string,
   content: Record<string, unknown>
 ) {
-  // Fire-and-forget
   supabase
     .from("whatsapp_message_log")
     .insert({ phone_number: phone, direction, message_type: messageType, content })
@@ -120,15 +195,13 @@ async function handleRegistration(
   session: SessionData,
   message: ParsedIncomingMessage
 ): Promise<void> {
-  const ctx = session.context as Record<string, string | undefined>;
+  const ctx = session.context;
 
   // Step 1: Ask for email
   if (!ctx.registration_step || ctx.registration_step === "ask_email") {
-    // Check if the text looks like an email
     if (message.text.includes("@") && message.text.includes(".")) {
       const email = message.text.trim().toLowerCase();
 
-      // Look up member by email across all orgs
       const { data: member } = await supabase
         .from("org_members")
         .select("id, org_id, full_name, email, status")
@@ -144,7 +217,6 @@ async function handleRegistration(
         return;
       }
 
-      // Generate verification code
       const code = Math.floor(100000 + Math.random() * 900000).toString();
 
       await updateSession(session.id, {
@@ -158,18 +230,14 @@ async function handleRegistration(
         },
       });
 
-      // In mock mode, include the code in the message for testing
       const isMock = process.env.WHATSAPP_MOCK !== "false";
       await sendTextMessage(
         message.from,
         `Found you! I've sent a verification code to ${email}. Please share it here.${isMock ? `\n\n[Mock mode — code is: ${code}]` : ""}`
       );
-
-      // TODO: Send actual verification email via Resend
       return;
     }
 
-    // First message or not an email — ask for it
     await sendTextMessage(
       message.from,
       "Welcome to SkySwift! I'm your company's AI travel assistant.\n\nTo get started, please share your work email so I can connect you to your company's travel account."
@@ -186,16 +254,14 @@ async function handleRegistration(
     const inputCode = message.text.trim().replace(/\s/g, "");
 
     if (inputCode === expectedCode) {
-      // Verified! Link session to member
       await updateSession(session.id, {
         org_id: ctx.org_id as string,
         member_id: ctx.member_id as string,
         verified: true,
         state: "idle",
-        context: {},
+        context: { messages: [] },
       });
 
-      // Update org_member with phone and WhatsApp status
       await supabase
         .from("org_members")
         .update({
@@ -223,7 +289,6 @@ async function handleRegistration(
       message.from,
       "That code doesn't match. Please try again, or type your email to restart verification."
     );
-    // Allow retry with email
     await updateSession(session.id, {
       context: { ...ctx, registration_step: "ask_email" },
     });
@@ -237,17 +302,10 @@ async function handleMessageWithAI(
   session: SessionData,
   message: ParsedIncomingMessage
 ): Promise<void> {
-  // Update conversation memory buffer (last 10 messages)
-  const lastMessages = (
-    (session.context as { last_messages?: string[] }).last_messages || []
-  ).slice(-9);
-  lastMessages.push(message.text);
+  // Append user message to conversation history
+  let ctx = appendMessage(session.context, "user", message.text);
 
-  await updateSession(session.id, {
-    context: { ...session.context, last_messages: lastMessages },
-  });
-
-  // Route through AI intent parser
+  // Route through AI intent parser with full history
   const result = await intentRouter.processMessage(
     {
       id: session.id,
@@ -255,7 +313,7 @@ async function handleMessageWithAI(
       org_id: session.org_id,
       member_id: session.member_id,
       state: session.state,
-      context: { ...session.context, last_messages: lastMessages },
+      context: ctx as Record<string, unknown>,
       verified: session.verified,
     },
     message.text
@@ -266,93 +324,124 @@ async function handleMessageWithAI(
     await sendTextMessage(message.from, msg);
   }
 
-  // Update session state if changed
-  if (result.newState || result.newContext) {
-    const updates: Partial<Pick<SessionData, "state" | "context">> = {};
-    if (result.newState) updates.state = result.newState;
-    if (result.newContext) {
-      updates.context = { ...result.newContext, last_messages: lastMessages };
-    }
-    await updateSession(session.id, updates);
+  // Append bot response to conversation history
+  if (result.messages.length > 0) {
+    const botReply = result.messages.join("\n\n");
+    ctx = appendMessage(
+      result.newContext ? { ...result.newContext, messages: ctx.messages } as SessionContext : ctx,
+      "assistant",
+      botReply
+    );
   }
 
-  // Store bot response in conversation memory
-  if (result.messages.length > 0) {
-    const updatedMessages = [...lastMessages, result.messages[0]].slice(-10);
-    await updateSession(session.id, {
-      context: {
-        ...(result.newContext ?? session.context),
-        last_messages: updatedMessages,
-      },
-    });
-  }
+  // Merge new context (flight_options, search_params, etc.) with updated messages
+  const finalCtx: SessionContext = {
+    ...(result.newContext ?? ctx),
+    messages: ctx.messages,
+  };
+
+  await updateSession(session.id, {
+    state: result.newState ?? session.state,
+    context: finalCtx as Record<string, unknown>,
+  });
 }
 
 // ── Selecting State — User picking from flight options ──
-
-interface FlightOptionContext {
-  offer_id: string;
-  supplier: string;
-  price: number;
-  currency: string;
-  airline_code: string;
-  airline_name: string;
-  compliance: { status: string; violations: string[] };
-  detail: string;
-}
 
 async function handleSelectingMessage(
   session: SessionData,
   message: ParsedIncomingMessage
 ): Promise<void> {
   const text = message.text.trim();
+  const options = session.context.flight_options;
 
-  // Expect a number (1, 2, 3, etc.) or button reply
-  if (/^[1-9]$/.test(text)) {
-    const selectedIndex = parseInt(text) - 1;
-    const options = (session.context as { flight_options?: FlightOptionContext[] }).flight_options;
+  // 1. Try deterministic selection (numbers, ordinals, airline names, superlatives)
+  if (options && options.length > 0) {
+    const selectedIdx = parseSelection(text, options.map(o => ({
+      airline_name: o.airline_name,
+      airline_code: o.airline_code,
+      price: o.price,
+      departure_time: o.departure_time,
+      duration_minutes: o.duration_minutes,
+      stops: o.stops,
+    })));
 
-    if (!options || selectedIndex >= options.length) {
-      await sendTextMessage(message.from, "Invalid option. Please reply with a number from the list.");
+    if (selectedIdx !== null && selectedIdx < options.length) {
+      await selectFlight(session, message, options[selectedIdx], selectedIdx);
       return;
     }
+  }
 
-    const selected = options[selectedIndex];
-
-    // Move to confirming state with selected flight details
+  // 2. Check for cancellation
+  if (isCancellation(text)) {
+    const ctx = appendMessage(session.context, "user", text);
+    const resetCtx: SessionContext = { messages: ctx.messages };
     await updateSession(session.id, {
-      state: "confirming",
-      context: { ...session.context, selected_option: selectedIndex, selected_flight: selected },
+      state: "idle",
+      context: resetCtx as Record<string, unknown>,
     });
-
-    // Show flight detail + confirm buttons
-    let confirmMsg = `*Selected flight:*\n\n${selected.detail}`;
-    if (selected.compliance.status === "warning") {
-      confirmMsg += `\n\n⚠️ ${selected.compliance.violations.join(", ")}`;
-      confirmMsg += "\n_This is outside policy. Your manager will be notified._";
-    }
-    confirmMsg += "\n\nBook this flight?";
-
-    await sendInteractiveButtons(
-      message.from,
-      confirmMsg,
-      [
-        { type: "reply", reply: { id: "confirm_yes", title: "Yes, Book" } },
-        { type: "reply", reply: { id: "confirm_no", title: "Cancel" } },
-      ]
-    );
+    const reply = "No problem! What else can I help with?";
+    const finalCtx = appendMessage(resetCtx, "assistant", reply);
+    await updateSession(session.id, { context: finalCtx as Record<string, unknown> });
+    await sendTextMessage(message.from, reply);
     return;
   }
 
-  // Cancel / start over
-  if (/^(cancel|no|back|start over)/i.test(text)) {
-    await updateSession(session.id, { state: "idle", context: {} });
-    await sendTextMessage(message.from, "No problem! What else can I help with?");
+  // 3. Check for modification request ("actually Tuesday", "make it afternoon")
+  if (isModificationRequest(text)) {
+    // Route through AI — it will re-parse with conversation history and do a new search
+    await handleMessageWithAI(session, message);
     return;
   }
 
-  // Non-numeric text during selecting — route through AI (might be "the cheaper one", "afternoon flights", etc.)
-  await handleMessageWithAI(session, message);
+  // 4. Fallback: try AI interpretation (might be a complex reference)
+  // But first, remind user about pending selection
+  if (options && options.length > 0) {
+    // Add state context hint so AI knows about pending selection
+    await handleMessageWithAI(session, message);
+  } else {
+    // No options cached — something went wrong, reset to idle
+    await updateSession(session.id, { state: "idle" });
+    await handleMessageWithAI(session, message);
+  }
+}
+
+async function selectFlight(
+  session: SessionData,
+  message: ParsedIncomingMessage,
+  selected: FlightOptionContext,
+  idx: number
+): Promise<void> {
+  // Append selection to conversation history
+  let ctx = appendMessage(session.context, "user", message.text);
+  ctx = {
+    ...ctx,
+    selected_option: idx,
+    selected_flight: selected,
+  };
+
+  let confirmMsg = `*Selected flight:*\n\n${selected.detail}`;
+  if (selected.compliance.status === "warning") {
+    confirmMsg += `\n\n⚠️ ${selected.compliance.violations.join(", ")}`;
+    confirmMsg += "\n_This is outside policy. Your manager will be notified._";
+  }
+  confirmMsg += "\n\nBook this flight?";
+
+  ctx = appendMessage(ctx, "assistant", confirmMsg);
+
+  await updateSession(session.id, {
+    state: "confirming",
+    context: ctx as Record<string, unknown>,
+  });
+
+  await sendInteractiveButtons(
+    message.from,
+    confirmMsg,
+    [
+      { type: "reply", reply: { id: "confirm_yes", title: "Yes, Book" } },
+      { type: "reply", reply: { id: "confirm_no", title: "Cancel" } },
+    ]
+  );
 }
 
 // ── Confirming State — User confirming booking ──
@@ -363,24 +452,21 @@ async function handleConfirmingMessage(
 ): Promise<void> {
   const text = message.text.trim().toLowerCase();
 
-  if (["yes", "confirm", "book", "confirm_yes"].includes(text) || text === "yes, book") {
-    const ctx = session.context as {
-      selected_flight?: FlightOptionContext;
-      search_params?: { origin: string; destination: string; date: string; cabinClass?: string };
-    };
+  // Confirmation
+  if (isConfirmation(text) || text === "confirm_yes" || text === "yes, book") {
+    const ctx = session.context;
     const selected = ctx.selected_flight;
     const searchParams = ctx.search_params;
 
     if (!selected || !session.org_id || !session.member_id) {
-      await updateSession(session.id, { state: "idle", context: {} });
-      await sendTextMessage(message.from, "Something went wrong. Let's start over — where do you need to fly?");
+      await updateSession(session.id, { state: "idle", context: { messages: ctx.messages } as Record<string, unknown> });
+      await sendTextMessage(message.from, "Lost track of your selection. Let's start fresh — where do you need to fly?");
       return;
     }
 
-    await sendTextMessage(message.from, "⏳ Processing your booking...");
+    await sendTextMessage(message.from, "⏳ Booking your flight...");
 
     try {
-      // Call corporate booking API
       const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.VERCEL_URL
         ? `https://${process.env.VERCEL_URL}`
         : "http://localhost:3000";
@@ -411,24 +497,50 @@ async function handleConfirmingMessage(
       const bookResult = await bookRes.json();
 
       if (bookResult.error) {
-        await sendTextMessage(message.from, `❌ Booking failed: ${bookResult.error}\n\nWant to try again?`);
+        await sendTextMessage(message.from, `That fare may no longer be available. Let me find the next best option for you.\n\nSay "search again" to retry.`);
       }
-      // Success messages are sent by the corporate-book API directly via WhatsApp
     } catch (err) {
       console.error("[WhatsApp Handler] Booking error:", err);
-      await sendTextMessage(message.from, "❌ Something went wrong with the booking. Please try again.");
+      await sendTextMessage(message.from, "Something went wrong with the booking. This usually fixes itself quickly — want me to try again?");
     }
 
-    await updateSession(session.id, { state: "idle", context: {} });
+    // Keep messages, clear booking state
+    const updatedCtx = appendMessage(session.context, "user", text);
+    const finalCtx = appendMessage(updatedCtx, "assistant", "Booking processed.");
+    await updateSession(session.id, {
+      state: "idle",
+      context: { messages: finalCtx.messages } as Record<string, unknown>,
+    });
     return;
   }
 
-  if (["no", "cancel", "confirm_no"].includes(text)) {
-    await updateSession(session.id, { state: "idle", context: {} });
-    await sendTextMessage(message.from, "Booking cancelled. What else can I help with?");
+  // Cancellation — go back to selecting
+  if (isCancellation(text) || text === "confirm_no") {
+    const options = session.context.flight_options;
+    if (options && options.length > 0) {
+      // Go back to selecting state, re-show options
+      const ctx = appendMessage(session.context, "user", text);
+      const reply = "No problem. Here are your options again — reply with a number to select:";
+      const finalCtx = appendMessage(ctx, "assistant", reply);
+      await updateSession(session.id, {
+        state: "selecting",
+        context: { ...finalCtx, flight_options: options, search_params: session.context.search_params } as Record<string, unknown>,
+      });
+      await sendTextMessage(message.from, reply);
+    } else {
+      await updateSession(session.id, { state: "idle", context: { messages: session.context.messages } as Record<string, unknown> });
+      await sendTextMessage(message.from, "Booking cancelled. What else can I help with?");
+    }
     return;
   }
 
+  // Modification request — re-route through AI for new search
+  if (isModificationRequest(text)) {
+    await handleMessageWithAI(session, message);
+    return;
+  }
+
+  // Unknown input — re-prompt
   await sendInteractiveButtons(
     message.from,
     "Please confirm your booking.",
@@ -446,33 +558,36 @@ export async function handleIncomingMessage(
 ): Promise<void> {
   const phone = message.from;
 
-  // Rate limit check
   if (!checkRateLimit(phone)) {
     await sendTextMessage(phone, "You're sending messages too fast. Please wait a moment.");
     return;
   }
 
-  // Log inbound
   await logMessage(phone, "inbound", message.type, {
     text: message.text,
     contact_name: message.contactName,
   });
 
-  // Mark as read
   await markAsRead(message.messageId);
 
   try {
-    // Get or create session
     const session = await getOrCreateSession(phone);
 
-    // Route based on session state
+    // Pre-process: fix common typos before routing
+    message = { ...message, text: fixCommonTypos(message.text) };
+
+    // Gibberish detection — respond helpfully
+    if (session.verified && isGibberish(message.text)) {
+      await sendTextMessage(phone, "I didn't catch that. Try something like \"Book BLR to DEL next Monday\" or type \"help\" to see what I can do.");
+      return;
+    }
+
     if (!session.verified) {
       await handleRegistration(session, message);
     } else {
       switch (session.state) {
         case "idle":
         case "searching":
-          // All messages go through AI intent parser for context-aware responses
           await handleMessageWithAI(session, message);
           break;
         case "selecting":
@@ -482,12 +597,10 @@ export async function handleIncomingMessage(
           await handleConfirmingMessage(session, message);
           break;
         case "awaiting_approval":
-          // Allow AI to handle approval-state messages (e.g., "status", new searches)
           await handleMessageWithAI(session, message);
           break;
         default:
-          // Reset to idle for unknown states
-          await updateSession(session.id, { state: "idle", context: {} });
+          await updateSession(session.id, { state: "idle" });
           await handleMessageWithAI(session, message);
           break;
       }
@@ -496,7 +609,7 @@ export async function handleIncomingMessage(
     console.error("[WhatsApp Handler] Error:", error);
     await sendTextMessage(
       phone,
-      "Sorry, something went wrong. Please try again in a moment."
+      "Something's not working on my end right now. Try again in a moment, or type \"help\" if you need anything."
     );
   }
 }

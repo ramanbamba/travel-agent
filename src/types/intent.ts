@@ -114,6 +114,22 @@ export interface CorporateAIContext {
   preferences: TravelerPreferenceSummary;
   pending_approvals: number;
   conversation_history: ConversationMessage[];
+  // Session state context — injected to help AI maintain context
+  session_state?: {
+    state: string; // idle, selecting, confirming, awaiting_approval
+    active_search?: {
+      origin: string;
+      destination: string;
+      date: string;
+      num_options: number;
+      options_summary: string; // brief list of options for context
+    };
+    selected_flight?: {
+      airline: string;
+      price: number;
+      departure: string;
+    };
+  };
 }
 
 export interface PolicySummary {
