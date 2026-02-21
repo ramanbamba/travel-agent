@@ -52,7 +52,9 @@ export default function AnalyticsPage() {
         <PageHeader title="Analytics" description="Travel insights and trends" />
         <EmptyState
           icon={BarChart3}
-          message="No booking data yet. Share the WhatsApp bot with your team to start seeing analytics!"
+          title="No analytics data yet"
+          message="Analytics will appear after your team's first bookings."
+          hint="Share the WhatsApp bot with your team to start tracking spend, compliance, and travel patterns."
         />
       </div>
     );

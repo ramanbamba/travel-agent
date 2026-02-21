@@ -160,7 +160,12 @@ export default function BookingsPage() {
           <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
         </div>
       ) : bookings.length === 0 ? (
-        <EmptyState icon={Plane} message="No bookings found matching your filters." />
+        <EmptyState
+          icon={Plane}
+          title="No bookings found"
+          message="No bookings match your current filters. Try adjusting or clearing them."
+          hint="Share the WhatsApp bot with your team to start seeing bookings here."
+        />
       ) : (
         <div className="rounded-lg border border-gray-200 bg-white overflow-hidden">
           <div className="overflow-x-auto">
@@ -271,7 +276,7 @@ function BookingDetail({
   return (
     <>
       <div className="fixed inset-0 z-40 bg-black/30" onClick={onClose} />
-      <div className="fixed inset-y-0 right-0 z-50 w-full max-w-lg bg-white shadow-xl border-l border-gray-200 overflow-y-auto">
+      <div className="fixed inset-y-0 right-0 z-50 w-full max-w-lg bg-white shadow-xl border-l border-gray-200 overflow-y-auto animate-[slideInRight_0.2s_ease-out]">
         <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
           <h2 className="text-lg font-bold text-[#0F1B2D]">Booking Details</h2>
           <button onClick={onClose} className="rounded-lg p-1 text-gray-400 hover:bg-gray-100">

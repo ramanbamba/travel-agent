@@ -150,7 +150,12 @@ export default function GstPage() {
 
       {/* Invoice Table */}
       {invoices.length === 0 ? (
-        <EmptyState icon={Receipt} message="No GST invoices yet. Invoices are auto-generated when bookings are made." />
+        <EmptyState
+          icon={Receipt}
+          title="No GST invoices yet"
+          message="GST invoices are captured automatically with each booking."
+          hint="Once your team starts booking flights, invoices with GSTIN will appear here for ITC claims."
+        />
       ) : (
         <div className="rounded-lg border border-gray-200 bg-white overflow-hidden">
           <div className="overflow-x-auto">

@@ -131,7 +131,9 @@ export default function EmployeesPage() {
       {filtered.length === 0 ? (
         <EmptyState
           icon={Users}
-          message="No employees found. Invite your team to get started!"
+          title="No employees yet"
+          message="Invite your first team member to start booking flights through SkySwift."
+          hint="You can invite individually or upload a CSV with multiple employees."
           cta={{ label: "Invite Employee", onClick: () => setShowInviteModal(true) }}
         />
       ) : (
@@ -509,7 +511,7 @@ function EditSlideOver({
   return (
     <>
       <div className="fixed inset-0 z-40 bg-black/30" onClick={onClose} />
-      <div className="fixed inset-y-0 right-0 z-50 w-full max-w-md bg-white shadow-xl border-l border-gray-200 overflow-y-auto">
+      <div className="fixed inset-y-0 right-0 z-50 w-full max-w-md bg-white shadow-xl border-l border-gray-200 overflow-y-auto animate-[slideInRight_0.2s_ease-out]">
         <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
           <h2 className="text-lg font-bold text-[#0F1B2D]">Edit Employee</h2>
           <button onClick={onClose} className="rounded-lg p-1 text-gray-400 hover:bg-gray-100">

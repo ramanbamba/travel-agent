@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import { Inter } from "next/font/google";
 import { Providers } from "@/components/providers";
+import { Toaster } from "sonner";
 import "./globals.css";
 
 const inter = Inter({
@@ -75,6 +76,7 @@ export default function RootLayout({
         className={`${inter.variable} ${geistMono.variable} font-sans antialiased`}
       >
         <Providers>{children}</Providers>
+        <Toaster position="bottom-right" richColors closeButton />
       </body>
     </html>
   );

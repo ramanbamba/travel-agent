@@ -187,7 +187,7 @@ export default function CorpOverviewPage() {
             </thead>
             <tbody>
               {recentBookings.map((b: StatsData) => (
-                <tr key={b.id} className="border-b border-gray-100 hover:bg-gray-50">
+                <tr key={b.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
                   <td className="whitespace-nowrap px-4 py-3 font-medium text-[#0F1B2D]">
                     {b.member_name}
                   </td>
@@ -217,8 +217,12 @@ export default function CorpOverviewPage() {
               ))}
               {recentBookings.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-4 py-12 text-center text-gray-400">
-                    No bookings yet. Share the WhatsApp bot with your team to get started!
+                  <td colSpan={6} className="px-4 py-16 text-center">
+                    <div className="flex flex-col items-center">
+                      <Inbox className="h-8 w-8 text-gray-300" />
+                      <p className="mt-3 text-sm font-medium text-gray-500">No bookings yet</p>
+                      <p className="mt-1 text-xs text-gray-400">Share the WhatsApp bot with your team to get started.</p>
+                    </div>
                   </td>
                 </tr>
               )}

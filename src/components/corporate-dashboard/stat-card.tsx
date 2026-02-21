@@ -10,7 +10,10 @@ interface StatCardProps {
 
 export function StatCard({ label, value, icon: Icon, trend, className }: StatCardProps) {
   return (
-    <div className={cn("rounded-lg border border-gray-200 bg-white p-5", className)}>
+    <div className={cn(
+      "rounded-lg border border-gray-200 bg-white p-5 transition-shadow hover:shadow-md",
+      className
+    )}>
       <div className="flex items-center justify-between">
         <p className="text-sm font-medium text-gray-500">{label}</p>
         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-50">
@@ -19,12 +22,17 @@ export function StatCard({ label, value, icon: Icon, trend, className }: StatCar
       </div>
       <p className="mt-2 text-2xl font-bold text-[#0F1B2D]">{value}</p>
       {trend && (
-        <p className={cn(
-          "mt-1 text-xs font-medium",
-          trend.value >= 0 ? "text-green-600" : "text-red-600"
-        )}>
-          {trend.value >= 0 ? "+" : ""}{trend.value}% {trend.label}
-        </p>
+        <div className="mt-1 flex items-center gap-1">
+          <span className={cn(
+            "inline-flex items-center rounded px-1 py-0.5 text-[10px] font-semibold",
+            trend.value >= 0
+              ? "bg-green-50 text-green-600"
+              : "bg-red-50 text-red-600"
+          )}>
+            {trend.value >= 0 ? "\u2191" : "\u2193"} {Math.abs(trend.value)}%
+          </span>
+          <span className="text-xs text-gray-400">{trend.label}</span>
+        </div>
       )}
     </div>
   );

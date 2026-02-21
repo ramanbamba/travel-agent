@@ -124,9 +124,9 @@ export function SidebarNav({ orgName, userName, userRole }: SidebarNavProps) {
                   href={item.href}
                   onClick={() => setMobileOpen(false)}
                   className={cn(
-                    "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                    "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-150",
                     isActive
-                      ? "bg-blue-50 text-blue-600"
+                      ? "bg-blue-50 text-blue-600 shadow-sm shadow-blue-100"
                       : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
                   )}
                   aria-current={isActive ? "page" : undefined}
