@@ -85,13 +85,13 @@ function HeroSection() {
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
                 <Link
                   href="/signup"
-                  className="group inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-8 py-3.5 text-sm font-medium text-white transition-all hover:bg-blue-500 hover:shadow-xl hover:shadow-blue-600/25"
+                  className="group inline-flex items-center justify-center gap-2 rounded-xl bg-[#0071e3] px-8 py-3.5 text-sm font-medium text-white transition-all hover:bg-[#0077ED] hover:shadow-xl hover:shadow-blue-600/25 active:scale-[0.98]"
                 >
                   Start Free Pilot <ArrowRight className="transition-transform group-hover:translate-x-0.5" />
                 </Link>
                 <a
                   href="#how-it-works"
-                  className="inline-flex items-center justify-center rounded-lg border border-slate-700 px-8 py-3.5 text-sm font-medium text-slate-300 transition-all hover:border-slate-500 hover:text-white"
+                  className="inline-flex items-center justify-center rounded-xl border border-slate-700 px-8 py-3.5 text-sm font-medium text-slate-300 transition-all hover:border-slate-500 hover:text-white"
                 >
                   See How It Works
                 </a>
@@ -130,10 +130,13 @@ function ProblemSection() {
   ];
 
   return (
-    <section className="bg-[#111827] px-6 py-24 lg:py-32">
-      <div className="mx-auto max-w-6xl">
+    <section className="relative overflow-hidden px-6 py-24 lg:py-32">
+      {/* Gradient accent blob */}
+      <div className="pointer-events-none absolute -top-32 -left-32 h-[500px] w-[500px] rounded-full bg-blue-500/[0.04] blur-[120px]" />
+
+      <div className="relative mx-auto max-w-6xl">
         <FadeIn>
-          <h2 className="mx-auto max-w-3xl text-center text-3xl font-bold text-white sm:text-4xl">
+          <h2 className="mx-auto max-w-3xl text-center text-3xl font-bold text-gray-900 sm:text-4xl">
             Corporate travel in India is stuck in 2005.
           </h2>
         </FadeIn>
@@ -141,12 +144,12 @@ function ProblemSection() {
         <Stagger className="mt-16 grid gap-6 md:grid-cols-3" stagger={0.15}>
           {problems.map((p) => (
             <StaggerChild key={p.label}>
-              <div className="rounded-2xl border border-slate-700/50 bg-slate-800/50 p-8">
-                <div className="font-mono text-4xl font-bold text-cyan-400 lg:text-5xl">
+              <div className="rounded-2xl border border-black/[0.06] bg-white/60 p-8 backdrop-blur-xl shadow-[0_2px_8px_rgba(0,0,0,0.04),0_4px_16px_rgba(0,0,0,0.03)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_4px_16px_rgba(0,0,0,0.08),0_8px_32px_rgba(0,0,0,0.05)]">
+                <div className="font-mono text-4xl font-bold text-blue-600 lg:text-5xl">
                   <CountUp end={p.metric} prefix={p.prefix ?? ""} suffix={p.suffix} />
                 </div>
-                <p className="mt-2 text-sm font-medium text-white">{p.label}</p>
-                <p className="mt-3 text-sm leading-relaxed text-slate-400">{p.description}</p>
+                <p className="mt-2 text-sm font-medium text-gray-900">{p.label}</p>
+                <p className="mt-3 text-sm leading-relaxed text-gray-500">{p.description}</p>
               </div>
             </StaggerChild>
           ))}
@@ -207,7 +210,7 @@ function HowItWorksSection() {
   ];
 
   return (
-    <section id="how-it-works" className="bg-white px-6 py-24 lg:py-32">
+    <section id="how-it-works" className="px-6 py-24 lg:py-32">
       <div className="mx-auto max-w-6xl">
         <FadeIn>
           <div className="text-center">
@@ -255,7 +258,7 @@ function DualValueSection() {
   ];
 
   return (
-    <section id="platform" className="bg-[#FAFBFC] px-6 py-24 lg:py-32">
+    <section id="platform" className="px-6 py-24 lg:py-32">
       <div className="mx-auto max-w-6xl">
         <FadeIn>
           <div className="text-center">
@@ -267,7 +270,7 @@ function DualValueSection() {
         <div className="mt-16 grid gap-8 lg:grid-cols-2">
           {/* For Managers */}
           <FadeIn delay={0.1}>
-            <div className="rounded-2xl border border-gray-200 bg-white p-8 lg:p-10">
+            <div className="rounded-2xl border border-black/[0.06] bg-white/80 p-8 backdrop-blur-xl shadow-[0_4px_16px_rgba(0,0,0,0.06),0_8px_32px_rgba(0,0,0,0.04)] lg:p-10">
               <div className="mb-6 inline-flex rounded-full bg-blue-50 px-4 py-1.5 text-xs font-medium text-blue-700">
                 For Travel Managers &amp; Finance
               </div>
@@ -288,7 +291,7 @@ function DualValueSection() {
 
           {/* For Employees */}
           <FadeIn delay={0.2}>
-            <div className="rounded-2xl border border-gray-200 bg-white p-8 lg:p-10">
+            <div className="rounded-2xl border border-black/[0.06] bg-white/80 p-8 backdrop-blur-xl shadow-[0_4px_16px_rgba(0,0,0,0.06),0_8px_32px_rgba(0,0,0,0.04)] lg:p-10">
               <div className="mb-6 inline-flex rounded-full bg-green-50 px-4 py-1.5 text-xs font-medium text-green-700">
                 For Employees
               </div>
@@ -325,10 +328,14 @@ function FeaturesSection() {
   ];
 
   return (
-    <section className="bg-[#0F172A] px-6 py-24 lg:py-32">
-      <div className="mx-auto max-w-6xl">
+    <section className="relative overflow-hidden px-6 py-24 lg:py-32">
+      {/* Gradient wash blobs */}
+      <div className="pointer-events-none absolute -top-24 -right-24 h-[500px] w-[500px] rounded-full bg-blue-600/[0.04] blur-[120px]" />
+      <div className="pointer-events-none absolute -bottom-24 -left-24 h-[400px] w-[400px] rounded-full bg-purple-500/[0.03] blur-[120px]" />
+
+      <div className="relative mx-auto max-w-6xl">
         <FadeIn>
-          <h2 className="text-center text-3xl font-bold text-white sm:text-4xl">
+          <h2 className="text-center text-3xl font-bold text-gray-900 sm:text-4xl">
             One platform. Everything your travel program needs.
           </h2>
         </FadeIn>
@@ -336,10 +343,10 @@ function FeaturesSection() {
         <Stagger className="mt-16 grid gap-5 sm:grid-cols-2 lg:grid-cols-3" stagger={0.1}>
           {features.map((f) => (
             <StaggerChild key={f.title}>
-              <div className="group rounded-2xl border border-slate-700/50 bg-slate-800/40 p-7 transition-all duration-300 hover:border-blue-500/30 hover:shadow-lg hover:shadow-blue-500/5">
+              <div className="group rounded-2xl border border-black/[0.06] bg-white/60 p-7 backdrop-blur-xl shadow-[0_2px_8px_rgba(0,0,0,0.04),0_4px_16px_rgba(0,0,0,0.03)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_4px_16px_rgba(0,0,0,0.08),0_8px_32px_rgba(0,0,0,0.05)]">
                 <span className="text-2xl">{f.icon}</span>
-                <h3 className="mt-4 text-lg font-semibold text-white">{f.title}</h3>
-                <p className="mt-2 text-sm leading-relaxed text-slate-400">{f.desc}</p>
+                <h3 className="mt-4 text-lg font-semibold text-gray-900">{f.title}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-gray-500">{f.desc}</p>
               </div>
             </StaggerChild>
           ))}
@@ -382,8 +389,11 @@ function PricingSection() {
   ];
 
   return (
-    <section id="pricing" className="bg-white px-6 py-24 lg:py-32">
-      <div className="mx-auto max-w-6xl">
+    <section id="pricing" className="relative overflow-hidden px-6 py-24 lg:py-32">
+      {/* Gradient accent blob */}
+      <div className="pointer-events-none absolute top-1/4 -right-32 h-[400px] w-[400px] rounded-full bg-cyan-500/[0.03] blur-[120px]" />
+
+      <div className="relative mx-auto max-w-6xl">
         <FadeIn>
           <div className="text-center">
             <h2 className="text-3xl font-bold text-gray-900 sm:text-4xl">Start free. Scale when ready.</h2>
@@ -394,13 +404,13 @@ function PricingSection() {
         <Stagger className="mt-16 grid gap-8 lg:grid-cols-3" stagger={0.15}>
           {plans.map((plan) => (
             <StaggerChild key={plan.name}>
-              <div className={`relative rounded-2xl border p-8 ${
+              <div className={`relative rounded-2xl border p-8 backdrop-blur-xl transition-all duration-300 ${
                 plan.highlighted
-                  ? "border-blue-600 bg-white shadow-xl shadow-blue-600/10 ring-1 ring-blue-600"
-                  : "border-gray-200 bg-white"
+                  ? "border-[#0071e3] bg-white/80 shadow-[0_4px_16px_rgba(0,0,0,0.06),0_8px_32px_rgba(0,0,0,0.04)] ring-1 ring-[#0071e3]"
+                  : "border-black/[0.06] bg-white/60 shadow-[0_2px_8px_rgba(0,0,0,0.04),0_4px_16px_rgba(0,0,0,0.03)] hover:-translate-y-0.5 hover:shadow-[0_4px_16px_rgba(0,0,0,0.08),0_8px_32px_rgba(0,0,0,0.05)]"
               }`}>
                 {plan.badge && (
-                  <div className="absolute -top-3 left-8 inline-flex rounded-full bg-blue-600 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-white">
+                  <div className="absolute -top-3 left-8 inline-flex rounded-full bg-[#0071e3] px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-white">
                     {plan.badge}
                   </div>
                 )}
@@ -413,10 +423,10 @@ function PricingSection() {
 
                 <Link
                   href="/signup"
-                  className={`mt-6 block rounded-lg px-6 py-3 text-center text-sm font-medium transition-all ${
+                  className={`mt-6 block rounded-xl px-6 py-3 text-center text-sm font-medium transition-all active:scale-[0.98] ${
                     plan.highlighted
-                      ? "bg-blue-600 text-white hover:bg-blue-500 hover:shadow-lg hover:shadow-blue-600/25"
-                      : "border border-gray-300 text-gray-700 hover:border-gray-400 hover:bg-gray-50"
+                      ? "bg-[#0071e3] text-white hover:bg-[#0077ED] hover:shadow-lg hover:shadow-blue-600/25"
+                      : "border border-black/[0.1] text-gray-700 hover:border-black/[0.2] hover:bg-gray-50"
                   }`}
                 >
                   {plan.cta}
@@ -449,32 +459,35 @@ function PricingSection() {
 
 function TrustSection() {
   return (
-    <section className="bg-[#111827] px-6 py-24 lg:py-32">
-      <div className="mx-auto max-w-3xl text-center">
-        <FadeIn>
-          <h2 className="text-3xl font-bold text-white sm:text-4xl">
-            Built by people who know travel from the inside.
-          </h2>
-          <div className="mt-8 space-y-3 text-slate-400">
-            <p>10+ years at Booking.com and Amadeus</p>
-            <p>Deep expertise in airline distribution, NDC, and travel technology</p>
-            <p>Building the travel infrastructure India deserves</p>
-          </div>
-        </FadeIn>
+    <section className="relative overflow-hidden px-6 py-24 lg:py-32">
+      {/* Gradient accent blob */}
+      <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[400px] w-[400px] rounded-full bg-blue-500/[0.03] blur-[120px]" />
 
-        <FadeIn delay={0.2}>
-          <div className="mt-12 flex flex-wrap items-center justify-center gap-6 text-xs text-slate-500">
-            {[
-              { icon: "🔒", label: "Encrypted at rest & in transit" },
-              { icon: "🇮🇳", label: "India data residency" },
-              { icon: "🛡️", label: "SOC 2 ready" },
-              { icon: "📋", label: "DPDP Act compliant" },
-            ].map((b) => (
-              <div key={b.label} className="flex items-center gap-2 rounded-full border border-slate-700/50 px-4 py-2">
-                <span>{b.icon}</span>
-                <span>{b.label}</span>
-              </div>
-            ))}
+      <div className="relative mx-auto max-w-3xl">
+        <FadeIn>
+          <div className="rounded-2xl border border-black/[0.06] bg-white/80 p-10 text-center backdrop-blur-xl shadow-[0_4px_16px_rgba(0,0,0,0.06),0_8px_32px_rgba(0,0,0,0.04)] lg:p-14">
+            <h2 className="text-3xl font-bold text-gray-900 sm:text-4xl">
+              Built by people who know travel from the inside.
+            </h2>
+            <div className="mt-8 space-y-3 text-gray-500">
+              <p>10+ years at Booking.com and Amadeus</p>
+              <p>Deep expertise in airline distribution, NDC, and travel technology</p>
+              <p>Building the travel infrastructure India deserves</p>
+            </div>
+
+            <div className="mt-12 flex flex-wrap items-center justify-center gap-4 text-xs text-gray-600">
+              {[
+                { icon: "🔒", label: "Encrypted at rest & in transit" },
+                { icon: "🇮🇳", label: "India data residency" },
+                { icon: "🛡️", label: "SOC 2 ready" },
+                { icon: "📋", label: "DPDP Act compliant" },
+              ].map((b) => (
+                <div key={b.label} className="flex items-center gap-2 rounded-full border border-black/[0.06] px-4 py-2">
+                  <span>{b.icon}</span>
+                  <span>{b.label}</span>
+                </div>
+              ))}
+            </div>
           </div>
         </FadeIn>
       </div>
@@ -497,7 +510,7 @@ function FAQSection() {
   ];
 
   return (
-    <section className="bg-[#FAFBFC] px-6 py-24 lg:py-32">
+    <section className="px-6 py-24 lg:py-32">
       <div className="mx-auto max-w-3xl">
         <FadeIn>
           <h2 className="text-center text-3xl font-bold text-gray-900 sm:text-4xl">
@@ -508,7 +521,7 @@ function FAQSection() {
         <Stagger className="mt-12 space-y-3" stagger={0.05}>
           {faqs.map((faq) => (
             <StaggerChild key={faq.q}>
-              <details className="group rounded-xl border border-gray-200 bg-white transition-shadow hover:shadow-sm">
+              <details className="group rounded-2xl border border-black/[0.06] bg-white/60 backdrop-blur-xl shadow-[0_2px_8px_rgba(0,0,0,0.04),0_4px_16px_rgba(0,0,0,0.03)] transition-shadow hover:shadow-[0_4px_16px_rgba(0,0,0,0.08),0_8px_32px_rgba(0,0,0,0.05)]">
                 <summary className="flex cursor-pointer items-center justify-between px-6 py-4 text-sm font-medium text-gray-900">
                   {faq.q}
                   <svg
@@ -525,7 +538,7 @@ function FAQSection() {
                     <polyline points="6 9 12 15 18 9" />
                   </svg>
                 </summary>
-                <div className="border-t border-gray-100 px-6 py-4 text-sm leading-relaxed text-gray-500">
+                <div className="border-t border-black/[0.04] px-6 py-4 text-sm leading-relaxed text-gray-500">
                   {faq.a}
                 </div>
               </details>
@@ -559,7 +572,7 @@ function FooterCTA() {
           <div className="mt-8">
             <Link
               href="/signup"
-              className="group inline-flex items-center gap-2 rounded-lg bg-blue-600 px-10 py-4 text-base font-medium text-white transition-all hover:bg-blue-500 hover:shadow-xl hover:shadow-blue-600/25"
+              className="group inline-flex items-center gap-2 rounded-xl bg-[#0071e3] px-10 py-4 text-base font-medium text-white transition-all hover:bg-[#0077ED] hover:shadow-xl hover:shadow-blue-600/25 active:scale-[0.98]"
             >
               Start Free Pilot <ArrowRight className="transition-transform group-hover:translate-x-0.5" />
             </Link>
@@ -629,9 +642,11 @@ function Footer() {
 
 export default function Home() {
   return (
-    <main className="min-h-screen">
+    <main className="min-h-screen bg-[#f5f5f7]">
       <Navbar />
       <HeroSection />
+      {/* Dark → Warm transition bridge */}
+      <div className="h-24 bg-gradient-to-b from-[#0A0F1E] to-[#f5f5f7]" />
       <ProblemSection />
       <HowItWorksSection />
       <DualValueSection />
@@ -639,6 +654,8 @@ export default function Home() {
       <PricingSection />
       <TrustSection />
       <FAQSection />
+      {/* Warm → Dark transition bridge */}
+      <div className="h-24 bg-gradient-to-b from-[#f5f5f7] to-[#0A0F1E]" />
       <FooterCTA />
       <Footer />
     </main>
