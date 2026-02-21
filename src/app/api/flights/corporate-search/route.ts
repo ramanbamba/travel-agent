@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { createClient as createServerClient } from "@/lib/supabase/server";
 import { searchFlights } from "@/lib/supply";
 import type { FlightOffer, CabinClass } from "@/lib/supply/types";
 import type { PolicyCompliance, CorporateFlightResult } from "@/lib/whatsapp/formatters";
@@ -124,6 +125,13 @@ function isIndianRoute(offer: FlightOffer): boolean {
 
 export async function POST(req: NextRequest) {
   try {
+    // Verify caller is authenticated
+    const authClient = createServerClient();
+    const { data: { user } } = await authClient.auth.getUser();
+    if (!user) {
+      return NextResponse.json({ data: null, error: "Unauthorized" }, { status: 401 });
+    }
+
     const body: SearchRequest = await req.json();
     const { origin, destination, date, return_date, cabin_class, org_id, member_id } = body;
 

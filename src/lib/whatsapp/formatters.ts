@@ -33,6 +33,8 @@ interface BookingSummary {
   status: string;
   passengerName: string;
   approvalStatus?: string;
+  gstin?: string;
+  email?: string;
 }
 
 interface ApprovalRequestSummary {
@@ -70,6 +72,25 @@ function formatSegmentLine(seg: SupplyFlightSegment): string {
   return `${seg.airlineCode} ${seg.flightNumber} · ${dep}–${arr} · ${seg.duration}`;
 }
 
+/**
+ * Find the top pick index (highest preference score, or first compliant option).
+ */
+function findTopPick(results: CorporateFlightResult[]): number {
+  let bestIdx = 0;
+  let bestScore = -1;
+  for (let i = 0; i < results.length; i++) {
+    const score = results[i].preferenceScore ?? 0;
+    const compliant = results[i].compliance.status === "compliant";
+    // Prefer compliant options, then highest score
+    const effective = compliant ? score + 1000 : score;
+    if (effective > bestScore) {
+      bestScore = effective;
+      bestIdx = i;
+    }
+  }
+  return bestIdx;
+}
+
 // ── Formatters ──
 
 /**
@@ -89,6 +110,9 @@ export function formatFlightResults(
   let msg = `*${origin}→${destination} · ${date}*\n`;
   msg += `Found ${results.length} option${results.length > 1 ? "s" : ""}:\n`;
 
+  // Find top pick (highest preference score, or first compliant option)
+  const topPickIdx = findTopPick(results);
+
   results.forEach((r, i) => {
     const offer = r.offer;
     const seg = offer.segments[0];
@@ -97,8 +121,8 @@ export function formatFlightResults(
     const arr = formatTime(seg.arrival.time);
 
     let line = `\n*${i + 1}.* ${seg.airlineCode} ${seg.flightNumber}`;
-    line += ` · ${dep}–${arr}`;
-    line += ` · ${offer.totalDuration}`;
+    if (i === topPickIdx) line += ` 🏷️ RECOMMENDED`;
+    line += `\n    ${dep}–${arr} · ${offer.totalDuration}`;
     if (offer.stops > 0) line += ` · ${offer.stops} stop${offer.stops > 1 ? "s" : ""}`;
     line += `\n    ${price}`;
 
@@ -113,7 +137,9 @@ export function formatFlightResults(
     }
 
     // Policy compliance
-    if (r.compliance.status === "warning") {
+    if (r.compliance.status === "compliant") {
+      line += `\n    ✅ In policy`;
+    } else if (r.compliance.status === "warning") {
       line += `\n    ⚠️ ${r.compliance.violations[0]}`;
     } else if (r.compliance.status === "blocked") {
       line += `\n    🚫 ${r.compliance.violations[0]}`;
@@ -137,6 +163,8 @@ export function formatFlightResultsAsList(
   title: string;
   rows: Array<{ id: string; title: string; description: string }>;
 }> {
+  const topPickIdx = findTopPick(results);
+
   const rows = results.map((r, i) => {
     const seg = r.offer.segments[0];
     const price = formatPrice(r.offer.price.total, r.offer.price.currency);
@@ -144,10 +172,11 @@ export function formatFlightResultsAsList(
     const complianceIcon =
       r.compliance.status === "compliant" ? "✅" :
       r.compliance.status === "warning" ? "⚠️" : "🚫";
+    const recommended = i === topPickIdx ? " 🏷️" : "";
 
     return {
       id: `select_flight_${i}`,
-      title: `${complianceIcon} ${seg.airlineCode} ${seg.flightNumber} · ${dep} · ${price}`,
+      title: `${complianceIcon} ${seg.airlineCode} ${seg.flightNumber} · ${dep} · ${price}${recommended}`,
       description: `${r.offer.totalDuration}${r.offer.stops ? ` · ${r.offer.stops} stop` : " · Nonstop"}${r.compliance.violations.length ? ` · ${r.compliance.violations[0]}` : ""}`,
     };
   });
@@ -178,8 +207,20 @@ export function formatBookingConfirmation(booking: BookingSummary): string {
     msg += `\n📋 *PNR: ${booking.pnr}*`;
   }
 
+  // Email confirmation
+  if (booking.email) {
+    msg += `\n📧 Confirmation sent to ${booking.email}`;
+  }
+
+  // GST capture
+  if (booking.gstin) {
+    msg += `\n📊 GST Invoice: GSTIN ${booking.gstin} captured ✓`;
+  }
+
   if (booking.approvalStatus === "pending") {
     msg += "\n\n⏳ _Sent for manager approval. I'll notify you when it's confirmed._";
+  } else if (booking.status === "booked") {
+    msg += "\n\nHave a great trip! ✈️";
   }
 
   return msg;
@@ -197,33 +238,77 @@ export function formatApprovalRequest(request: ApprovalRequestSummary): string {
   msg += `💰 ${formatPrice(request.totalAmount, request.currency)}\n`;
 
   if (request.policyViolations.length > 0) {
-    msg += `\n⚠️ *Policy violations:*\n`;
+    msg += `\n⚠️ *Policy exceptions requested:*\n`;
     for (const v of request.policyViolations) {
       msg += `  • ${v}\n`;
     }
+  } else {
+    msg += `\n✅ Within travel policy\n`;
   }
 
-  msg += "\nReply *approve* or *reject* to respond.";
+  msg += "\nTap *Approve* or *Reject* below to respond.";
 
   return msg;
 }
 
 /**
+ * Format interactive buttons for approval requests.
+ * Returns button config for sendInteractiveButtons().
+ */
+export function formatApprovalButtons(approvalId: string): Array<{
+  id: string;
+  title: string;
+}> {
+  return [
+    { id: `approve_${approvalId}`, title: "✅ Approve" },
+    { id: `reject_${approvalId}`, title: "❌ Reject" },
+  ];
+}
+
+/**
  * Format policy violation explanation.
+ * Friendly tone — never make the employee feel punished.
  */
 export function formatPolicyViolation(violations: string[], policyMode: "soft" | "hard"): string {
-  let msg = "⚠️ *Policy check:*\n";
+  let msg = "⚠️ *Heads up — policy check:*\n\n";
   for (const v of violations) {
     msg += `  • ${v}\n`;
   }
 
   if (policyMode === "hard") {
-    msg += "\n🚫 This booking is *blocked* by company policy. Contact your travel manager for an override.";
+    msg += "\n🚫 This option is outside your company's travel policy and can't be booked directly.";
+    msg += "\n\n💡 *What you can do:*";
+    msg += "\n  • Try a different cabin class or airline";
+    msg += "\n  • Ask your travel manager for an exception";
+    msg += "\n\nType *search* to see alternative options.";
   } else {
-    msg += "\n_This is outside policy but can proceed. Your manager will be notified._";
+    msg += "\n_This is slightly outside policy but you can still proceed. Your manager will be notified for approval._";
+    msg += "\n\nReply *proceed* to continue or *alternatives* to see in-policy options.";
   }
 
   return msg;
+}
+
+/**
+ * Format user-friendly error messages with suggested next actions.
+ * Never shows generic "an error occurred" messages.
+ */
+export function formatErrorMessage(
+  errorType: "search_failed" | "booking_failed" | "payment_failed" | "fare_expired" | "general",
+  context?: { route?: string; nextBestOption?: string }
+): string {
+  switch (errorType) {
+    case "search_failed":
+      return `❌ I couldn't find flights${context?.route ? ` for ${context.route}` : ""}.\n\n💡 Try:\n  • A different date\n  • A nearby airport\n  • A different cabin class\n\nType your new search to try again.`;
+    case "booking_failed":
+      return `❌ The booking couldn't be completed — the fare may have changed or seats filled up.\n\n${context?.nextBestOption ? `💡 Here's the next best option: ${context.nextBestOption}\n\n` : ""}Type *search* to find updated options.`;
+    case "payment_failed":
+      return `❌ Payment didn't go through. No charges were made.\n\n💡 Please check your payment method and try again, or type *help* to contact support.`;
+    case "fare_expired":
+      return `⏰ That fare is no longer available — prices change quickly!\n\n${context?.nextBestOption ? `💡 Next best option: ${context.nextBestOption}\n\n` : ""}Type *search* to see current prices.`;
+    default:
+      return `Something unexpected happened. Type *help* to get assistance, or try your request again.`;
+  }
 }
 
 /**

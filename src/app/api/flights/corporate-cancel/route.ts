@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { createClient as createServerClient } from "@/lib/supabase/server";
 import { cancelSupplyBooking, resolveSupplierFromOfferId } from "@/lib/supply";
 import { sendTextMessage } from "@/lib/whatsapp/client";
 
@@ -20,6 +21,13 @@ interface CancelRequest {
 
 export async function POST(req: NextRequest) {
   try {
+    // Verify caller is authenticated
+    const authClient = createServerClient();
+    const { data: { user } } = await authClient.auth.getUser();
+    if (!user) {
+      return NextResponse.json({ data: null, error: "Unauthorized" }, { status: 401 });
+    }
+
     const body: CancelRequest = await req.json();
     const { booking_id, member_id, reason } = body;
 

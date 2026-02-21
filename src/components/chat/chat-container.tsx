@@ -167,8 +167,43 @@ export function ChatContainer() {
             loading={returningLoading}
           />
         )}
+        {/* Quick reply chips — show when idle or few messages */}
+        {!isLoading && messages.length <= 2 && (
+          <QuickReplyChips onSelect={sendMessage} />
+        )}
         <ChatInput onSend={sendMessage} disabled={isLoading} />
       </div>
+    </div>
+  );
+}
+
+const QUICK_REPLIES = [
+  { label: "Book a flight", icon: "✈️" },
+  { label: "Check my bookings", icon: "📋" },
+  { label: "Help", icon: "💬" },
+];
+
+function QuickReplyChips({ onSelect }: { onSelect: (msg: string) => void }) {
+  return (
+    <div className="flex items-center gap-2 overflow-x-auto px-4 pb-1.5">
+      {QUICK_REPLIES.map((chip) => (
+        <button
+          key={chip.label}
+          onClick={() => onSelect(chip.label)}
+          className={cn(
+            "shrink-0 flex items-center gap-1.5 rounded-full px-3.5 py-1.5",
+            "text-xs font-medium",
+            "border border-[var(--glass-border)]",
+            "bg-[var(--glass-subtle)]",
+            "text-[var(--glass-text-secondary)]",
+            "hover:bg-[var(--glass-accent-blue-light)] hover:text-[var(--glass-accent-blue)] hover:border-[var(--glass-accent-blue)]",
+            "transition-all duration-200"
+          )}
+        >
+          <span>{chip.icon}</span>
+          {chip.label}
+        </button>
+      ))}
     </div>
   );
 }

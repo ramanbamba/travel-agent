@@ -11,6 +11,7 @@ import {
   sendInteractiveButtons,
   markAsRead,
 } from "./client";
+import { formatErrorMessage } from "./formatters";
 import { IntentRouter } from "@/lib/ai/intent-router";
 import {
   parseSelection,
@@ -31,6 +32,7 @@ const intentRouter = new IntentRouter({ supabase });
 
 const MAX_MESSAGES = 20; // 10 turns (user + assistant)
 const SESSION_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
+const STALE_REMINDER_MS = 10 * 60 * 1000; // 10 minutes — remind user of pending selection
 const RATE_LIMIT = 20;
 const RATE_WINDOW = 60_000;
 
@@ -133,10 +135,11 @@ async function getOrCreateSession(phone: string): Promise<SessionData> {
 
   if (existing) {
     const lastMsg = new Date(existing.last_message_at).getTime();
+    const elapsed = Date.now() - lastMsg;
     const ctx = (existing.context ?? {}) as SessionContext;
 
     // Session timeout: reset state but KEEP messages + preferences
-    if (Date.now() - lastMsg > SESSION_TIMEOUT_MS && existing.state !== "idle") {
+    if (elapsed > SESSION_TIMEOUT_MS && existing.state !== "idle") {
       const resetCtx: SessionContext = {
         messages: ctx.messages, // keep conversation memory
       };
@@ -145,6 +148,16 @@ async function getOrCreateSession(phone: string): Promise<SessionData> {
         .update({ state: "idle", context: resetCtx, last_message_at: new Date().toISOString() })
         .eq("id", existing.id);
       return { ...existing, state: "idle", context: resetCtx } as SessionData;
+    }
+
+    // Stale selecting state: user was picking a flight but went quiet for 10+ min
+    // Flag it so the handler can send a reminder with their options
+    if (
+      elapsed > STALE_REMINDER_MS &&
+      (existing.state === "selecting" || existing.state === "confirming") &&
+      ctx.search_params
+    ) {
+      ctx._staleReconnect = true;
     }
 
     await supabase
@@ -354,6 +367,22 @@ async function handleSelectingMessage(
 ): Promise<void> {
   const text = message.text.trim();
   const options = session.context.flight_options;
+  const params = session.context.search_params;
+
+  // Stale reconnect: user was away 10+ min, remind them where they left off
+  if (session.context._staleReconnect && options && options.length > 0 && params) {
+    const route = `${params.origin}→${params.destination}`;
+    let reminderMsg = `Welcome back! You were looking at ${route} flights. Still want to pick one?\n\nHere are your options:\n`;
+    options.forEach((o: FlightOptionContext, i: number) => {
+      reminderMsg += `\n*${i + 1}.* ${o.airline_name} · ${o.detail?.split("\n")[0] ?? ""} · ₹${Math.round(o.price).toLocaleString("en-IN")}`;
+    });
+    reminderMsg += `\n\nReply with a number (1-${options.length}) to select, or type *cancel*.`;
+    await sendTextMessage(message.from, reminderMsg);
+    // Clear the reconnect flag
+    await updateSession(session.id, {
+      context: { ...session.context, _staleReconnect: undefined } as Record<string, unknown>,
+    });
+  }
 
   // 1. Try deterministic selection (numbers, ordinals, airline names, superlatives)
   if (options && options.length > 0) {
@@ -464,6 +493,30 @@ async function handleConfirmingMessage(
       return;
     }
 
+    // Double-booking protection: check for existing active booking on same route+date
+    if (searchParams) {
+      const { data: existingBooking } = await supabase
+        .from("corp_bookings")
+        .select("id, pnr, status")
+        .eq("member_id", session.member_id)
+        .eq("origin", searchParams.origin)
+        .eq("destination", searchParams.destination)
+        .eq("departure_date", searchParams.date)
+        .in("status", ["booked", "pending_approval"])
+        .limit(1)
+        .single();
+
+      if (existingBooking) {
+        const pnrInfo = existingBooking.pnr ? ` (PNR: ${existingBooking.pnr})` : "";
+        await sendTextMessage(
+          message.from,
+          `⚠️ You already have an active booking for ${searchParams.origin}→${searchParams.destination} on ${searchParams.date}${pnrInfo}.\n\nAre you sure you want to book another flight on the same route and date?\n\nReply *yes* to proceed or *cancel* to go back.`
+        );
+        // Stay in confirming state — next message will process
+        return;
+      }
+    }
+
     await sendTextMessage(message.from, "⏳ Booking your flight...");
 
     try {
@@ -497,11 +550,12 @@ async function handleConfirmingMessage(
       const bookResult = await bookRes.json();
 
       if (bookResult.error) {
-        await sendTextMessage(message.from, `That fare may no longer be available. Let me find the next best option for you.\n\nSay "search again" to retry.`);
+        const route = searchParams ? `${searchParams.origin}→${searchParams.destination}` : undefined;
+        await sendTextMessage(message.from, formatErrorMessage("fare_expired", { route }));
       }
     } catch (err) {
       console.error("[WhatsApp Handler] Booking error:", err);
-      await sendTextMessage(message.from, "Something went wrong with the booking. This usually fixes itself quickly — want me to try again?");
+      await sendTextMessage(message.from, formatErrorMessage("booking_failed"));
     }
 
     // Keep messages, clear booking state

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plane, MessageCircle, LayoutDashboard, Users, Lock, Loader2, ArrowRight } from "lucide-react";
+import { Plane, MessageCircle, LayoutDashboard, Lock, Loader2, ArrowRight, Monitor, Shield } from "lucide-react";
 
 export default function DemoLandingPage() {
   const [password, setPassword] = useState("");
@@ -118,28 +118,36 @@ export default function DemoLandingPage() {
         </div>
 
         {/* Demo Cards */}
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-2">
           <DemoCard
             icon={<MessageCircle className="h-6 w-6" />}
-            title="WhatsApp Bot"
-            description="Experience the full booking flow — search, select, policy check, and confirm — all via chat."
+            title="WhatsApp Demo"
+            description="Experience the booking flow as Anita Sharma (IC employee) — search, select, policy check, and book in chat."
             accent="green"
             tag="Start here"
             onClick={() => router.push("/demo/whatsapp")}
           />
           <DemoCard
+            icon={<Monitor className="h-6 w-6" />}
+            title="Cross-Platform Demo"
+            description="See SkySwift on WhatsApp, Slack, and Microsoft Teams — same AI, three platforms. Includes auto-play."
+            accent="purple"
+            tag="New"
+            onClick={() => router.push("/demo/channels")}
+          />
+          <DemoCard
             icon={<LayoutDashboard className="h-6 w-6" />}
             title="Admin Dashboard"
-            description="See the travel manager's view — bookings, policy config, analytics, GST compliance, approvals."
+            description="See Priya Singh's travel manager command center — 60 bookings, policy config, analytics, GST compliance."
             accent="blue"
             onClick={() => router.push("/dashboard/corp")}
           />
           <DemoCard
-            icon={<Users className="h-6 w-6" />}
-            title="Employee View"
-            description="See what employees see — web-based booking, trip history, preferences, and policy guidance."
-            accent="purple"
-            onClick={() => router.push("/book")}
+            icon={<Shield className="h-6 w-6" />}
+            title="Policy in Action"
+            description="Watch policy enforcement live — try booking business class and see the approval flow in action."
+            accent="green"
+            onClick={() => router.push("/demo/whatsapp")}
           />
         </div>
 

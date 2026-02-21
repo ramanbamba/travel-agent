@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { createClient as createServerClient } from "@/lib/supabase/server";
 import { createSupplyBooking } from "@/lib/supply";
 import { sendTextMessage } from "@/lib/whatsapp/client";
 import {
@@ -59,6 +60,13 @@ function generatePNR(): string {
 
 export async function POST(req: NextRequest) {
   try {
+    // Verify caller is authenticated
+    const authClient = createServerClient();
+    const { data: { user } } = await authClient.auth.getUser();
+    if (!user) {
+      return NextResponse.json({ data: null, error: "Unauthorized" }, { status: 401 });
+    }
+
     const body: BookRequest = await req.json();
     const {
       offer_id, member_id, org_id, purpose, purpose_note,

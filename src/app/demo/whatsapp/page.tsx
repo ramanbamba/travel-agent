@@ -34,15 +34,37 @@ interface DemoFlightCard {
   compliant: boolean;
   violations: string[];
   seatsLeft?: number;
+  preferenceScore?: number;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type SessionCtx = any;
 
+function findDemoTopPick(flights: DemoFlightCard[]): number {
+  let bestIdx = 0;
+  let bestScore = -1;
+  for (let i = 0; i < flights.length; i++) {
+    const score = flights[i].preferenceScore ?? 0;
+    const effective = flights[i].compliant ? score + 1000 : score;
+    if (effective > bestScore) {
+      bestScore = effective;
+      bestIdx = i;
+    }
+  }
+  return bestIdx;
+}
+
 const STARTER_SUGGESTIONS = [
   "Book BLR to DEL next Monday",
   "Find flights to Mumbai tomorrow",
   "Need a business class ticket to Chennai",
+];
+
+const SCENARIO_BUTTONS = [
+  { label: "Standard Booking", msg: "Book BLR to DEL Monday morning", color: "text-green-400 border-green-700/40" },
+  { label: "Out of Policy", msg: "Book me business class to Mumbai", color: "text-yellow-400 border-yellow-700/40" },
+  { label: "Preference Learning", msg: "Book my usual Delhi flight", color: "text-blue-400 border-blue-700/40" },
+  { label: "Modify Booking", msg: "Change my Delhi flight to Thursday", color: "text-purple-400 border-purple-700/40" },
 ];
 
 function timeNow(): string {
@@ -249,7 +271,9 @@ export default function WhatsAppDemoPage() {
                 {/* Flight cards */}
                 {msg.flights && msg.flights.length > 0 && (
                   <div className="mt-1.5 space-y-1.5 pl-1">
-                    {msg.flights.map((flight, idx) => (
+                    {msg.flights.map((flight, idx) => {
+                      const isTopPick = findDemoTopPick(msg.flights!) === idx;
+                      return (
                       <button
                         key={flight.offer_id}
                         onClick={() => handleSelectFlight(flight)}
@@ -259,9 +283,14 @@ export default function WhatsAppDemoPage() {
                             : "border-yellow-700/40 bg-yellow-900/20 hover:bg-yellow-900/30"
                         }`}
                       >
+                        {isTopPick && (
+                          <div className="mb-1.5 flex items-center gap-1 text-[10px] font-semibold text-blue-300">
+                            <span>🏷️</span> RECOMMENDED
+                          </div>
+                        )}
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
-                            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-600/20 text-[10px] font-bold text-blue-400">
+                            <span className={`flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold ${isTopPick ? "bg-blue-500/30 text-blue-300" : "bg-blue-600/20 text-blue-400"}`}>
                               {idx + 1}
                             </span>
                             <div>
@@ -299,7 +328,8 @@ export default function WhatsAppDemoPage() {
                           <p className="mt-1 text-[10px] text-orange-400">{flight.seatsLeft} seats left</p>
                         )}
                       </button>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
 
@@ -321,6 +351,13 @@ export default function WhatsAppDemoPage() {
                         </p>
                       )}
                       <p className="text-[11px] text-green-300/80">{msg.booking.message}</p>
+                      <div className="mt-2 space-y-0.5 border-t border-green-700/30 pt-2">
+                        <p className="text-[10px] text-green-400/70">📧 Confirmation sent to your email</p>
+                        <p className="text-[10px] text-green-400/70">📊 GST Invoice: GSTIN captured ✓</p>
+                      </div>
+                      {msg.booking.status !== "pending_approval" && (
+                        <p className="mt-1.5 text-[11px] text-green-300/60">Have a great trip! ✈️</p>
+                      )}
                     </div>
                   </div>
                 )}
@@ -343,6 +380,24 @@ export default function WhatsAppDemoPage() {
             <div ref={messagesEndRef} />
           </div>
         </div>
+
+        {/* Scenario buttons */}
+        {messages.length <= 1 && !loading && (
+          <div className="bg-[#111b21] px-3 pt-2">
+            <p className="text-[10px] text-gray-500 mb-1.5 uppercase tracking-wider">Demo Scenarios</p>
+            <div className="flex gap-1.5 overflow-x-auto pb-1.5">
+              {SCENARIO_BUTTONS.map((s) => (
+                <button
+                  key={s.label}
+                  onClick={() => sendMessage(s.msg)}
+                  className={`shrink-0 rounded-lg border bg-[#1a2730] px-2.5 py-1.5 text-[11px] font-medium hover:bg-[#1f2e38] transition-colors ${s.color}`}
+                >
+                  {s.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Starter suggestions */}
         {messages.length <= 1 && !loading && (
