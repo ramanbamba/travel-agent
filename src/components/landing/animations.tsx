@@ -18,10 +18,10 @@ export function FadeIn({ children, delay = 0, direction = "up", className = "", 
   const isInView = useInView(ref, { once, margin: "-60px" });
 
   const directionMap = {
-    up: { y: 24, x: 0 },
-    down: { y: -24, x: 0 },
-    left: { y: 0, x: 24 },
-    right: { y: 0, x: -24 },
+    up: { y: 10, x: 0 },
+    down: { y: -10, x: 0 },
+    left: { y: 0, x: 10 },
+    right: { y: 0, x: -10 },
     none: { y: 0, x: 0 },
   };
 
@@ -32,8 +32,9 @@ export function FadeIn({ children, delay = 0, direction = "up", className = "", 
       ref={ref}
       initial={{ opacity: 0, y: offset.y, x: offset.x }}
       animate={isInView ? { opacity: 1, y: 0, x: 0 } : { opacity: 0, y: offset.y, x: offset.x }}
-      transition={{ duration: 0.6, delay, ease: [0.22, 1, 0.36, 1] }}
+      transition={{ duration: 0.5, delay, ease: [0.22, 1, 0.36, 1] }}
       className={className}
+      style={{ willChange: "transform, opacity" }}
     >
       {children}
     </motion.div>
@@ -73,10 +74,11 @@ export function StaggerChild({ children, className = "" }: { children: ReactNode
   return (
     <motion.div
       variants={{
-        hidden: { opacity: 0, y: 20 },
-        visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] } },
+        hidden: { opacity: 0, y: 8 },
+        visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: [0.22, 1, 0.36, 1] } },
       }}
       className={className}
+      style={{ willChange: "transform, opacity" }}
     >
       {children}
     </motion.div>
@@ -162,8 +164,8 @@ export function WordReveal({ text, className = "", highlightWords = [], highligh
           <motion.span
             key={`${word}-${i}`}
             variants={{
-              hidden: { opacity: 0, y: 20 },
-              visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] } },
+              hidden: { opacity: 0, y: 8 },
+              visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: [0.22, 1, 0.36, 1] } },
             }}
             className={`inline-block ${isHighlighted ? highlightClass : ""}`}
           >

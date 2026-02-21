@@ -226,8 +226,8 @@ function HowItWorksSection() {
         <Stagger className="mt-16 grid gap-8 md:grid-cols-3" stagger={0.2}>
           {steps.map((step) => (
             <StaggerChild key={step.num}>
-              <div className="text-center">
-                <div className="mx-auto mb-6 w-fit">{step.visual}</div>
+              <div className="flex flex-col items-center text-center">
+                <div className="mb-6 flex h-[88px] items-end justify-center">{step.visual}</div>
                 <span className="font-mono text-xs font-medium text-blue-600">{step.num}</span>
                 <h3 className="mt-1 text-lg font-semibold text-gray-900">{step.title}</h3>
                 <p className="mt-2 text-sm leading-relaxed text-gray-500">{step.description}</p>
