@@ -610,7 +610,7 @@ function TrustSection() {
               Enterprise security. <span className="text-slate-500">Bank-grade compliance.</span>
             </h2>
             <div className="mt-8 space-y-4 text-[15px] text-slate-400">
-              <p>Trusted by India's fastest-growing companies.</p>
+              <p>Trusted by India&apos;s fastest-growing companies.</p>
               <p>Rigorous data isolation, end-to-end encryption, and continuous monitoring.</p>
               <p>Because your corporate data should never be a compromise.</p>
             </div>
