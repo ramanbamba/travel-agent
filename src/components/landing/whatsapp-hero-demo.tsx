@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { HoverTilt } from "./animations";
 
 interface ChatMessage {
   id: number;
@@ -22,23 +23,23 @@ const MESSAGES: ChatMessage[] = [
     from: "bot",
     content: (
       <div>
-        <p className="mb-2 text-[13px]">Found 3 flights within <strong>Acme Corp</strong> policy:</p>
+        <p className="mb-2 text-[13px] text-slate-200">Found 3 flights within <strong className="text-white">Acme Corp</strong> policy:</p>
         <div className="space-y-1.5">
-          <div className="rounded-md border border-green-300/40 bg-green-50/80 p-1.5 text-[11px]">
-            <span className="font-semibold text-green-700">1. IndiGo 6E-234</span>
-            <br />06:15 → 09:00 · Direct · ₹4,850
-            <br /><span className="font-medium text-green-600">RECOMMENDED</span>
+          <div className="rounded-md border border-green-500/30 bg-green-500/10 p-2 text-[11px] backdrop-blur-sm">
+            <span className="font-semibold text-green-400">1. IndiGo 6E-234</span>
+            <br /><span className="text-slate-300">06:15 → 09:00 · Direct · ₹4,850</span>
+            <br /><span className="mt-1 block font-medium text-green-500 text-[10px] tracking-wider">RECOMMENDED</span>
           </div>
-          <div className="rounded-md border border-gray-200 bg-gray-50/50 p-1.5 text-[11px]">
-            <span className="font-medium">2. Air India AI-505</span>
-            <br />08:30 → 11:15 · Direct · ₹5,200
+          <div className="rounded-md border border-white/5 bg-white/5 p-2 text-[11px] backdrop-blur-sm">
+            <span className="font-medium text-slate-200">2. Air India AI-505</span>
+            <br /><span className="text-slate-400">08:30 → 11:15 · Direct · ₹5,200</span>
           </div>
-          <div className="rounded-md border border-gray-200 bg-gray-50/50 p-1.5 text-[11px]">
-            <span className="font-medium">3. Vistara UK-812</span>
-            <br />07:00 → 09:45 · Direct · ₹5,680
+          <div className="rounded-md border border-white/5 bg-white/5 p-2 text-[11px] backdrop-blur-sm">
+            <span className="font-medium text-slate-200">3. Vistara UK-812</span>
+            <br /><span className="text-slate-400">07:00 → 09:45 · Direct · ₹5,680</span>
           </div>
         </div>
-        <p className="mt-1.5 text-[11px] text-gray-500">Reply 1-3 to book ✨</p>
+        <p className="mt-2 text-[11px] text-slate-400">Reply 1-3 to book ✨</p>
       </div>
     ),
     delay: 2000,
@@ -53,15 +54,18 @@ const MESSAGES: ChatMessage[] = [
     id: 4,
     from: "bot",
     content: (
-      <div className="text-[13px]">
-        <p>✅ <strong>Booked!</strong></p>
-        <p className="mt-1 text-[11px]">
-          IndiGo 6E-234 · Mon, Feb 23
-          <br />BLR → DEL · 06:15 - 09:00
-          <br />PNR: <strong>SKY7X2M</strong>
-        </p>
-        <p className="mt-1.5 text-[11px] text-gray-500">
-          📧 E-ticket sent · 🧾 GST captured
+      <div className="text-[13px] text-slate-200">
+        <p className="flex items-center gap-1.5"><span className="text-green-400">✅</span> <strong className="text-white">Booked!</strong></p>
+        <div className="mt-2 rounded bg-black/20 p-2">
+          <p className="text-[11px] text-slate-300">
+            <span className="text-white">IndiGo 6E-234</span> · Mon, Feb 23
+            <br />BLR → DEL · 06:15 - 09:00
+            <br />PNR: <strong className="text-blue-400">SKY7X2M</strong>
+          </p>
+        </div>
+        <p className="mt-2 text-[10px] text-slate-400 flex items-center justify-between">
+          <span>📧 E-ticket sent</span>
+          <span>🧾 GST captured</span>
         </p>
       </div>
     ),
@@ -75,8 +79,8 @@ function TypingIndicator() {
       {[0, 1, 2].map((i) => (
         <motion.div
           key={i}
-          className="h-[6px] w-[6px] rounded-full bg-gray-400"
-          animate={{ opacity: [0.3, 1, 0.3] }}
+          className="h-[6px] w-[6px] rounded-full bg-slate-400"
+          animate={{ opacity: [0.3, 1, 0.3], y: [0, -2, 0] }}
           transition={{
             duration: 1,
             repeat: Infinity,
@@ -90,11 +94,11 @@ function TypingIndicator() {
 
 function TimeStamp({ time }: { time: string }) {
   return (
-    <span className="ml-1.5 inline-flex items-center gap-0.5 text-[10px] text-gray-400">
+    <span className="ml-1.5 inline-flex items-center gap-0.5 text-[9px] text-slate-400">
       {time}
-      <svg width="13" height="9" viewBox="0 0 16 11" fill="none" className="text-blue-500">
-        <path d="M1 5.5L4.5 9L11 2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-        <path d="M5 5.5L8.5 9L15 2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+      <svg width="13" height="9" viewBox="0 0 16 11" fill="none" className="text-blue-400">
+        <path d="M1 5.5L4.5 9L11 2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M5 5.5L8.5 9L15 2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
     </span>
   );
@@ -115,7 +119,6 @@ export function WhatsAppHeroDemo() {
       const msg = MESSAGES[i];
       setCurrentTime(times[i]);
 
-      // Show typing before bot messages
       if (msg.from === "bot") {
         setShowTyping(true);
         await sleep(1200);
@@ -126,10 +129,7 @@ export function WhatsAppHeroDemo() {
       setVisibleMessages((prev) => [...prev, msg.id]);
     }
 
-    // Pause on final state
-    await sleep(3000);
-
-    // Fade out and restart
+    await sleep(4000);
     setVisibleMessages([]);
     await sleep(800);
   }, []);
@@ -148,100 +148,132 @@ export function WhatsAppHeroDemo() {
   }, [runSequence]);
 
   return (
-    <div className="relative mx-auto w-full max-w-[320px] lg:max-w-[340px]">
-      {/* Phone shadow */}
-      <div className="absolute -bottom-6 left-1/2 h-8 w-[85%] -translate-x-1/2 rounded-[50%] bg-black/20 blur-2xl" />
+    <div className="relative mx-auto w-full max-w-[320px] lg:max-w-[340px] perspective-[1200px]">
+      {/* Animated glowing auras behind the phone */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-full w-full rounded-full bg-blue-500/20 blur-[80px] animate-pulse-glow" />
+      <div className="absolute top-1/4 -right-1/4 h-64 w-64 rounded-full bg-purple-500/20 blur-[60px] animate-aura-spin" />
 
-      {/* Phone frame */}
-      <div
-        className="relative overflow-hidden rounded-[36px] border-[3px] border-gray-800 bg-black shadow-2xl lg:[transform:perspective(1200px)_rotateY(-3deg)]"
-      >
-        {/* Status bar */}
-        <div className="flex items-center justify-between bg-[#075e54] px-5 pb-0.5 pt-3">
-          <span className="text-[11px] font-medium text-white/90">{currentTime}</span>
-          <div className="flex items-center gap-1">
-            <div className="h-2.5 w-2.5 rounded-sm border border-white/60">
-              <div className="mt-0.5 mx-auto h-1 w-1.5 bg-white/60" />
+      {/* Phone shadow */}
+      <div className="absolute -bottom-8 left-1/2 h-8 w-[80%] -translate-x-1/2 rounded-[50%] bg-blue-900/30 blur-2xl" />
+
+      <HoverTilt rotationRatio={10}>
+        {/* Phone frame */}
+        <div className="relative overflow-hidden rounded-[40px] border-[4px] border-[#1f2937] bg-[#0b141a] shadow-2xl ring-1 ring-white/10">
+
+          {/* Glass glare effect */}
+          <div className="absolute inset-0 pointer-events-none bg-gradient-to-tr from-white/5 via-transparent to-transparent z-50 rounded-[36px]" />
+
+          {/* Status bar */}
+          <div className="flex items-center justify-between bg-[#111b21] px-6 pb-1 pt-3">
+            <span className="text-[11px] font-medium text-slate-300">{currentTime}</span>
+            <div className="flex items-center gap-1.5 opacity-80">
+              {/* Cellular */}
+              <svg width="12" height="10" viewBox="0 0 16 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect y="8" width="3" height="4" rx="1" fill="#cbd5e1" />
+                <rect x="4" y="6" width="3" height="6" rx="1" fill="#cbd5e1" />
+                <rect x="8" y="3" width="3" height="9" rx="1" fill="#cbd5e1" />
+                <rect x="12" width="3" height="12" rx="1" fill="#cbd5e1" />
+              </svg>
+              {/* Wifi */}
+              <svg width="12" height="10" viewBox="0 0 16 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M8 12C9.43144 12 10.7418 11.4886 11.7574 10.6387L8 4.3193L4.24264 10.6387C5.2582 11.4886 6.56856 12 8 12Z" fill="#cbd5e1" />
+                <path d="M14.0711 7.2132C12.5188 5.66089 10.3662 4.7 8 4.7C5.6338 4.7 3.48123 5.66089 1.92893 7.2132L0 3.96645C2.08055 1.8859 4.88725 0.5 8 0.5C11.1127 0.5 13.9194 1.8859 16 3.96645L14.0711 7.2132Z" fill="#cbd5e1" />
+              </svg>
+              {/* Battery */}
+              <div className="h-2.5 w-5 rounded-sm border border-slate-300 p-0.5 flex items-center">
+                <div className="h-full w-[80%] bg-slate-200 rounded-[1px]" />
+              </div>
+            </div>
+          </div>
+
+          {/* WhatsApp Dark header */}
+          <div className="flex items-center gap-3 bg-[#202c33] px-4 pb-3 pt-2">
+            <div className="relative flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-blue-600 shadow-inner">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z" />
+              </svg>
+              <div className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-[#202c33] bg-[#00a884]" />
+            </div>
+            <div className="flex-1">
+              <p className="text-[15px] font-medium text-[#e9edef]">SkySwift AI</p>
+              <p className="text-[12px] text-[#8696a0]">online</p>
+            </div>
+            <div className="flex gap-4 text-[#aebac1]">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" /></svg>
+            </div>
+          </div>
+
+          {/* Chat area */}
+          <div
+            className="relative space-y-3 px-3 py-4"
+            style={{
+              minHeight: 380,
+              backgroundColor: "#0b141a",
+              backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M10 10h1v1h-1zM30 30h1v1h-1zM50 80h1v1h-1zM70 20h1v1h-1zM90 60h1v1h-1z' fill='%23ffffff' fill-opacity='0.03' fill-rule='evenodd'/%3E%3C/svg%3E\")",
+            }}
+          >
+            <div className="flex justify-center mb-4">
+              <div className="bg-[#182229] px-3 py-1 rounded-lg text-[10px] text-[#8696a0] shadow-sm uppercase tracking-wider">Today</div>
+            </div>
+
+            <AnimatePresence>
+              {MESSAGES.filter((m) => visibleMessages.includes(m.id)).map((msg) => (
+                <motion.div
+                  key={msg.id}
+                  initial={{ opacity: 0, y: 15, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  transition={{ type: "spring", stiffness: 200, damping: 20 }}
+                  className={`flex ${msg.from === "user" ? "justify-end" : "justify-start"}`}
+                >
+                  <div
+                    className={`relative max-w-[85%] rounded-xl px-3 py-2 shadow-sm ${msg.from === "user"
+                        ? "rounded-tr-none bg-[#005c4b] text-[#e9edef]" // WhatsApp dark user bubble
+                        : "rounded-tl-none bg-[#202c33] text-[#e9edef]" // WhatsApp dark bot bubble
+                      }`}
+                  >
+                    <div className="text-[13.5px] leading-relaxed">{msg.content}</div>
+                    <div className="mt-1 flex justify-end">
+                      <TimeStamp time={currentTime} />
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </AnimatePresence>
+
+            {/* Typing indicator */}
+            <AnimatePresence>
+              {showTyping && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10, scale: 0.9 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.9 }}
+                  className="flex justify-start"
+                >
+                  <div className="rounded-xl rounded-tl-none bg-[#202c33] px-3 py-2.5 shadow-sm">
+                    <TypingIndicator />
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
+          {/* Input bar */}
+          <div className="flex items-center gap-2 bg-[#202c33] px-3 py-2.5">
+            <div className="flex h-9 w-9 items-center justify-center text-[#8696a0]">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 5v14M5 12h14" /></svg>
+            </div>
+            <div className="flex-1 rounded-full bg-[#2a3942] px-4 py-2 text-[13px] text-[#8696a0]">
+              Message
+            </div>
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#00a884] shadow-md shadow-green-900/20">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
+                <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
+              </svg>
             </div>
           </div>
         </div>
-
-        {/* WhatsApp header */}
-        <div className="flex items-center gap-3 bg-[#075e54] px-4 pb-3 pt-1">
-          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-500">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z" />
-            </svg>
-          </div>
-          <div className="flex-1">
-            <p className="text-[14px] font-medium text-white">SkySwift AI</p>
-            <p className="text-[11px] text-green-200">online</p>
-          </div>
-        </div>
-
-        {/* Chat area */}
-        <div
-          className="relative space-y-2 bg-[#e5ddd5] px-3 py-3"
-          style={{
-            minHeight: 360,
-            backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23c8c3bb' fill-opacity='0.15'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E\")",
-          }}
-        >
-          <AnimatePresence>
-            {MESSAGES.filter((m) => visibleMessages.includes(m.id)).map((msg) => (
-              <motion.div
-                key={msg.id}
-                initial={{ opacity: 0, y: 12, scale: 0.95 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: -8 }}
-                transition={{ duration: 0.3, ease: "easeOut" }}
-                className={`flex ${msg.from === "user" ? "justify-end" : "justify-start"}`}
-              >
-                <div
-                  className={`relative max-w-[82%] rounded-lg px-2.5 py-1.5 shadow-sm ${
-                    msg.from === "user"
-                      ? "rounded-tr-none bg-[#dcf8c6] text-gray-900"
-                      : "rounded-tl-none bg-white text-gray-800"
-                  }`}
-                >
-                  <div className="text-[13px] leading-relaxed">{msg.content}</div>
-                  <div className="mt-0.5 flex justify-end">
-                    <TimeStamp time={currentTime} />
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </AnimatePresence>
-
-          {/* Typing indicator */}
-          <AnimatePresence>
-            {showTyping && (
-              <motion.div
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0 }}
-                className="flex justify-start"
-              >
-                <div className="rounded-lg rounded-tl-none bg-white px-3 py-2 shadow-sm">
-                  <TypingIndicator />
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-
-        {/* Input bar */}
-        <div className="flex items-center gap-2 bg-[#f0f0f0] px-3 py-2">
-          <div className="flex-1 rounded-full bg-white px-4 py-2 text-[12px] text-gray-400">
-            Type a message
-          </div>
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#075e54]">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="white">
-              <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
-            </svg>
-          </div>
-        </div>
-      </div>
+      </HoverTilt>
     </div>
   );
 }

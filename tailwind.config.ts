@@ -32,39 +32,39 @@ const config: Config = {
         ],
       },
       colors: {
-        background: "hsl(var(--background))",
-        foreground: "hsl(var(--foreground))",
+        background: "var(--background)",
+        foreground: "var(--foreground)",
         card: {
-          DEFAULT: "hsl(var(--card))",
-          foreground: "hsl(var(--card-foreground))",
+          DEFAULT: "var(--card)",
+          foreground: "var(--card-foreground)",
         },
         popover: {
-          DEFAULT: "hsl(var(--popover))",
-          foreground: "hsl(var(--popover-foreground))",
+          DEFAULT: "var(--popover)",
+          foreground: "var(--popover-foreground)",
         },
         primary: {
-          DEFAULT: "hsl(var(--primary))",
-          foreground: "hsl(var(--primary-foreground))",
+          DEFAULT: "var(--primary)",
+          foreground: "var(--primary-foreground)",
         },
         secondary: {
-          DEFAULT: "hsl(var(--secondary))",
-          foreground: "hsl(var(--secondary-foreground))",
+          DEFAULT: "var(--secondary)",
+          foreground: "var(--secondary-foreground)",
         },
         muted: {
-          DEFAULT: "hsl(var(--muted))",
-          foreground: "hsl(var(--muted-foreground))",
+          DEFAULT: "var(--muted)",
+          foreground: "var(--muted-foreground)",
         },
         accent: {
-          DEFAULT: "hsl(var(--accent))",
-          foreground: "hsl(var(--accent-foreground))",
+          DEFAULT: "var(--accent)",
+          foreground: "var(--accent-foreground)",
         },
         destructive: {
-          DEFAULT: "hsl(var(--destructive))",
-          foreground: "hsl(var(--destructive-foreground))",
+          DEFAULT: "var(--destructive)",
+          foreground: "var(--destructive-foreground)",
         },
-        border: "hsl(var(--border))",
-        input: "hsl(var(--input))",
-        ring: "hsl(var(--ring))",
+        border: "var(--border)",
+        input: "var(--input)",
+        ring: "var(--ring)",
         chart: {
           "1": "hsl(var(--chart-1))",
           "2": "hsl(var(--chart-2))",
@@ -72,57 +72,54 @@ const config: Config = {
           "4": "hsl(var(--chart-4))",
           "5": "hsl(var(--chart-5))",
         },
-        // Glass theme colors
-        glass: {
-          blue: "var(--glass-accent-blue)",
-          green: "var(--glass-accent-green)",
-          amber: "var(--glass-accent-amber)",
-          red: "var(--glass-accent-red)",
-        },
+        // Deep space / premium dark theme colors
+        brand: {
+          blue: "#0071e3",
+          blueHover: "#0077ED",
+          dark: "#050A15", // extremely deep navy/black
+          card: "rgba(255, 255, 255, 0.03)", // subtle glass
+          cardHover: "rgba(255, 255, 255, 0.06)",
+        }
       },
       borderRadius: {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
-        glass: "var(--glass-radius-card)",
-        "glass-button": "var(--glass-radius-button)",
-        "glass-modal": "var(--glass-radius-modal)",
+      },
+      backgroundImage: {
+        'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
+        'gradient-conic': 'conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))',
+        'mesh-dark': 'radial-gradient(ellipse at center, #0F172A 0%, #050A15 100%)',
       },
       backdropBlur: {
-        glass: "var(--glass-blur)",
+        glass: "12px",
+        heavy: "32px",
       },
       transitionTimingFunction: {
         spring: "cubic-bezier(0.34, 1.56, 0.64, 1)",
         "expo-out": "cubic-bezier(0.16, 1, 0.3, 1)",
       },
       keyframes: {
-        "glass-in": {
-          from: { opacity: "0", transform: "scale(0.96) translateY(8px)" },
-          to: { opacity: "1", transform: "scale(1) translateY(0)" },
+        float: {
+          "0%, 100%": { transform: "translateY(0)" },
+          "50%": { transform: "translateY(-10px)" },
         },
-        "glass-out": {
-          from: { opacity: "1", transform: "scale(1) translateY(0)" },
-          to: { opacity: "0", transform: "scale(0.96) translateY(8px)" },
+        "float-slow": {
+          "0%, 100%": { transform: "translateY(0) scale(1)" },
+          "50%": { transform: "translateY(-20px) scale(1.05)" },
         },
-        "sheet-up": {
-          from: { transform: "translateY(100%)" },
-          to: { transform: "translateY(0)" },
+        "aura-spin": {
+          "0%": { transform: "rotate(0deg) scale(1)" },
+          "50%": { transform: "rotate(180deg) scale(1.2)" },
+          "100%": { transform: "rotate(360deg) scale(1)" },
         },
-        "sheet-down": {
-          from: { transform: "translateY(0)" },
-          to: { transform: "translateY(100%)" },
+        pulseGlow: {
+          "0%, 100%": { opacity: "0.2" },
+          "50%": { opacity: "0.5" },
         },
-        "pill-in": {
-          from: { opacity: "0", transform: "scale(0.8)" },
-          to: { opacity: "1", transform: "scale(1)" },
-        },
-        "nav-shrink": {
-          from: { height: "4rem", backdropFilter: "blur(0px)" },
-          to: { height: "3.5rem", backdropFilter: "blur(24px) saturate(1.8)" },
-        },
-        confetti: {
-          "0%": { opacity: "1", transform: "translateY(0) rotate(0deg)" },
-          "100%": { opacity: "0", transform: "translateY(400px) rotate(720deg)" },
+        shimmer: {
+          from: { backgroundPosition: "200% 0" },
+          to: { backgroundPosition: "-200% 0" },
         },
         "draw-check": {
           "0%": { strokeDashoffset: "1" },
@@ -130,12 +127,11 @@ const config: Config = {
         },
       },
       animation: {
-        "glass-in": "glass-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards",
-        "glass-out": "glass-out 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards",
-        "sheet-up": "sheet-up 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards",
-        "sheet-down": "sheet-down 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards",
-        "pill-in": "pill-in 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards",
-        confetti: "confetti var(--tw-animate-duration, 2s) cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards",
+        "float": "float 4s ease-in-out infinite",
+        "float-slow": "float-slow 8s ease-in-out infinite",
+        "aura-spin": "aura-spin 20s linear infinite",
+        "pulse-glow": "pulseGlow 4s ease-in-out infinite",
+        "shimmer": "shimmer 8s ease-in-out infinite",
         "draw-check": "draw-check 0.6s cubic-bezier(0.65, 0, 0.35, 1) 0.2s forwards",
       },
     },
