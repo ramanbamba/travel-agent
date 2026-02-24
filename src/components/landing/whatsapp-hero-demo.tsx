@@ -205,7 +205,7 @@ export function WhatsAppHeroDemo() {
 
           {/* Chat area */}
           <div
-            className="relative flex flex-col justify-end overflow-hidden px-3 py-4 h-[420px]"
+            className="relative flex flex-col justify-end overflow-hidden px-3 py-4 h-[520px]"
             style={{
               backgroundColor: "#0b141a",
               backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M10 10h1v1h-1zM30 30h1v1h-1zM50 80h1v1h-1zM70 20h1v1h-1zM90 60h1v1h-1z' fill='%23ffffff' fill-opacity='0.03' fill-rule='evenodd'/%3E%3C/svg%3E\")",

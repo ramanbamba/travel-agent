@@ -37,7 +37,7 @@ function ArrowRight({ className }: { className?: string }) {
 
 function HeroSection() {
   return (
-    <section className="relative min-h-screen overflow-hidden bg-background pt-32 pb-20 md:pt-40 lg:pt-48 selection:bg-blue-500/30">
+    <section className="relative min-h-screen overflow-hidden bg-background pt-24 pb-16 md:pt-32 lg:pt-40 selection:bg-blue-500/30">
       {/* Premium glowing background mesh */}
       <div className="absolute inset-0 z-0 bg-mesh-dark opacity-80" />
 
@@ -146,7 +146,7 @@ function ProblemSection() {
   ];
 
   return (
-    <section className="relative overflow-hidden bg-background px-6 py-24 lg:py-32">
+    <section className="relative overflow-hidden bg-background px-6 py-16 lg:py-24">
       {/* Background radial gradient specifically for this section */}
       <div className="pointer-events-none absolute left-1/2 top-0 h-[600px] w-[80%] -translate-x-1/2 -translate-y-1/2 rounded-[100%] bg-blue-900/10 blur-[100px]" />
 
@@ -256,7 +256,7 @@ function HowItWorksSection() {
   ];
 
   return (
-    <section id="how-it-works" className="relative overflow-hidden bg-[#020617] px-6 py-24 lg:py-32 border-t border-white/5">
+    <section id="how-it-works" className="relative overflow-hidden bg-[#020617] px-6 py-16 lg:py-24 border-t border-white/5">
       {/* Subtle Background Elements */}
       <div className="pointer-events-none absolute left-0 top-1/2 h-[500px] w-[500px] -translate-y-1/2 -translate-x-1/2 rounded-[100%] bg-indigo-900/10 blur-[100px]" />
       <div className="pointer-events-none absolute right-0 bottom-0 h-[400px] w-[400px] rounded-[100%] bg-blue-900/10 blur-[100px]" />
@@ -286,10 +286,12 @@ function HowItWorksSection() {
               <StaggerChild key={step.num}>
                 <div className="group relative flex flex-col items-center text-center">
 
-                  {/* Visual Container */}
+                  {/* Visual Container (Fixed height to ensure alignment) */}
                   <HoverTilt rotationRatio={8} className="w-full">
-                    <div className="mb-8 w-full transition-transform duration-500 group-hover:-translate-y-2">
-                      {step.visual}
+                    <div className="mb-8 w-full transition-transform duration-500 group-hover:-translate-y-2 h-[100px] sm:h-[120px] flex items-end justify-center">
+                      <div className="w-full">
+                        {step.visual}
+                      </div>
                     </div>
                   </HoverTilt>
 
@@ -432,7 +434,7 @@ function FeaturesSection() {
   ];
 
   return (
-    <section className="relative overflow-hidden bg-[#020617] px-6 py-24 lg:py-32 border-t border-white/5">
+    <section className="relative overflow-hidden bg-[#020617] px-6 py-16 lg:py-24 border-t border-white/5">
       {/* Background ambient light blobs */}
       <div className="pointer-events-none absolute -top-40 -right-40 h-[600px] w-[600px] rounded-full bg-blue-600/10 blur-[150px] animate-pulse-glow" />
       <div className="pointer-events-none absolute -bottom-40 -left-40 h-[600px] w-[600px] rounded-full bg-purple-600/10 blur-[150px] animate-aura-spin" />
@@ -516,7 +518,7 @@ function PricingSection() {
   ];
 
   return (
-    <section id="pricing" className="relative overflow-hidden bg-background px-6 py-24 lg:py-32">
+    <section id="pricing" className="relative overflow-hidden bg-background px-6 py-16 lg:py-24">
       {/* Deep glow behind pricing cards */}
       <div className="absolute left-1/2 top-1/2 -z-10 h-[800px] w-[1000px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-blue-900/10 blur-[150px]" />
 
@@ -597,7 +599,7 @@ function PricingSection() {
 
 function TrustSection() {
   return (
-    <section className="relative overflow-hidden bg-background px-6 py-24 lg:py-32">
+    <section className="relative overflow-hidden bg-background px-6 py-16 lg:py-24">
       {/* Subtle glow */}
       <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[400px] w-[600px] rounded-full bg-blue-500/5 blur-[120px]" />
 
