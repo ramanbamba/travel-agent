@@ -208,7 +208,7 @@ function HowItWorksSection() {
         <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-[#0A0F1E] p-4 shadow-xl">
           <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-purple-500/10 opacity-50" />
           <div className="relative rounded-xl border border-green-500/30 bg-green-500/10 px-4 py-3 text-[13px] text-green-50 shadow-[0_0_15px_rgba(34,197,94,0.1)] backdrop-blur-md">
-            "Book BLR to DEL Monday morning"
+            &ldquo;Book BLR to DEL Monday morning&rdquo;
           </div>
         </div>
       ),
