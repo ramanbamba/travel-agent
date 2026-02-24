@@ -205,57 +205,58 @@ export function WhatsAppHeroDemo() {
 
           {/* Chat area */}
           <div
-            className="relative space-y-3 px-3 py-4"
+            className="relative flex flex-col justify-end overflow-hidden px-3 py-4 h-[420px]"
             style={{
-              minHeight: 380,
               backgroundColor: "#0b141a",
               backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M10 10h1v1h-1zM30 30h1v1h-1zM50 80h1v1h-1zM70 20h1v1h-1zM90 60h1v1h-1z' fill='%23ffffff' fill-opacity='0.03' fill-rule='evenodd'/%3E%3C/svg%3E\")",
             }}
           >
-            <div className="flex justify-center mb-4">
+            <div className="absolute top-4 left-0 w-full flex justify-center z-10">
               <div className="bg-[#182229] px-3 py-1 rounded-lg text-[10px] text-[#8696a0] shadow-sm uppercase tracking-wider">Today</div>
             </div>
 
-            <AnimatePresence>
-              {MESSAGES.filter((m) => visibleMessages.includes(m.id)).map((msg) => (
-                <motion.div
-                  key={msg.id}
-                  initial={{ opacity: 0, y: 15, scale: 0.95 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  transition={{ type: "spring", stiffness: 200, damping: 20 }}
-                  className={`flex ${msg.from === "user" ? "justify-end" : "justify-start"}`}
-                >
-                  <div
-                    className={`relative max-w-[85%] rounded-xl px-3 py-2 shadow-sm ${msg.from === "user"
+            <div className="flex flex-col space-y-3 z-20 mt-8">
+              <AnimatePresence>
+                {MESSAGES.filter((m) => visibleMessages.includes(m.id)).map((msg) => (
+                  <motion.div
+                    key={msg.id}
+                    initial={{ opacity: 0, y: 15, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    transition={{ type: "spring", stiffness: 200, damping: 20 }}
+                    className={`flex ${msg.from === "user" ? "justify-end" : "justify-start"}`}
+                  >
+                    <div
+                      className={`relative max-w-[85%] rounded-xl px-3 py-2 shadow-sm ${msg.from === "user"
                         ? "rounded-tr-none bg-[#005c4b] text-[#e9edef]" // WhatsApp dark user bubble
                         : "rounded-tl-none bg-[#202c33] text-[#e9edef]" // WhatsApp dark bot bubble
-                      }`}
-                  >
-                    <div className="text-[13.5px] leading-relaxed">{msg.content}</div>
-                    <div className="mt-1 flex justify-end">
-                      <TimeStamp time={currentTime} />
+                        }`}
+                    >
+                      <div className="text-[13.5px] leading-relaxed">{msg.content}</div>
+                      <div className="mt-1 flex justify-end">
+                        <TimeStamp time={currentTime} />
+                      </div>
                     </div>
-                  </div>
-                </motion.div>
-              ))}
-            </AnimatePresence>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
 
-            {/* Typing indicator */}
-            <AnimatePresence>
-              {showTyping && (
-                <motion.div
-                  initial={{ opacity: 0, y: 10, scale: 0.9 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.9 }}
-                  className="flex justify-start"
-                >
-                  <div className="rounded-xl rounded-tl-none bg-[#202c33] px-3 py-2.5 shadow-sm">
-                    <TypingIndicator />
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+              {/* Typing indicator */}
+              <AnimatePresence>
+                {showTyping && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10, scale: 0.9 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.9 }}
+                    className="flex justify-start pt-1"
+                  >
+                    <div className="rounded-xl rounded-tl-none bg-[#202c33] px-3 py-2 shadow-sm inline-flex items-center h-8">
+                      <TypingIndicator />
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           </div>
 
           {/* Input bar */}

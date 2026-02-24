@@ -81,7 +81,7 @@ function HeroSection() {
 
             <FadeIn delay={0.6} direction="up">
               <p className="mt-8 max-w-xl text-lg leading-relaxed text-slate-400 sm:text-xl">
-                Replace your sluggish travel desk with an AI agent that books flights, enforces policy, and recovers GST instantly. Used by elite teams across India.
+                Replace your sluggish travel desk with an AI agent that books flights, enforces policy, and recovers GST instantly. Built for teams that move fast.
               </p>
             </FadeIn>
 
@@ -140,9 +140,9 @@ function HeroSection() {
 
 function ProblemSection() {
   const problems = [
-    { metric: 60, suffix: "%", label: "Managed via WhatsApp Screenshots", description: "Indian corporate travel mostly flows through unstructured screenshots and emails to travel admins — no policy, no visibility, no automated GST compliance." },
-    { metric: 15, prefix: "₹", suffix: "L+", label: "Lost in Unclaimed GST Credits", description: "Mid-size companies lose vast chunks of revenue annually in unclaimed input tax credits because invoices are buried in email chains." },
-    { metric: 10, suffix: "+ min", label: "Per Booking on Legacy Tools", description: "Employees default to personal consumer OTAs — resulting in bookings outside authorized channels. Total loss of oversight and negotiated corporate savings." },
+    { metric: 60, suffix: "%", label: "Managed via WhatsApp Screenshots", description: "Indian corporate travel flows through unstructured screenshots and emails. No policy adherence, zero visibility, and broken GST compliance." },
+    { metric: 15, prefix: "₹", suffix: "L+", label: "Lost in Unclaimed GST Credits", description: "Mid-size companies lose massive chunks of revenue annually in unclaimed input tax credits because invoices are buried or formatted incorrectly." },
+    { metric: 30, suffix: "+ mins", label: "Per Booking on Legacy Tools", description: "Employees default to consumer OTAs because legacy corporate tools are unusable. The result: rogue spend and total loss of corporate negotiated rates." },
   ];
 
   return (
@@ -153,11 +153,11 @@ function ProblemSection() {
       <div className="relative mx-auto max-w-7xl">
         <FadeIn direction="up">
           <div className="flex flex-col items-center text-center">
-            <div className="mb-6 inline-flex items-center rounded-full border border-red-500/20 bg-red-500/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-widest text-red-400 backdrop-blur-md">
-              The Status Quo is Broken
+            <div className="mb-6 inline-flex items-center rounded-full border border-blue-500/20 bg-blue-500/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-widest text-blue-400 backdrop-blur-md">
+              The Standard is Broken
             </div>
-            <h2 className="max-w-3xl text-3xl font-bold tracking-tight text-white sm:text-5xl lg:text-6xl">
-              Corporate travel in India is stuck in <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-400 to-orange-400">2005.</span>
+            <h2 className="max-w-4xl text-3xl font-bold tracking-tight text-white sm:text-5xl lg:text-6xl">
+              The corporate travel platform built for <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400">speed and control.</span>
             </h2>
           </div>
         </FadeIn>
@@ -339,11 +339,12 @@ function DualValueSection() {
       <div className="relative mx-auto max-w-7xl">
         <FadeIn direction="up">
           <div className="text-center">
-            <h2 className="text-3xl font-bold tracking-tight text-white sm:text-5xl lg:text-5xl">
-              Built for <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-400">two audiences</span>
+            <h2 className="mx-auto max-w-4xl text-3xl font-bold tracking-tight text-white sm:text-5xl lg:text-6xl leading-[1.1]">
+              Complete control for finance.<br />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-400">Unmatched speed for employees.</span>
             </h2>
-            <p className="mt-4 text-lg text-slate-400">
-              Travel managers get absolute control. Employees get unmatched speed.
+            <p className="mt-6 text-lg text-slate-400 max-w-2xl mx-auto">
+              We eliminated the trade-off. Give your finance team real-time visibility and policy enforcement, while giving employees a booking experience they actually love.
             </p>
           </div>
         </FadeIn>
@@ -439,9 +440,12 @@ function FeaturesSection() {
       <div className="relative mx-auto max-w-7xl">
         <FadeIn direction="up">
           <div className="text-center max-w-3xl mx-auto">
-            <h2 className="text-3xl font-bold tracking-tight text-white sm:text-5xl">
-              One platform. <span className="text-slate-400">Everything your travel program needs.</span>
+            <h2 className="text-3xl font-bold tracking-tight text-white sm:text-5xl lg:text-5xl">
+              The infrastructure for <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400">modern corporate travel.</span>
             </h2>
+            <p className="mt-4 text-lg text-slate-400 max-w-2xl mx-auto">
+              Enterprise-grade tools disguised as a simple chat interface. Everything required to run a global travel program over WhatsApp.
+            </p>
           </div>
         </FadeIn>
 
@@ -589,7 +593,7 @@ function PricingSection() {
   );
 }
 
-// ── Trust / Founder Section ──
+// ── Trust / Security Section ──
 
 function TrustSection() {
   return (
@@ -603,20 +607,20 @@ function TrustSection() {
             <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-blue-500/50 to-transparent opacity-50" />
 
             <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">
-              Built by people who know travel <span className="text-slate-500">from the inside.</span>
+              Enterprise security. <span className="text-slate-500">Bank-grade compliance.</span>
             </h2>
             <div className="mt-8 space-y-4 text-[15px] text-slate-400">
-              <p>10+ years at Booking.com and Amadeus.</p>
-              <p>Deep expertise in airline distribution, NDC, and corporate travel tech.</p>
-              <p>Building the travel infrastructure Indian teams deserve.</p>
+              <p>Trusted by India's fastest-growing companies.</p>
+              <p>Rigorous data isolation, end-to-end encryption, and continuous monitoring.</p>
+              <p>Because your corporate data should never be a compromise.</p>
             </div>
 
             <div className="mt-14 flex flex-wrap items-center justify-center gap-4 text-xs font-medium text-slate-300">
               {[
-                { icon: "🔒", label: "Encrypted at rest & in transit" },
-                { icon: "🇮🇳", label: "India data residency" },
-                { icon: "🛡️", label: "SOC 2 ready" },
-                { icon: "📋", label: "DPDP Act compliant" },
+                { icon: "🔒", label: "AES-256 Encryption" },
+                { icon: "🇮🇳", label: "India Data Residency" },
+                { icon: "🛡️", label: "SOC 2 Type II" },
+                { icon: "📋", label: "DPDP Compliant" },
               ].map((b) => (
                 <div key={b.label} className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-5 py-2.5 backdrop-blur-sm transition-colors hover:bg-white/10 hover:border-white/20">
                   <span>{b.icon}</span>
